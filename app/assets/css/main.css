@@ -1,0 +1,36 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    list-style: none;
+    font-family: "Quicksand", sans-serif;
+}
+
+html,
+main {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+}
+
+body>div:first-of-type {
+    height: 100%;
+    display: grid;
+    grid: "header" auto "main" 1fr "footer" auto / 1fr;
+}
+
+header {
+    grid-area: header;
+}
+
+main {
+    grid-area: main;
+}
+
+footer {
+    grid-area: footer;
+}
