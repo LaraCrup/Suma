@@ -1,26 +1,30 @@
 export default {
     theme: {
         screens: {
-            'sm': '480px',
-            'md': '660px',
-            'lg': '992px',
-            'xl': '1280px',
-            '2xl': '1440px',
+            'sm': '400px',
+            'md': '480px',
+            'lg': '660px',
+            'xl': '800px',
+            '2xl': '992px',
         },
         extend: {
             colors: {
-                primary: "#FF541C",
-                primaryHover: "#FF541C",
-                secondary: "#FF8259",
-                secondaryHover: "#FF8259",
-                terciary: "#B82D18",
-                accent: "#FCC008",
-                light: '#FBF9F9',
-                dark: "#03101D",
-                gray: {
-                    mid: "#DDDDDD"
+                primary: "#157A6E",
+                accent: "#D7F560",
+                green: {
+                    light: "#499F68",
+                    dark: "#12534C"
                 },
-                error: "#DE5E5E"
+                light: '#F3FCF7',
+                midlight: "#E9F3ED",
+                dark: "#131815",
+                gray: "#999999",
+                error: "#C24848",
+            },
+            backgroundImage: {
+                'gradient-primary': 'linear-gradient(to bottom, #D7F560, #157A6E)',
+                'gradient-primary-horizontal': 'linear-gradient(to bottom, #499F68, #12534C)',
+                'gradient-secondary': 'linear-gradient(to right, #157A6E, #D7F560)',
             }
         }
     }
