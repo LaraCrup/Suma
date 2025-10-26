@@ -20,7 +20,7 @@ body {
 body>div:first-of-type {
     height: 100%;
     display: grid;
-    grid: "header" auto "main" 1fr "footer" auto / 1fr;
+    grid: "header" auto "main" 1fr "nav" auto / 1fr;
 }
 
 header {
@@ -31,6 +31,6 @@ main {
     grid-area: main;
 }
 
-footer {
-    grid-area: footer;
+nav {
+    grid-area: nav;
 }

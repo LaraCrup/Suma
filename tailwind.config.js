@@ -8,6 +8,9 @@ export default {
             '2xl': '992px',
         },
         extend: {
+            fontFamily: {
+                'montserrat': ['Montserrat Alternates', 'sans-serif'],
+            },
             colors: {
                 primary: "#157A6E",
                 accent: "#D7F560",

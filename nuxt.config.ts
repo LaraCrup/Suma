@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  srcDir: 'app/',
   css: ['~/assets/css/main.css'],
   modules: [
     '@nuxt/fonts',
@@ -34,6 +35,9 @@ export default defineNuxtConfig({
         '/olvidar-contrasena',
         '/olvidar-contrasena-confirmacion',
         '/restablecer-contrasena',
+        '/restablecer-contrasena-confirmacion',
+        '/confirmar-cuenta',
+        '/nueva-contrasena'
       ]
     },
     cookieOptions: {
@@ -50,6 +54,9 @@ export default defineNuxtConfig({
     },
   },
   fonts: {
+    families: [
+      { name: 'Montserrat Alternates', provider: 'google' }
+    ],
     defaults: {
       weights: [300, 400, 500, 600, 700, 800, 900],
     }
