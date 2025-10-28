@@ -32,8 +32,6 @@ export default defineNuxtConfig({
       exclude: [
         '/iniciar-sesion',
         '/registrarse',
-        '/olvidar-contrasena',
-        '/olvidar-contrasena-confirmacion',
         '/restablecer-contrasena',
         '/restablecer-contrasena-confirmacion',
         '/confirmar-cuenta',
