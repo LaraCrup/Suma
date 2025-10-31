@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <FormLabel :id="id" :required="required" class="sr-only">{{ label }}</FormLabel>
+        <FormLabel :id="id" :required="required">{{ label }}</FormLabel>
 
         <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
             :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"

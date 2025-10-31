@@ -25,10 +25,7 @@
 
             <ButtonPrimary type="submit" class="lg:!px-48" :disabled="loading || !isValid">
                 <span v-if="!loading">Registrarse</span>
-                <span v-else class="flex justify-center items-center gap-2">
-                    <Icon name="tabler:loader-2" class="animate-spin" />
-                    Registrando...
-                </span>
+                <Loader v-else color="light" />
             </ButtonPrimary>
         </FormLayout>
         <p class="flex flex-col items-center text-xs">¿Ya tenés cuenta?<NuxtLink :to="ROUTE_NAMES.LOGIN"
@@ -49,7 +46,7 @@ definePageMeta({
 
 const client = useSupabaseClient()
 const router = useRouter()
-// const { success } = useNotification()
+const { success } = useNotification()
 
 const form = reactive({
     displayName: '',
@@ -87,8 +84,8 @@ const isValid = computed(() => {
 const validateDisplayName = () => {
     if (!form.displayName) {
         errors.displayName = 'El nombre para mostrar es requerido'
-    } else if (form.displayName.length < 2) {
-        errors.displayName = 'El nombre debe tener al menos 2 caracteres'
+    } else if (form.displayName.length < 3) {
+        errors.displayName = 'El nombre debe tener al menos 3 caracteres'
     } else if (form.displayName.length > 50) {
         errors.displayName = 'El nombre no puede tener más de 50 caracteres'
     } else {
@@ -266,12 +263,22 @@ const signUp = async () => {
     }
 
     try {
-        sessionStorage.setItem('lastRegisteredEmail', form.email)
+        const { data: existingProfile } = await client
+            .from('profiles')
+            .select('id')
+            .eq('email', form.email)
+            .maybeSingle()
+
+        if (existingProfile) {
+            errorMsg.value = 'Este correo ya está registrado'
+            loading.value = false
+            return
+        }
 
         const baseUrl = window.location.origin
         const loginPath = ROUTE_NAMES.LOGIN
 
-        const { data, error } = await client.auth.signUp({
+        const { error } = await client.auth.signUp({
             email: form.email,
             password: form.password,
             options: {
@@ -294,11 +301,10 @@ const signUp = async () => {
         form.passwordConfirm = ''
 
         success('¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.', {
-            title: 'Registro exitoso',
-            duration: 20000
+            title: 'Registro exitoso'
         })
 
-        await router.push(ROUTE_NAMES.LOGIN)
+        await router.push(ROUTE_NAMES.CONFIRM_ACCOUNT)
 
     } catch (error) {
         console.error('Error en registro:', error)

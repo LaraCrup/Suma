@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <FormLabel :id="id" :required="required" class="sr-only">{{ label }}</FormLabel>
+        <FormLabel :id="id" :required="required" class="text-sm text-primary">{{ label }}</FormLabel>
 
         <div
             class="relative bg-light border border-primary rounded-full outline-none text-dark text-xs placeholder:text-gray placeholder:text-xs py-3 px-5">

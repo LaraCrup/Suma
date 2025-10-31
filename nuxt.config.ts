@@ -26,6 +26,7 @@ export default defineNuxtConfig({
     }
   },
   supabase: {
+    types: false,
     redirectOptions: {
       login: '/iniciar-sesion',
       callback: '/callback',
