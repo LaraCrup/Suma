@@ -23,12 +23,9 @@
                 {{ errorMsg }}
             </FormError>
 
-            <ButtonPrimary type="submit">
+            <ButtonPrimary type="submit" :disabled="isLoading">
                 <span v-if="!isLoading">Ingresar</span>
-                <!-- <span v-else class="flex justify-center items-center gap-2">
-                    <Icon name="tabler:loader-2" class="animate-spin" />
-                    Iniciando sesión...
-                </span> -->
+                <Loader v-else color="light" />
             </ButtonPrimary>
         </FormLayout>
         <p class="flex flex-col items-center text-xs">¿Todavía no tenés cuenta?<NuxtLink :to="ROUTE_NAMES.REGISTER"
@@ -49,25 +46,25 @@ const client = useSupabaseClient();
 const router = useRouter();
 
 const form = reactive({
-    email: '',
+    username: '',
     password: ''
 })
 
 const errors = reactive({
-    email: '',
+    username: '',
     password: ''
 })
 
 const isLoading = ref(false)
 const errorMsg = ref('');
 
-const validateEmail = () => {
-    if (!form.email) {
-        errors.email = 'El correo electrónico es requerido'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-        errors.email = 'Formato de correo electrónico inválido'
+const validateUsername = () => {
+    if (!form.username) {
+        errors.username = 'El nombre de usuario es requerido'
+    } else if (form.username.length < 3) {
+        errors.username = 'El nombre debe tener al menos 3 caracteres'
     } else {
-        errors.email = ''
+        errors.username = ''
     }
 }
 
@@ -79,8 +76,8 @@ const validatePassword = () => {
     }
 }
 
-watch(() => form.email, () => {
-    if (errors.email) errors.email = ''
+watch(() => form.username, () => {
+    if (errors.username) errors.username = ''
 })
 
 watch(() => form.password, () => {
@@ -88,37 +85,46 @@ watch(() => form.password, () => {
 })
 
 const handleSignIn = async () => {
-    isLoading.value = true;
-    errorMsg.value = '';
+    isLoading.value = true
+    errorMsg.value = ''
 
-    validateEmail()
+    validateUsername()
     validatePassword()
 
-    if (errors.email || errors.password) {
+    if (errors.username || errors.password) {
         isLoading.value = false
         return
     }
 
     try {
-        localStorage.setItem('lastLoginEmail', form.email);
-        errorMsg.value = '';
-        const { error } = await client.auth.signInWithPassword({
-            email: form.email,
-            password: form.password,
-            options: {
-                staySignedIn: true
-            }
-        });
+        const { data: profile } = await client
+            .from('profiles')
+            .select('email')
+            .eq('display_name', form.username)
+            .maybeSingle()
 
-        if (error) {
-            errorMsg.value = handleSupabaseError(error);
+        if (!profile?.email) {
+            errorMsg.value = 'Usuario no encontrado'
+            isLoading.value = false
+            return
         }
 
-        router.push(ROUTE_NAMES.HOME)
+        const { error } = await client.auth.signInWithPassword({
+            email: profile.email,
+            password: form.password
+        })
+
+        if (error) {
+            errorMsg.value = handleSupabaseError(error)
+            return
+        }
+
+        localStorage.setItem('lastLoginUsername', form.username)
+        await router.push(ROUTE_NAMES.HOME)
 
     } catch (error) {
         console.error('Error en login:', error)
-        errors.password = 'Credenciales incorrectas'
+        errorMsg.value = 'Credenciales incorrectas'
     } finally {
         isLoading.value = false
     }
