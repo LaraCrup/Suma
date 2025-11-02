@@ -9,6 +9,7 @@ export const ROUTE_NAMES = {
     RESET_PASSWORD_CONFIRMATION: "/restablecer-contrasena-confirmacion",
     CONFIRM_ACCOUNT: "/confirmar-cuenta",
     NEW_PASSWORD: '/nueva-contrasena',
+    PASSWORD_UPDATED: '/contrasena-actualizada',
     // Auth
     HOME: '/',
 };

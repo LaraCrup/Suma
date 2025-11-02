@@ -17,12 +17,9 @@
                 {{ errorMsg }}
             </FormError>
 
-            <ButtonPrimary type="submit">
+            <ButtonPrimary type="submit" :disabled="loading">
                 <span v-if="!loading">Recuperar acceso</span>
-                <!-- <span v-else class="flex justify-center items-center gap-2">
-                    <Icon name="tabler:loader-2" class="animate-spin" />
-                    Actualizando...
-                </span> -->
+                <Loader v-else color="light" />
             </ButtonPrimary>
         </FormLayout>
     </DefaultSection>
@@ -37,118 +34,79 @@ definePageMeta({
 
 const client = useSupabaseClient()
 const router = useRouter()
-const route = useRoute()
+const { success } = useNotification()
 
 const form = reactive({
-    password: '',
-    confirmPassword: ''
+    email: ''
 })
 
 const errors = reactive({
-    password: '',
-    confirmPassword: ''
+    email: ''
 })
 
 const loading = ref(false)
 const errorMsg = ref('')
-const passwordUpdateAttempted = ref(false)
+const emailSendAttempted = ref(false)
 
-const isValid = computed(() => {
-    return form.password.length > 0 &&
-        form.confirmPassword.length > 0 &&
-        !errors.password &&
-        !errors.confirmPassword &&
-        form.password === form.confirmPassword
-})
+const validateEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-onMounted(async () => {
-    try {
-        const { data, error } = await client.auth.getSession()
-        if (error) {
-            console.warn('Error al verificar sesión:', error)
-        }
-    } catch (error) {
-        console.error('Error al inicializar recuperación:', error)
-    }
-})
-
-const validatePassword = () => {
-    if (!form.password) {
-        errors.password = 'La contraseña es requerida'
-    } else if (form.password.length < 8) {
-        errors.password = 'La contraseña debe tener al menos 8 caracteres'
+    if (!form.email) {
+        errors.email = 'El correo electrónico es requerido'
+    } else if (!emailRegex.test(form.email)) {
+        errors.email = 'Ingresa un correo electrónico válido'
     } else {
-        errors.password = ''
-    }
-
-    if (form.confirmPassword) {
-        validateConfirmPassword()
-    }
-}
-
-const validateConfirmPassword = () => {
-    if (!form.confirmPassword) {
-        errors.confirmPassword = 'Debe confirmar la contraseña'
-    } else if (form.password !== form.confirmPassword) {
-        errors.confirmPassword = 'Las contraseñas no coinciden'
-    } else {
-        errors.confirmPassword = ''
+        errors.email = ''
     }
 }
 
 const handleResetPassword = async () => {
-    if (passwordUpdateAttempted.value) {
-        errorMsg.value = 'El proceso de actualización ya está en curso. Por favor espere.'
+    if (emailSendAttempted.value) {
+        errorMsg.value = 'El proceso de recuperación ya está en curso. Por favor espere.'
+        return
+    }
+
+    errorMsg.value = ''
+    validateEmail()
+
+    if (errors.email) {
         return
     }
 
     loading.value = true
-    errorMsg.value = ''
-    passwordUpdateAttempted.value = true
-
-    validatePassword()
-    validateConfirmPassword()
-
-    if (errors.password || errors.confirmPassword) {
-        loading.value = false
-        passwordUpdateAttempted.value = false
-        return
-    }
+    emailSendAttempted.value = true
 
     try {
-        const { error } = await client.auth.updateUser({
-            password: form.password
+        const { error } = await client.auth.resetPasswordForEmail(form.email, {
+            redirectTo: `${window.location.origin}/nueva-contrasena`
         })
 
         if (error) {
             errorMsg.value = handleSupabaseError(error)
-            passwordUpdateAttempted.value = false
+            emailSendAttempted.value = false
         } else {
-            form.password = ''
-            form.confirmPassword = ''
+            // Store email in sessionStorage for confirmation page
+            sessionStorage.setItem('resetPasswordEmail', form.email)
+            form.email = ''
 
-            success('¡Contraseña actualizada exitosamente!', {
-                title: 'Contraseña cambiada',
+            success('Te hemos enviado un correo de recuperación', {
+                title: 'Correo enviado',
                 duration: 7000
             })
 
-            await router.push(ROUTE_NAMES.LOGIN)
+            await router.push(ROUTE_NAMES.RESET_PASSWORD_CONFIRMATION)
         }
 
     } catch (error) {
-        console.error('Error al restablecer contraseña:', error)
-        errorMsg.value = 'Error al restablecer la contraseña'
-        passwordUpdateAttempted.value = false
+        console.error('Error al enviar correo de recuperación:', error)
+        errorMsg.value = 'Error al enviar el correo de recuperación'
+        emailSendAttempted.value = false
     } finally {
         loading.value = false
     }
 }
 
-watch(() => form.password, () => {
-    if (errors.password) errors.password = ''
-})
-
-watch(() => form.confirmPassword, () => {
-    if (errors.confirmPassword) errors.confirmPassword = ''
+watch(() => form.email, () => {
+    if (errors.email) errors.email = ''
 })
 </script>

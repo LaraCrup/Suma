@@ -1,11 +1,11 @@
 <template>
-    <DefaultSection>
-        <div class="flex flex-col items-center gap-2">
+    <DefaultSection v-if="!linkValidating">
+        <div v-if="linkValid" class="flex flex-col items-center gap-2">
             <HeadingH1>Creá tu nueva contraseña</HeadingH1>
             <p class="text-xs text-center">Elegí una nueva contraseña segura y volvé a tu progreso.</p>
         </div>
 
-        <FormLayout @submit.prevent="handleResetPassword">
+        <FormLayout v-if="linkValid" @submit.prevent="handleResetPassword">
             <FormFieldsContainer>
                 <FormPasswordField v-model="form.password" label="Nueva contraseña" id="password"
                     placeholder="Nueva contraseña" :error="errors.password" required
@@ -20,14 +20,24 @@
                 {{ errorMsg }}
             </FormError>
 
-            <ButtonPrimary type="submit">
+            <ButtonPrimary type="submit" :disabled="loading">
                 <span v-if="!loading">Actualizar contraseña</span>
-                <span v-else class="flex justify-center items-center gap-2">
-                    <Icon name="tabler:loader-2" class="animate-spin" />
-                    Actualizando...
-                </span>
+                <Loader v-else color="light" />
             </ButtonPrimary>
         </FormLayout>
+
+        <div v-else class="flex flex-col items-center gap-4">
+            <div class="text-center">
+                <HeadingH1 class="text-red-500 mb-2">Enlace inválido o expirado</HeadingH1>
+                <p class="text-xs text-gray-500">{{ linkErrorMsg }}</p>
+            </div>
+            <ButtonPrimary :to="ROUTE_NAMES.RESET_PASSWORD">Solicitar nuevo enlace</ButtonPrimary>
+        </div>
+    </DefaultSection>
+
+    <DefaultSection v-else class="flex flex-col items-center justify-center gap-4">
+        <div class="text-4xl">⏳</div>
+        <p class="text-sm text-gray-500">Verificando tu enlace de recuperación...</p>
     </DefaultSection>
 </template>
 
@@ -40,7 +50,7 @@ definePageMeta({
 
 const client = useSupabaseClient()
 const router = useRouter()
-const route = useRoute()
+const { success } = useNotification()
 
 const form = reactive({
     password: '',
@@ -55,23 +65,30 @@ const errors = reactive({
 const loading = ref(false)
 const errorMsg = ref('')
 const passwordUpdateAttempted = ref(false)
-
-const isValid = computed(() => {
-    return form.password.length > 0 &&
-        form.confirmPassword.length > 0 &&
-        !errors.password &&
-        !errors.confirmPassword &&
-        form.password === form.confirmPassword
-})
+const linkValidating = ref(true)
+const linkValid = ref(false)
+const linkErrorMsg = ref('')
 
 onMounted(async () => {
     try {
-        const { data, error } = await client.auth.getSession()
-        if (error) {
-            console.warn('Error al verificar sesión:', error)
+        // Check if user has a valid session (from reset link)
+        const { data: { session }, error } = await client.auth.getSession()
+
+        if (error || !session) {
+            linkValid.value = false
+            linkErrorMsg.value = 'Tu enlace de recuperación ha expirado. Por favor solicita uno nuevo.'
+            linkValidating.value = false
+            return
         }
+
+        linkValid.value = true
+        linkValidating.value = false
+
     } catch (error) {
-        console.error('Error al inicializar recuperación:', error)
+        console.error('Error al verificar sesión:', error)
+        linkValid.value = false
+        linkErrorMsg.value = 'Error al verificar el enlace de recuperación. Por favor intenta nuevamente.'
+        linkValidating.value = false
     }
 })
 
@@ -105,18 +122,16 @@ const handleResetPassword = async () => {
         return
     }
 
-    loading.value = true
     errorMsg.value = ''
-    passwordUpdateAttempted.value = true
-
     validatePassword()
     validateConfirmPassword()
 
     if (errors.password || errors.confirmPassword) {
-        loading.value = false
-        passwordUpdateAttempted.value = false
         return
     }
+
+    loading.value = true
+    passwordUpdateAttempted.value = true
 
     try {
         const { error } = await client.auth.updateUser({
@@ -129,13 +144,14 @@ const handleResetPassword = async () => {
         } else {
             form.password = ''
             form.confirmPassword = ''
+            sessionStorage.removeItem('resetPasswordEmail')
 
             success('¡Contraseña actualizada exitosamente!', {
                 title: 'Contraseña cambiada',
                 duration: 7000
             })
 
-            await router.push(ROUTE_NAMES.LOGIN)
+            await router.push(ROUTE_NAMES.PASSWORD_UPDATED)
         }
 
     } catch (error) {
