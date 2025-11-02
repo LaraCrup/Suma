@@ -7,14 +7,18 @@
                 <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                     placeholder="Correo electrónico" autocomplete="email" :error="errors.email" required
                     @blur="validateEmail" />
-                <FormTextField v-model="form.displayName" label="Nombre de usuario" id="displayName" type="text"
-                    placeholder="Nombre de usuario" autocomplete="name" :error="errors.displayName" required
-                    @blur="validateDisplayName" />
+                <FormTextField v-model="form.name" label="Nombre completo" id="name" type="text"
+                    placeholder="Nombre completo" autocomplete="name" :error="errors.name" required
+                    @blur="validateName" />
             </FormFieldsContainer>
             <FormFieldsContainer>
+                <FormTextField v-model="form.displayName" label="Nombre de usuario" id="displayName" type="text"
+                    placeholder="Nombre de usuario" autocomplete="username" :error="errors.displayName" required
+                    @blur="validateDisplayName" />
                 <FormPasswordField v-model="form.password" label="Contraseña" id="password" placeholder="********"
                     autocomplete="new-password" :error="errors.password" required @blur="handlePasswordInput" />
-
+            </FormFieldsContainer>
+            <FormFieldsContainer>
                 <FormPasswordField v-model="form.passwordConfirm" label="Confirmar contraseña" id="passwordConfirm"
                     placeholder="********" autocomplete="new-password" :error="errors.passwordConfirm" required
                     @blur="validatePasswordConfirm" />
@@ -49,15 +53,17 @@ const router = useRouter()
 const { success } = useNotification()
 
 const form = reactive({
-    displayName: '',
+    name: '',
     email: '',
+    displayName: '',
     password: '',
     passwordConfirm: ''
 })
 
 const errors = reactive({
-    displayName: '',
+    name: '',
     email: '',
+    displayName: '',
     password: '',
     passwordConfirm: ''
 })
@@ -70,24 +76,38 @@ const passwordCheckCache = reactive(new Map())
 const passwordCheckTimeout = ref(null)
 
 const isValid = computed(() => {
-    return form.displayName.length > 0 &&
+    return form.name.length > 0 &&
         form.email.length > 0 &&
+        form.displayName.length > 0 &&
         form.password.length > 0 &&
         form.passwordConfirm.length > 0 &&
-        !errors.displayName &&
+        !errors.name &&
         !errors.email &&
+        !errors.displayName &&
         !errors.password &&
         !errors.passwordConfirm &&
         !isPasswordCompromised.value
 })
 
+const validateName = () => {
+    if (!form.name) {
+        errors.name = 'El nombre completo es requerido'
+    } else if (form.name.length < 3) {
+        errors.name = 'El nombre debe tener al menos 3 caracteres'
+    } else if (form.name.length > 100) {
+        errors.name = 'El nombre no puede tener más de 100 caracteres'
+    } else {
+        errors.name = ''
+    }
+}
+
 const validateDisplayName = () => {
     if (!form.displayName) {
-        errors.displayName = 'El nombre para mostrar es requerido'
+        errors.displayName = 'El nombre de usuario es requerido'
     } else if (form.displayName.length < 3) {
-        errors.displayName = 'El nombre debe tener al menos 3 caracteres'
+        errors.displayName = 'El nombre de usuario debe tener al menos 3 caracteres'
     } else if (form.displayName.length > 50) {
-        errors.displayName = 'El nombre no puede tener más de 50 caracteres'
+        errors.displayName = 'El nombre de usuario no puede tener más de 50 caracteres'
     } else {
         errors.displayName = ''
     }
@@ -252,12 +272,13 @@ const signUp = async () => {
     loading.value = true
     errorMsg.value = ''
 
-    validateDisplayName()
+    validateName()
     validateEmail()
+    validateDisplayName()
     validatePassword()
     validatePasswordConfirm()
 
-    if (errors.displayName || errors.email || errors.password || errors.passwordConfirm || isPasswordCompromised.value) {
+    if (errors.name || errors.email || errors.displayName || errors.password || errors.passwordConfirm || isPasswordCompromised.value) {
         loading.value = false
         return
     }
@@ -284,6 +305,7 @@ const signUp = async () => {
             options: {
                 emailRedirectTo: `${baseUrl}${loginPath}`,
                 data: {
+                    full_name: form.name,
                     display_name: form.displayName
                 }
             }
@@ -298,6 +320,7 @@ const signUp = async () => {
         // Guardar email antes de limpiar el form
         const registeredEmail = form.email
 
+        form.name = ''
         form.displayName = ''
         form.email = ''
         form.password = ''
@@ -322,12 +345,16 @@ const signUp = async () => {
     }
 }
 
-watch(() => form.displayName, () => {
-    if (errors.displayName) errors.displayName = ''
+watch(() => form.name, () => {
+    if (errors.name) errors.name = ''
 })
 
 watch(() => form.email, () => {
     if (errors.email) errors.email = ''
+})
+
+watch(() => form.displayName, () => {
+    if (errors.displayName) errors.displayName = ''
 })
 
 watch(() => form.password, () => {
