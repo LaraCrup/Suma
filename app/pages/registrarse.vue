@@ -295,6 +295,9 @@ const signUp = async () => {
             return
         }
 
+        // Guardar email antes de limpiar el form
+        const registeredEmail = form.email
+
         form.displayName = ''
         form.email = ''
         form.password = ''
@@ -303,6 +306,11 @@ const signUp = async () => {
         success('¡Cuenta creada exitosamente! Revisa tu correo para confirmar tu cuenta.', {
             title: 'Registro exitoso'
         })
+
+        // Guardar email en sessionStorage para la página de confirmación
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('confirmationEmail', registeredEmail)
+        }
 
         await router.push(ROUTE_NAMES.CONFIRM_ACCOUNT)
 
