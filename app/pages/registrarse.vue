@@ -7,8 +7,8 @@
                 <FormTextField v-model="form.email" label="Correo electrónico" id="email" type="email"
                     placeholder="Correo electrónico" autocomplete="email" :error="errors.email" required
                     @blur="validateEmail" />
-                <FormTextField v-model="form.name" label="Nombre completo" id="name" type="text"
-                    placeholder="Nombre completo" autocomplete="name" :error="errors.name" required
+                <FormTextField v-model="form.name" label="Nombre" id="name" type="text"
+                    placeholder="Nombre" autocomplete="name" :error="errors.name" required
                     @blur="validateName" />
             </FormFieldsContainer>
             <FormFieldsContainer>
@@ -91,11 +91,11 @@ const isValid = computed(() => {
 
 const validateName = () => {
     if (!form.name) {
-        errors.name = 'El nombre completo es requerido'
-    } else if (form.name.length < 3) {
-        errors.name = 'El nombre debe tener al menos 3 caracteres'
-    } else if (form.name.length > 100) {
-        errors.name = 'El nombre no puede tener más de 100 caracteres'
+        errors.name = 'El nombre es requerido'
+    } else if (form.name.length < 2) {
+        errors.name = 'El nombre debe tener al menos 2 caracteres'
+    } else if (form.name.length > 50) {
+        errors.name = 'El nombre no puede tener más de 50 caracteres'
     } else {
         errors.name = ''
     }

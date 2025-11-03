@@ -15,6 +15,7 @@ body {
     height: 100%;
     overflow-x: hidden;
     scroll-behavior: smooth;
+    background-color: #F3FCF7;
 }
 
 body>div:first-of-type {

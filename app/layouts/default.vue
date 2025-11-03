@@ -3,5 +3,5 @@
     <DefaultMain>
         <slot />
     </DefaultMain>
-    <DefaultFooter />
+    <DefaultNav />
 </template>

@@ -1,33 +1,19 @@
 <template>
-    <header class="flex justify-center items-center relative bg-secondary p-6 lg:px-24">
-        <button @click="toggleDrawer"
-            class="flex flex-col justify-center items-center gap-1 absolute left-6 lg:left-24 transition-all duration-300">
-            <Icon name="tabler:menu-2" class="w-7 h-7 lg:w-9 lg:h-9 text-light" />
-        </button>
-
-        <NuxtLink :to="ROUTE_NAMES.HOME">
-            <NuxtImg src="/images/isotipo.svg" alt="Logo Unike Group" class="h-10 lg:h-[3.25rem]" />
-        </NuxtLink>
-
-        <NavDrawer :is-open="isDrawerOpen" @close="closeDrawer" />
+    <header class="flex flex-col justify-center items-center relative bg-secondary lg:px-24">
+        <div class="w-full bg-green-light px-6 py-1">
+            <p class="text-[0.625rem] text-center text-light">Hoy es un buen día para sumar</p>
+        </div>
+        <div class="w-full flex justify-between bg-light px-6 mt-4">
+            <div class="flex gap-2 items-center">
+                <NuxtImg src="/images/isotipo.svg" alt="Logo Unike Group" class="w-4" />
+                <p class="text-[0.625rem]">Hola, <span class="font-bold text-primary">Lara</span></p>
+            </div>
+            <div class="flex items-center gap-2">
+                <p class="text-[0.625rem]">Nivel</p>
+                <div class="w-6 h-6 flex justify-center items-center bg-primary rounded-full">
+                    <p class="text-xs text-light font-bold">1</p>
+                </div>
+            </div>
+        </div>
     </header>
 </template>
-
-<script setup>
-import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES';
-
-const isDrawerOpen = ref(false)
-
-const toggleDrawer = () => {
-    isDrawerOpen.value = !isDrawerOpen.value
-}
-
-const closeDrawer = () => {
-    isDrawerOpen.value = false
-}
-
-const route = useRoute()
-watch(() => route.path, () => {
-    closeDrawer()
-})
-</script>
