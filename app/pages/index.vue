@@ -2,15 +2,15 @@
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
         <div class="w-full flex flex-col gap-1">
-            <HabitsView />
-            <HabitsView />
-            <HabitsView />
+            <HabitsCard />
+            <HabitsCard />
+            <HabitsCard />
         </div>
     </DefaultSection>
         <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos comunitarios</HeadingH1>
         <div class="w-full flex flex-col gap-1">
-            <HabitsView />
+            <HabitsCard />
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">

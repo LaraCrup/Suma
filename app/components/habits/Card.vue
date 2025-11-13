@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full flex justify-between bg-midlight rounded-lg p-3">
+    <button @click="goToHabit" class="w-full flex justify-between bg-midlight rounded-lg p-3">
         <div class="flex gap-3 items-center">
             <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-secondary text-lg">🏃🏻‍♂️</div>
             <div>
@@ -22,5 +22,15 @@
                 <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-3" />
             </div>
         </div>
-    </div>
+    </button>
 </template>
+
+<script setup>
+const router = useRouter();
+
+const goToHabit = () => {
+  // Convierte el nombre a slug (reemplaza espacios con guiones y minúsculas)
+  const habitSlug = 'Correr 4km'.toLowerCase().replace(/\s+/g, '-');
+  router.push(`/mis-habitos/${habitSlug}`);
+};
+</script>
