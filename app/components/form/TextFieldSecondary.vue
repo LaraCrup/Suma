@@ -1,20 +1,23 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <FormLabel :id="id" :required="required" v-if="label">{{ label }}</FormLabel>
+        <p class="text-[0.625rem] text-green-dark">¿Qué hábito queres formar? Que sea especifico.</p>
+        <div class="w-full flex flex-col gap-1">
+            <FormLabelSecondary :id="id" :required="required">{{ label }}</FormLabelSecondary>
 
-        <input ref="inputElement" :id="inputId" type="email" :placeholder="placeholder" :value="modelValue"
-            :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
-            :autocomplete="autocomplete"
-            class="bg-light border border-dark rounded-md outline-none lg:text-xl font-light text-dark lg:placeholder:text-xl placeholder:font-light placeholder:text-gray-dark py-3 px-[0.875rem]" />
+            <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
+                :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
+                :autocomplete="autocomplete"
+                class="border-b border-gray outline-none text-dark text-xs font-bold placeholder:text-gray placeholder:text-xs pb-1 mb-1" />
 
-        <FormError v-if="error && showError">{{ error }}</FormError>
+            <FormError v-if="error && showError">{{ error }}</FormError>
+        </div>
     </div>
 </template>
 
 <script setup>
 const props = defineProps({
     modelValue: {
-        type: String,
+        type: [String, Number],
         default: ''
     },
     label: {
@@ -23,7 +26,11 @@ const props = defineProps({
     },
     placeholder: {
         type: String,
-        default: 'email@example.com'
+        default: ''
+    },
+    type: {
+        type: String,
+        default: 'text'
     },
     error: {
         type: String,
@@ -39,7 +46,7 @@ const props = defineProps({
     },
     autocomplete: {
         type: String,
-        default: 'email'
+        default: 'off'
     }
 })
 
@@ -49,6 +56,7 @@ const inputElement = ref(null)
 const showError = ref(false)
 
 const inputId = computed(() => props.id)
+
 
 const handleInput = (event) => {
     emit('update:modelValue', event.target.value)
