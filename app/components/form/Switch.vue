@@ -11,6 +11,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
     modelValue: {
         type: Boolean,
@@ -28,4 +30,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 const inputId = computed(() => props.id)
+
+const toggle = () => {
+    emit('update:modelValue', !props.modelValue)
+}
 </script>

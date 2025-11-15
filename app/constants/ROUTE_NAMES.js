@@ -12,4 +12,6 @@ export const ROUTE_NAMES = {
     PASSWORD_UPDATED: '/contrasena-actualizada',
     // Auth
     HOME: '/',
+    HABITS_CREATE: '/mis-habitos/crear',
+    HABITS_EDIT: '/mis-habitos/editar/:habitId',
 };

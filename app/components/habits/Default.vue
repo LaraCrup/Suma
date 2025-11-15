@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection>
+    <DefaultSection class="pb-12">
         <HeadingH1 class="w-full">Nuevo hábito</HeadingH1>
         <div class="w-full flex flex-col items-center gap-2">
             <div class="w-full flex justify-between items-center">
@@ -15,10 +15,13 @@
                 :key="habit.name"
                 :icon="habit.icon"
                 :name="habit.name"
+                @select="selectHabit(habit)"
+                :is-selected="selectedHabit?.name === habit.name"
             />
         </div>
+        <ButtonPrimary @click="goToDetails" :disabled="!selectedHabit">Siguiente</ButtonPrimary>
     </DefaultSection>
-    <div class="w-max flex gap-2 text-light bg-green-light px-5 py-2 rounded-full fixed bottom-20 left-1/2 -translate-x-1/2">
+    <div class="fixed w-max flex gap-2 text-light bg-green-light px-5 py-2 rounded-full bottom-20 left-1/2 -translate-x-1/2 cursor-pointer" @click="startCustom">
         <NuxtImg src="/images/brillo-blanco.svg" alt="Cerrar" class="w-3" />
         <p class="text-xs">Hábito personalizado</p>
     </div>
@@ -26,6 +29,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useHabitStore } from '~/stores/habitStore'
 
 const defaultHabits = [
     {
@@ -195,4 +199,25 @@ const defaultHabits = [
 ];
 
 const selectedCategory = ref(defaultHabits[0])
+const selectedHabit = ref(null)
+const habitStore = useHabitStore()
+
+const selectHabit = (habit) => {
+    if (selectedHabit.value?.name === habit.name) {
+        selectedHabit.value = null
+    } else {
+        selectedHabit.value = habit
+    }
+}
+
+const startCustom = () => {
+    habitStore.setCustomHabit()
+}
+
+const goToDetails = () => {
+    if (selectedHabit.value) {
+        habitStore.setSelectedHabit(selectedHabit.value)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+}
 </script>

@@ -1,13 +1,13 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <p class="text-[0.625rem] text-green-dark">¿Qué hábito queres formar? Que sea especifico.</p>
+        <p v-if="hint" class="text-[0.625rem] text-green-dark">{{ hint }}</p>
         <div class="w-full flex flex-col gap-1">
             <FormLabelSecondary :id="id" :required="required">{{ label }}</FormLabelSecondary>
 
             <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
                 :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
                 :autocomplete="autocomplete"
-                class="border-b border-gray outline-none text-dark text-xs font-bold placeholder:text-gray placeholder:text-xs pb-1 mb-1" />
+                class="border-b border-gray outline-none bg-transparent text-dark text-xs font-bold placeholder:text-gray placeholder:text-xs pb-1 mb-1" />
 
             <FormError v-if="error && showError">{{ error }}</FormError>
         </div>
@@ -21,6 +21,10 @@ const props = defineProps({
         default: ''
     },
     label: {
+        type: String,
+        default: ''
+    },
+    hint: {
         type: String,
         default: ''
     },

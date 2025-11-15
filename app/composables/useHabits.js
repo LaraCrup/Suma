@@ -1,0 +1,152 @@
+export const useHabits = () => {
+    const client = useSupabaseClient()
+    const user = useSupabaseUser()
+
+    /**
+     * Crear un nuevo hábito
+     */
+    const createHabit = async (habitData) => {
+        if (!user.value) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        const { data, error } = await client
+            .from('habits')
+            .insert([
+                {
+                    user_id: user.value.id,
+                    name: habitData.name,
+                    icon: habitData.icon,
+                    when_where: habitData.when_where || null,
+                    identity: habitData.identity || null,
+                    unit: habitData.unit || null,
+                    goal_value: habitData.goal_value || 1,
+                    frequency_type: habitData.frequency_type,
+                    frequency_option: habitData.frequency_option,
+                    frequency_detail: habitData.frequency_detail || null,
+                    reminder_enabled: habitData.reminder_enabled || false,
+                    is_active: true,
+                }
+            ])
+            .select()
+
+        if (error) {
+            throw error
+        }
+
+        return data?.[0] || null
+    }
+
+    /**
+     * Obtener todos los hábitos del usuario
+     */
+    const getHabits = async () => {
+        if (!user.value) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        const { data, error } = await client
+            .from('habits')
+            .select('*')
+            .eq('user_id', user.value.id)
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+
+        if (error) {
+            throw error
+        }
+
+        return data || []
+    }
+
+    /**
+     * Obtener un hábito por ID
+     */
+    const getHabitById = async (habitId) => {
+        const { data, error } = await client
+            .from('habits')
+            .select('*')
+            .eq('id', habitId)
+            .maybeSingle()
+
+        if (error) {
+            throw error
+        }
+
+        return data
+    }
+
+    /**
+     * Actualizar un hábito
+     */
+    const updateHabit = async (habitId, updates) => {
+        const { data, error } = await client
+            .from('habits')
+            .update(updates)
+            .eq('id', habitId)
+            .select()
+
+        if (error) {
+            throw error
+        }
+
+        return data?.[0] || null
+    }
+
+    /**
+     * Eliminar un hábito (soft delete)
+     */
+    const deleteHabit = async (habitId) => {
+        const { error } = await client
+            .from('habits')
+            .update({ is_active: false })
+            .eq('id', habitId)
+
+        if (error) {
+            throw error
+        }
+
+        return true
+    }
+
+    /**
+     * Registrar progreso en un hábito
+     */
+    const logHabitProgress = async (habitId, amount = 1) => {
+        if (!user.value) {
+            throw new Error('Usuario no autenticado')
+        }
+
+        // Primero obtener el hábito actual
+        const habit = await getHabitById(habitId)
+        if (!habit) {
+            throw new Error('Hábito no encontrado')
+        }
+
+        // Actualizar el contador de progreso
+        const newProgressCount = (habit.progress_count || 0) + amount
+        const { data, error } = await client
+            .from('habits')
+            .update({
+                progress_count: newProgressCount,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', habitId)
+            .select()
+
+        if (error) {
+            throw error
+        }
+
+        return data?.[0] || null
+    }
+
+    return {
+        createHabit,
+        getHabits,
+        getHabitById,
+        updateHabit,
+        deleteHabit,
+        logHabitProgress
+    }
+}

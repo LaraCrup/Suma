@@ -1,6 +1,9 @@
 <template>
     <DefaultSection class="!gap-2">
-        <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
+        <div class="w-full flex justify-between items-center">
+            <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
+            <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="min-w-6 min-h-6 flex justify-center items-center bg-green-dark text-light rounded-full">+</NuxtLink>
+        </div>
         <div class="w-full flex flex-col gap-1">
             <HabitsCard />
             <HabitsCard />
@@ -26,3 +29,7 @@
         </div>
     </DefaultSection>
 </template>
+
+<script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
+</script>
