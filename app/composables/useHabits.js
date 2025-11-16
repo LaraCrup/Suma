@@ -132,9 +132,12 @@ export const useHabits = () => {
             throw new Error('Hábito no encontrado')
         }
 
-        // Actualizar el contador de progreso
-        const newProgressCount = (habit.progress_count || 0) + amount
-        const { data, error } = await client
+        // Calcular nuevo progreso
+        const newProgressCount = Math.max(0, (habit.progress_count || 0) + amount)
+        const isCompleted = newProgressCount >= (habit.goal_value || 1)
+
+        // Actualizar el contador de progreso en habits
+        const { data: updatedHabit, error: habitError } = await client
             .from('habits')
             .update({
                 progress_count: newProgressCount,
@@ -143,11 +146,30 @@ export const useHabits = () => {
             .eq('id', habitId)
             .select()
 
-        if (error) {
-            throw error
+        if (habitError) {
+            console.error('Error actualizando hábito:', habitError)
+            throw habitError
         }
 
-        return data?.[0] || null
+        // Obtener la fecha de hoy en formato YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0]
+
+        // Insertar log en habit_logs
+        const { error: logError } = await client
+            .from('habit_logs')
+            .insert([{
+                habit_id: habitId,
+                date: today,
+                value: amount,
+                completed: isCompleted
+            }])
+
+        if (logError) {
+            console.error('Error creando log de hábito:', logError)
+            throw logError
+        }
+
+        return updatedHabit?.[0] || null
     }
 
     return {
