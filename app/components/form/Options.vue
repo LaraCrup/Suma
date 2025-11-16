@@ -17,6 +17,7 @@
                 <div class="w-full flex flex-col gap-3 px-3">
                     <div v-if="mainOption">
                         <ButtonPrimary
+                            type="button"
                             @click="selectMainOption"
                             :class="[
                                 isMainOptionSelected ? 'bg-primary' : 'bg-transparent text-primary border border-primary'
@@ -47,6 +48,7 @@
                     <!-- Opciones secundarias -->
                     <div v-for="(option, index) in secondaryOptions" :key="`secondary-${index}`">
                         <ButtonPrimary
+                            type="button"
                             @click="selectSecondaryOption(index)"
                             :class="[
                                 selectedSecondaryIndex === index ? 'bg-primary' : 'bg-transparent text-primary border border-primary'
@@ -76,8 +78,8 @@
                 </div>
             </div>
             <div class="w-full flex justify-between mt-3 gap-3">
-                <ButtonTerciary class="!w-fit !px-5" @click="closeModal">Cerrar</ButtonTerciary>
-                <ButtonPrimary class="!w-fit !px-5" @click="confirmSelection">Aceptar</ButtonPrimary>
+                <ButtonTerciary type="button" class="!w-fit !px-5" @click="closeModal">Cerrar</ButtonTerciary>
+                <ButtonPrimary type="button" class="!w-fit !px-5" @click="confirmSelection">Aceptar</ButtonPrimary>
             </div>
         </div>
     </div>

@@ -18,17 +18,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useHabitStore } from '~/stores/habitStore'
 
-// Store
 const habitStore = useHabitStore()
 
-// Estado
 const initialData = ref(null)
 const isEditing = ref(false)
 
-// Computed
 const displayIcon = computed(() => initialData.value?.icon || '📝')
 
-// Métodos
 const goBack = () => {
     habitStore.clearSelection()
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
@@ -36,21 +32,15 @@ const goBack = () => {
 
 const handleFormSuccess = () => {
     habitStore.clearSelection()
-
-    // Redirigir a la página de hábitos después de 1.5 segundos
-    setTimeout(() => {
-        navigateTo('/mis-habitos')
-    }, 1500)
+    navigateTo('/')
 }
 
 const handleFormError = (err) => {
     console.error('Error with habit:', err)
 }
 
-// Inicializar con datos del store si existen
 onMounted(() => {
     if (habitStore.selectedHabit) {
-        // Convertir el formato del store al formato esperado por el formulario
         initialData.value = {
             name: habitStore.selectedHabit.name,
             icon: habitStore.selectedHabit.icon,
@@ -66,7 +56,6 @@ onMounted(() => {
         }
         isEditing.value = false
     } else {
-        // Para hábito personalizado, inicializar con valores vacíos
         initialData.value = {
             name: '',
             icon: '📝',

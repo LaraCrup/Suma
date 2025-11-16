@@ -37,8 +37,8 @@
                     </div>
                 </div>
             </div>
-            <p class="text-center text-sm">Voy a <span class="font-bold">{{ habit?.name }}</span> cuando <span
-                    class="font-bold">{{ habit?.when_where || 'siempre' }}</span>, para ser <span class="font-bold">{{ habit?.identity || 'mejor persona' }}</span>.</p>
+            <p class="text-center text-sm">Voy a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span> cuando <span
+                    class="font-bold">{{ habit?.when_where?.toLowerCase() || 'siempre' }}</span>, para ser <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejor persona' }}</span>.</p>
             <div>
                 <div class="w-full h-3 bg-green-dark rounded-full"></div>
                 <div class="w-full flex justify-center items-center gap-3 mt-3">

@@ -12,58 +12,71 @@
                 placeholder="Ej: Una persona más saludable" :error="errors.habitIdentity" required />
         </div>
 
-        <div class="w-full flex justify-between items-center">
-            <FormLabelSecondary>Icono del hábito</FormLabelSecondary>
-            <input v-model="formData.habitIcon" type="text" class="w-8 text-xl text-center bg-transparent" placeholder="❇️" maxlength="1" />
+        <!-- Icono del hábito -->
+        <div class="w-full flex flex-col gap-1">
+            <div class="w-full flex justify-between">
+                <FormLabelSecondary id="habit-icon" required>Icono del hábito</FormLabelSecondary>
+                <input id="habit-icon-input" v-model="formData.habitIcon" type="text"
+                    class="w-8 text-xl text-center bg-transparent outline-nones"
+                    placeholder="❇️" maxlength="2" required aria-required="true"
+                    aria-invalid="errors.habitIcon ? 'true' : 'false'"
+                    :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null" />
+            </div>
+            <FormError v-if="errors.habitIcon" id="habit-icon-error">{{ errors.habitIcon }}</FormError>
         </div>
 
-        <div class="w-full flex flex-col gap-2">
-            <div class="w-full flex justify-between items-center">
-                <FormLabelSecondary>Frecuencia</FormLabelSecondary>
-                <input
-                    type="text"
-                    class="w-fit text-right text-xs text-dark font-bold bg-transparent cursor-pointer focus-visible:outline-none"
-                    :placeholder="formData.frequencyType === 'diario' ? 'Diario' : formData.frequencyType === 'semanal' ? 'Semanal' : 'Mensual'"
-                    :value="formData.frequencyType === 'diario' ? 'Diario' : formData.frequencyType === 'semanal' ? 'Semanal' : 'Mensual'"
-                    @click="openFrequencyModal"
-                    readonly
-                />
-            </div>
-            <div class="w-full flex justify-end items-center">
-                <FormLabelSecondary class="sr-only">Frecuencia</FormLabelSecondary>
-                <input
-                    type="text"
-                    class="w-full text-right text-xs text-dark font-bold bg-transparent focus-visible:outline-none"
-                    :value="formData.frequencyVariant ? `${formData.frequencyVariant}` : 'Todos los días'"
-                    @click="openFrequencyModal"
-                    readonly
-                />
-            </div>
-            <FormOptions
-                ref="frequencyModal"
-                title="Frecuencia"
-                :mainOption="'Diario'"
-                :secondaryOptions="['Semanal', 'Mensual']"
-                :variantOptions="frequencyVariants"
-                :previousSelection="getPreviousFrequencySelection()"
-                @confirm="handleFrequencySelect"
-            ></FormOptions>
-            <div class="w-full flex justify-between items-center mt-2">
+        <!-- Frecuencia -->
+        <div class="w-full flex flex-col gap-1">
+            <FormLabelSecondary>Frecuencia</FormLabelSecondary>
+            <button id="frequency-button" type="button"
+                class="w-full text-right text-xs text-dark font-bold bg-transparent border-b border-gray outline-none pb-1 cursor-pointer hover:opacity-70 transition-opacity"
+                @click="openFrequencyModal" aria-haspopup="dialog" aria-controls="frequency-modal"
+                :aria-invalid="errors.frequencyVariant ? 'true' : 'false'"
+                :aria-describedby="errors.frequencyVariant ? 'frequency-error' : null">
+                <div class="flex justify-between gap-3">
+                    <span class="text-xs">
+                        {{ formData.frequencyType === 'diario' ? 'Diario' : formData.frequencyType === 'semanal' ?
+                        'Semanal' : 'Mensual' }}
+                    </span>
+                    <span class="text-xs">
+                        {{ formData.frequencyVariant ? formData.frequencyVariant : 'Todos los días' }}
+                    </span>
+                </div>
+            </button>
+            <FormOptions ref="frequencyModal" title="Frecuencia"
+                :mainOption="'Diario'" :secondaryOptions="['Semanal', 'Mensual']" :variantOptions="frequencyVariants"
+                :previousSelection="getPreviousFrequencySelection()" @confirm="handleFrequencySelect"></FormOptions>
+            <FormError v-if="errors.frequencyVariant" id="frequency-error">{{ errors.frequencyVariant }}</FormError>
+        </div>
+
+        <!-- Meta -->
+        <fieldset class="w-full flex flex-col gap-1 border-none p-0">
+            <div class="w-full flex items-center justify-between">
                 <FormLabelSecondary>Meta</FormLabelSecondary>
-                <div class="w-fit flex items-center gap-1">
-                    <input type="number" class="w-12 text-center text-xs text-dark font-bold bg-accent rounded-lg p-1"
-                        placeholder="2" v-model.number="formData.goalValue" />
-                    <input type="text" class="w-12 text-center text-xs text-dark font-bold bg-accent rounded-lg p-1"
-                        placeholder="km" v-model="formData.habitUnit" />
-                    <p class="text-xs text-dark">
-                        /{{ formData.frequencyType === 'diario' ? 'diario' : formData.frequencyType === 'semanal' ? 'semanal' : 'mensual' }}
+                <div class="flex items-center gap-1">
+                    <input id="goal-value" v-model.number="formData.goalValue" type="number"
+                        class="w-12 text-center text-xs text-dark font-bold bg-accent rounded-lg p-1 border border-transparent outline-none"
+                        placeholder="2" min="1" max="999" step="1" required aria-required="true"
+                        aria-invalid="errors.goalValue ? 'true' : 'false'"
+                        :aria-describedby="errors.goalValue ? 'goal-value-error' : null" />
+                    <input id="habit-unit" v-model="formData.habitUnit" type="text"
+                        class="w-16 text-center text-xs text-dark font-bold bg-accent rounded-lg p-1 border border-transparent outline-none"
+                        placeholder="km" maxlength="20" required aria-required="true"
+                        aria-invalid="errors.habitUnit ? 'true' : 'false'"
+                        :aria-describedby="errors.habitUnit ? 'habit-unit-error' : null" />
+                    <p class="text-xs text-dark font-semibold ml-1">
+                        /{{ formData.frequencyType === 'diario' ? 'día' : formData.frequencyType === 'semanal' ?
+                        'semana' : 'mes' }}
                     </p>
                 </div>
             </div>
-        </div>
+            <FormError v-if="errors.goalValue" id="goal-value-error">{{ errors.goalValue }}</FormError>
+            <FormError v-if="errors.habitUnit" id="habit-unit-error">{{ errors.habitUnit }}</FormError>
+        </fieldset>
         <div class="w-full bg-green-dark rounded p-1">
             <p class="text-center text-xs text-light">
-                {{ formData.habitName ? formData.habitName : 'Hábito' }}: {{ formData.goalValue }} {{ formData.habitUnit }} {{ getFrequencyDescription() }}
+                {{ formData.habitName ? formData.habitName : 'Hábito' }}: {{ formData.goalValue }} {{ formData.habitUnit
+                }} {{ getFrequencyDescription() }}
             </p>
         </div>
         <div class="w-full flex justify-between items-center">
@@ -138,8 +151,12 @@ const frequencyVariants = {
 // Errors
 const errors = ref({
     habitName: null,
+    habitIcon: null,
+    habitUnit: null,
     habitWhenWhere: null,
-    habitIdentity: null
+    habitIdentity: null,
+    goalValue: null,
+    frequencyVariant: null
 })
 
 const isLoading = ref(false)
@@ -213,11 +230,10 @@ const getFrequencyDescription = () => {
         const match = formData.frequencyVariant.match(/\((\d+)\)$/)
         if (match) {
             const cantidad = match[1]
-            if (formData.frequencyType === 'diario') {
-                return `${cantidad} días del mes`
-            } else if (formData.frequencyType === 'semanal') {
+            // Verificar si es cantidad de días de la semana o del mes según el texto del variant
+            if (formData.frequencyVariant.includes('semana')) {
                 return `${cantidad} días a la semana`
-            } else {
+            } else if (formData.frequencyVariant.includes('mes')) {
                 return `${cantidad} días del mes`
             }
         }
@@ -264,10 +280,16 @@ const handleFrequencySelect = (confirmData) => {
 }
 
 const validateForm = () => {
+    // Limpiar todos los errores
     errors.value.habitName = null
+    errors.value.habitIcon = null
+    errors.value.habitUnit = null
     errors.value.habitWhenWhere = null
     errors.value.habitIdentity = null
+    errors.value.goalValue = null
+    errors.value.frequencyVariant = null
 
+    // Validación: Nombre del hábito
     if (!formData.habitName || formData.habitName.trim().length === 0) {
         errors.value.habitName = 'El nombre del hábito es obligatorio'
         return false
@@ -278,17 +300,144 @@ const validateForm = () => {
         return false
     }
 
+    if (formData.habitName.trim().length > 50) {
+        errors.value.habitName = 'El nombre no puede exceder 50 caracteres'
+        return false
+    }
+
+    // Validación: Icono
+    if (!formData.habitIcon || formData.habitIcon.trim().length === 0) {
+        errors.value.habitIcon = 'El icono es obligatorio'
+        return false
+    }
+
+    // Contar caracteres reales (graphemes) en lugar de unidades UTF-16
+    // para soportar emojis complejos como 🏃‍♀️ que pueden tener múltiples componentes
+    const iconLength = Array.from(formData.habitIcon.trim()).length
+    if (iconLength > 5) {
+        errors.value.habitIcon = 'El icono debe ser un carácter o emoji'
+        return false
+    }
+
+    // Validación: Unidad de medida
+    if (!formData.habitUnit || formData.habitUnit.trim().length === 0) {
+        errors.value.habitUnit = 'La unidad de medida es obligatoria'
+        return false
+    }
+
+    if (formData.habitUnit.trim().length > 20) {
+        errors.value.habitUnit = 'La unidad de medida no puede exceder 20 caracteres'
+        return false
+    }
+
+    // Validación: Cuándo y dónde
     if (!formData.habitWhenWhere || formData.habitWhenWhere.trim().length === 0) {
         errors.value.habitWhenWhere = 'Cuándo y dónde es obligatorio'
         return false
     }
 
+    if (formData.habitWhenWhere.trim().length < 5) {
+        errors.value.habitWhenWhere = 'Por favor describe cuándo y dónde de forma más detallada'
+        return false
+    }
+
+    if (formData.habitWhenWhere.trim().length > 200) {
+        errors.value.habitWhenWhere = 'Cuándo y dónde no puede exceder 200 caracteres'
+        return false
+    }
+
+    // Validación: Para convertirme en
     if (!formData.habitIdentity || formData.habitIdentity.trim().length === 0) {
         errors.value.habitIdentity = 'Para convertirme en es obligatorio'
         return false
     }
 
+    if (formData.habitIdentity.trim().length < 5) {
+        errors.value.habitIdentity = 'Por favor describe la identidad de forma más detallada'
+        return false
+    }
+
+    if (formData.habitIdentity.trim().length > 200) {
+        errors.value.habitIdentity = 'Para convertirme en no puede exceder 200 caracteres'
+        return false
+    }
+
+    // Validación: Valor de la meta
+    if (formData.goalValue === null || formData.goalValue === undefined || formData.goalValue === '') {
+        errors.value.goalValue = 'La meta es obligatoria'
+        return false
+    }
+
+    if (isNaN(formData.goalValue) || formData.goalValue <= 0) {
+        errors.value.goalValue = 'La meta debe ser un número mayor a 0'
+        return false
+    }
+
+    if (formData.goalValue > 999) {
+        errors.value.goalValue = 'La meta no puede ser mayor a 999'
+        return false
+    }
+
+    // Validación: Variante de frecuencia (si es específica)
+    if (formData.frequencyVariant && formData.frequencyVariant.includes('especificos')) {
+        const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
+        if (!match || !match[1] || match[1].trim().length === 0) {
+            errors.value.frequencyVariant = 'Por favor selecciona los días específicos'
+            return false
+        }
+    }
+
     return true
+}
+
+const mapFrequencyOption = () => {
+    if (!formData.frequencyVariant) {
+        return 'todos'
+    }
+
+    const variantLower = formData.frequencyVariant.toLowerCase()
+
+    if (variantLower.includes('todos') || variantLower.includes('toda') || variantLower.includes('todo')) {
+        return 'todos'
+    }
+
+    if (variantLower.includes('dias especificos de la semana')) {
+        return 'dias_especificos_semana'
+    }
+
+    if (variantLower.includes('cantidad de dias') && variantLower.includes('semana')) {
+        return 'cantidad_dias_semana'
+    }
+
+    if (variantLower.includes('dias especificos del mes')) {
+        return 'dias_especificos_mes'
+    }
+
+    if (variantLower.includes('cantidad de dias') && variantLower.includes('mes')) {
+        return 'cantidad_dias_mes'
+    }
+
+    return 'todos'
+}
+
+const buildFrequencyDetail = () => {
+    const detail = {
+        variant: formData.frequencyVariant
+    }
+
+    if (formData.frequencyVariantData.weekDays && formData.frequencyVariantData.weekDays.length > 0) {
+        detail.weekDays = formData.frequencyVariantData.weekDays
+    }
+
+    if (formData.frequencyVariantData.monthDays && formData.frequencyVariantData.monthDays.length > 0) {
+        detail.monthDays = formData.frequencyVariantData.monthDays
+    }
+
+    if (formData.frequencyVariantData.counter && formData.frequencyVariantData.counter > 0) {
+        detail.counter = formData.frequencyVariantData.counter
+    }
+
+    return Object.keys(detail).length > 1 ? detail : null
 }
 
 const handleSubmit = async () => {
@@ -307,10 +456,8 @@ const handleSubmit = async () => {
             identity: formData.habitIdentity || null,
             goal_value: formData.goalValue || 1,
             frequency_type: formData.frequencyType,
-            frequency_option: formData.frequencyOption,
-            frequency_variant: formData.frequencyVariant,
-            frequency_variant_data: formData.frequencyVariantData,
-            frequency_detail: null,
+            frequency_option: mapFrequencyOption(),
+            frequency_detail: buildFrequencyDetail(),
             reminder_enabled: formData.reminderEnabled
         }
 
@@ -349,9 +496,20 @@ const loadFormData = (data) => {
         formData.goalValue = data.goal_value || 1
         formData.frequencyType = data.frequency_type || 'diario'
         formData.frequencyOption = data.frequency_option || 'todos'
-        formData.frequencyVariant = data.frequency_variant || null
-        formData.frequencyVariantData = data.frequency_variant_data || {}
         formData.reminderEnabled = data.reminder_enabled || false
+
+        // Cargar frequency_detail si existe
+        if (data.frequency_detail) {
+            formData.frequencyVariant = data.frequency_detail.variant || null
+            formData.frequencyVariantData = {
+                weekDays: data.frequency_detail.weekDays || [],
+                monthDays: data.frequency_detail.monthDays || [],
+                counter: data.frequency_detail.counter || null
+            }
+        } else {
+            formData.frequencyVariant = null
+            formData.frequencyVariantData = {}
+        }
     }
 }
 

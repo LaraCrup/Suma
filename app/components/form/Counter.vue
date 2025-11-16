@@ -1,6 +1,7 @@
 <template>
     <div class="w-28 flex items-center justify-between rounded-lg bg-midlight px-3 py-2">
         <button
+            type="button"
             @click="decrease"
             :disabled="value <= 0"
             class="flex items-center justify-center w-6 h-6 rounded-full"
@@ -15,6 +16,7 @@
             <span v-if="max" class="text-gray text-xs">máx: {{ max }}</span>
         </div>
         <button
+            type="button"
             @click="increase"
             :disabled="max && value >= max"
             class="flex items-center justify-center w-6 h-6 rounded-full"

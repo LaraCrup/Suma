@@ -32,6 +32,7 @@
         </div>
         <div v-if="isSelected" class="w-full grid grid-cols-7 gap-1">
             <button
+                type="button"
                 v-for="day in weekDays"
                 :key="day.key"
                 @click="toggleWeekDay(day.key)"
@@ -60,6 +61,7 @@
         </div>
         <div v-if="isSelected" class="w-full grid grid-cols-7 gap-1">
             <button
+                type="button"
                 v-for="day in monthDays"
                 :key="day"
                 @click="toggleMonthDay(day)"

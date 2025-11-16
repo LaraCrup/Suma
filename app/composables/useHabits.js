@@ -1,36 +1,49 @@
 export const useHabits = () => {
     const client = useSupabaseClient()
-    const user = useSupabaseUser()
+
+    /**
+     * Obtener el user_id de la sesión actual
+     */
+    const getUserId = async () => {
+        const { data: { session }, error } = await client.auth.getSession()
+
+        if (error || !session?.user?.id) {
+            throw new Error('Usuario no autenticado. Por favor inicia sesión.')
+        }
+
+        return session.user.id
+    }
 
     /**
      * Crear un nuevo hábito
      */
     const createHabit = async (habitData) => {
-        if (!user.value) {
-            throw new Error('Usuario no autenticado')
+        const userId = await getUserId()
+
+        const habitRecord = {
+            user_id: userId,
+            name: habitData.name,
+            icon: habitData.icon,
+            when_where: habitData.when_where || null,
+            identity: habitData.identity || null,
+            unit: habitData.unit || null,
+            goal_value: habitData.goal_value || 1,
+            frequency_type: habitData.frequency_type,
+            frequency_option: habitData.frequency_option,
+            frequency_detail: habitData.frequency_detail || null,
+            reminder_enabled: habitData.reminder_enabled || false,
+            is_active: true,
         }
+
+        console.log('Creando hábito con:', habitRecord)
 
         const { data, error } = await client
             .from('habits')
-            .insert([
-                {
-                    user_id: user.value.id,
-                    name: habitData.name,
-                    icon: habitData.icon,
-                    when_where: habitData.when_where || null,
-                    identity: habitData.identity || null,
-                    unit: habitData.unit || null,
-                    goal_value: habitData.goal_value || 1,
-                    frequency_type: habitData.frequency_type,
-                    frequency_option: habitData.frequency_option,
-                    frequency_detail: habitData.frequency_detail || null,
-                    reminder_enabled: habitData.reminder_enabled || false,
-                    is_active: true,
-                }
-            ])
+            .insert([habitRecord])
             .select()
 
         if (error) {
+            console.error('Error en Supabase:', error)
             throw error
         }
 
@@ -41,14 +54,12 @@ export const useHabits = () => {
      * Obtener todos los hábitos del usuario
      */
     const getHabits = async () => {
-        if (!user.value) {
-            throw new Error('Usuario no autenticado')
-        }
+        const userId = await getUserId()
 
         const { data, error } = await client
             .from('habits')
             .select('*')
-            .eq('user_id', user.value.id)
+            .eq('user_id', userId)
             .eq('is_active', true)
             .order('created_at', { ascending: false })
 
@@ -113,9 +124,7 @@ export const useHabits = () => {
      * Registrar progreso en un hábito
      */
     const logHabitProgress = async (habitId, amount = 1) => {
-        if (!user.value) {
-            throw new Error('Usuario no autenticado')
-        }
+        await getUserId() // Validar que el usuario está autenticado
 
         // Primero obtener el hábito actual
         const habit = await getHabitById(habitId)
