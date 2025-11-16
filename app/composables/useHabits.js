@@ -221,12 +221,62 @@ export const useHabits = () => {
         return updatedHabit?.[0] || null
     }
 
+    /**
+     * Determinar si un hábito debe mostrarse hoy basado en su frecuencia
+     */
+    const shouldShowHabitToday = (habit) => {
+        const today = new Date()
+        const dayOfWeek = today.getDay() // 0 = domingo, 1 = lunes, ..., 6 = sábado
+        const dayOfMonth = today.getDate()
+
+        switch (habit.frequency_type) {
+            case 'diario':
+                return true
+
+            case 'semanal':
+                // frequency_option: 'todos' = todos los días de la semana
+                // frequency_option: 'especifico' = solo días específicos
+                if (habit.frequency_option === 'todos') {
+                    return true
+                }
+                if (habit.frequency_option === 'especifico') {
+                    // frequency_detail contiene array de días (0-6)
+                    const selectedDays = habit.frequency_detail || []
+                    return selectedDays.includes(dayOfWeek)
+                }
+                return false
+
+            case 'mensual':
+                // frequency_option: 'todos' = todos los días del mes
+                // frequency_option: 'especifico' = solo días específicos del mes
+                if (habit.frequency_option === 'todos') {
+                    return true
+                }
+                if (habit.frequency_option === 'especifico') {
+                    // frequency_detail contiene array de días del mes (1-31)
+                    const selectedDays = habit.frequency_detail || []
+                    return selectedDays.includes(dayOfMonth)
+                }
+                return false
+
+            case 'flexible':
+                // En frecuencia flexible, mostramos el hábito si aún no se cumplió la meta en este período
+                // frequency_detail contiene la cantidad de veces en frequency_option (semana/mes)
+                // Por ahora solo mostramos si no se completó hoy
+                return true
+
+            default:
+                return true
+        }
+    }
+
     return {
         createHabit,
         getHabits,
         getHabitById,
         updateHabit,
         deleteHabit,
-        logHabitProgress
+        logHabitProgress,
+        shouldShowHabitToday
     }
 }

@@ -6,11 +6,11 @@
         </div>
         <div class="w-full flex flex-col gap-1">
             <HabitsCard
-                v-for="habit in habits"
+                v-for="habit in visibleHabits"
                 :key="habit.id"
                 :habit="habit"
             />
-            <p v-if="habits.length === 0" class="text-sm text-gray text-center py-4">No tienes hábitos aún. ¡Crea uno!</p>
+            <p v-if="visibleHabits.length === 0" class="text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">
@@ -37,8 +37,11 @@
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 
-const { getHabits } = useHabits()
+const { getHabits, shouldShowHabitToday } = useHabits()
 const habits = ref([])
+const visibleHabits = computed(() => {
+    return habits.value.filter(habit => shouldShowHabitToday(habit))
+})
 
 onMounted(async () => {
     try {
