@@ -133,7 +133,10 @@ export const useHabits = () => {
         }
 
         // Calcular nuevo progreso
-        const newProgressCount = Math.max(0, (habit.progress_count || 0) + amount)
+        let newProgressCount = (habit.progress_count || 0) + amount
+        newProgressCount = Math.max(0, newProgressCount) // No puede ser negativo
+        newProgressCount = Math.min(newProgressCount, habit.goal_value || 1) // No puede superar la meta
+
         const isCompleted = newProgressCount >= (habit.goal_value || 1)
 
         // Actualizar el contador de progreso en habits

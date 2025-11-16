@@ -43,7 +43,7 @@
                 <div class="w-full h-3 bg-green-dark rounded-full overflow-hidden">
                     <div
                         :style="{ width: `${((habit?.progress_count || 0) / (habit?.goal_value || 1)) * 100}%` }"
-                        class="h-full bg-accent rounded-full transition-all duration-300"
+                        class="h-full bg-gradient-primary-horizontal-reverse rounded-full transition-all duration-300"
                     ></div>
                 </div>
                 <div class="w-full flex justify-center items-center gap-3 mt-3">
@@ -52,7 +52,7 @@
                         <p class="text-xl">{{ habit?.progress_count || 0 }}</p>
                         <p class="text-[0.625rem]/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
                     </div>
-                    <button @click="increaseProgress" class="h-4 w-4 flex justify-center items-center bg-accent rounded-full text-xs">+</button>
+                    <button @click="increaseProgress" :disabled="(habit?.progress_count || 0) >= (habit?.goal_value || 1)" :class="{ 'opacity-50 cursor-not-allowed': (habit?.progress_count || 0) >= (habit?.goal_value || 1) }" class="h-4 w-4 flex justify-center items-center bg-accent rounded-full text-xs">+</button>
                 </div>
             </div>
         </div>
