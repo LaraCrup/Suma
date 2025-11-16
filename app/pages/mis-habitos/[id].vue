@@ -14,7 +14,7 @@
                         <NuxtImg src="/images/icons/edit.svg" alt="Editar" class="h-[14px]" />
                         <p class="text-xs">Editar hábito</p>
                     </li>
-                    <li @click="handleDeleteHabit" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
+                    <li @click="deleteHabitWithConfirmation" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
                         <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="h-[14px]" />
                         <p class="text-xs text-error">Eliminar hábito</p>
                     </li>
@@ -116,12 +116,18 @@ const completeHabit = async () => {
     }
 }
 
-const handleDeleteHabit = async () => {
+const deleteHabitWithConfirmation = async () => {
+    const confirmed = confirm(`¿Estás seguro de que deseas eliminar el hábito "${habit.value?.name}"? Esta acción no se puede deshacer.`)
+
+    if (!confirmed) return
+
     try {
         await deleteHabitAPI(route.params.id)
+        showMenu.value = false
         navigateTo('/')
     } catch (error) {
         console.error('Error eliminando hábito:', error)
+        alert('Error al eliminar el hábito')
     }
 }
 </script>
