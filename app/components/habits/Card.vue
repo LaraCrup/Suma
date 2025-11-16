@@ -3,7 +3,7 @@
         <div class="flex gap-3 items-center">
             <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-secondary text-lg">{{ habit.icon }}</div>
             <div>
-                <p class="text-xs">{{ habit.name }}</p>
+                <p class="text-xs text-start">{{ habit.name }}</p>
                 <div class="flex gap-2 items-center">
                     <p class="text-[0.625rem] text-green-dark">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
                     <div class="flex gap-[2px]">
@@ -14,8 +14,8 @@
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="flex items-center gap-1">
-                <p class="text-[0.625rem]">{{ habit.streak || 0 }}</p>
+            <div v-if="habit.streak > 0" class="flex items-center gap-1">
+                <p class="text-[0.625rem]">{{ habit.streak }}</p>
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
             </div>
             <div class="w-6 h-6 flex justify-center items-center border-gray border-[1px] rounded-full">
@@ -36,8 +36,6 @@ const props = defineProps({
 });
 
 const goToHabit = () => {
-  // Convierte el nombre a slug (reemplaza espacios con guiones y minúsculas)
-  const habitSlug = props.habit.name.toLowerCase().replace(/\s+/g, '-');
-  router.push(`/mis-habitos/${habitSlug}`);
+  router.push(`/mis-habitos/${props.habit.id}`);
 };
 </script>
