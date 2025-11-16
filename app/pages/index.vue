@@ -5,15 +5,18 @@
             <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="min-w-6 min-h-6 flex justify-center items-center bg-green-dark text-light rounded-full">+</NuxtLink>
         </div>
         <div class="w-full flex flex-col gap-1">
-            <HabitsCard />
-            <HabitsCard />
-            <HabitsCard />
+            <HabitsCard
+                v-for="habit in habits"
+                :key="habit.id"
+                :habit="habit"
+            />
+            <p v-if="habits.length === 0" class="text-sm text-gray text-center py-4">No tienes hábitos aún. ¡Crea uno!</p>
         </div>
     </DefaultSection>
-        <DefaultSection class="!gap-2">
+    <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos comunitarios</HeadingH1>
         <div class="w-full flex flex-col gap-1">
-            <HabitsCard />
+            <p class="text-sm text-gray text-center py-4">Próximamente...</p>
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">
@@ -32,4 +35,16 @@
 
 <script setup>
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
+import { useHabits } from '~/composables/useHabits'
+
+const { getHabits } = useHabits()
+const habits = ref([])
+
+onMounted(async () => {
+    try {
+        habits.value = await getHabits()
+    } catch (error) {
+        console.error('Error cargando hábitos:', error)
+    }
+})
 </script>
