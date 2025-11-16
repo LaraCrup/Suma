@@ -139,11 +139,75 @@ export const useHabits = () => {
 
         const isCompleted = newProgressCount >= (habit.goal_value || 1)
 
+        // Obtener la fecha de hoy en formato YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0]
+
+        // Verificar si ya existe un log para hoy
+        const { data: existingLog, error: searchError } = await client
+            .from('habit_logs')
+            .select('*')
+            .eq('habit_id', habitId)
+            .eq('date', today)
+            .maybeSingle()
+
+        if (searchError) {
+            console.error('Error buscando log existente:', searchError)
+            throw searchError
+        }
+
+        // Si existe un log para hoy, actualizarlo. Si no, crear uno nuevo
+        if (existingLog) {
+            const { error: updateLogError } = await client
+                .from('habit_logs')
+                .update({
+                    value: existingLog.value + amount,
+                    completed: isCompleted
+                })
+                .eq('id', existingLog.id)
+
+            if (updateLogError) {
+                console.error('Error actualizando log de hábito:', updateLogError)
+                throw updateLogError
+            }
+        } else {
+            const { error: insertLogError } = await client
+                .from('habit_logs')
+                .insert([{
+                    habit_id: habitId,
+                    date: today,
+                    value: amount,
+                    completed: isCompleted
+                }])
+
+            if (insertLogError) {
+                console.error('Error creando log de hábito:', insertLogError)
+                throw insertLogError
+            }
+        }
+
+        // Calcular si se completó por primera vez hoy para actualizar streak
+        let streakUpdate = {}
+        if (isCompleted && !existingLog?.completed) {
+            // Se completó por primera vez hoy
+            const newStreak = (habit.streak || 0) + 1
+            const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
+            streakUpdate = {
+                streak: newStreak,
+                longest_streak: longestStreak
+            }
+        } else if (!isCompleted && existingLog?.completed) {
+            // Se desmarcó como completado
+            streakUpdate = {
+                streak: Math.max(0, (habit.streak || 0) - 1)
+            }
+        }
+
         // Actualizar el contador de progreso en habits
         const { data: updatedHabit, error: habitError } = await client
             .from('habits')
             .update({
                 progress_count: newProgressCount,
+                ...streakUpdate,
                 updated_at: new Date().toISOString()
             })
             .eq('id', habitId)
@@ -152,24 +216,6 @@ export const useHabits = () => {
         if (habitError) {
             console.error('Error actualizando hábito:', habitError)
             throw habitError
-        }
-
-        // Obtener la fecha de hoy en formato YYYY-MM-DD
-        const today = new Date().toISOString().split('T')[0]
-
-        // Insertar log en habit_logs
-        const { error: logError } = await client
-            .from('habit_logs')
-            .insert([{
-                habit_id: habitId,
-                date: today,
-                value: amount,
-                completed: isCompleted
-            }])
-
-        if (logError) {
-            console.error('Error creando log de hábito:', logError)
-            throw logError
         }
 
         return updatedHabit?.[0] || null
