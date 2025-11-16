@@ -1,12 +1,18 @@
 <template>
+    <FormDelete
+        :isOpen="showDeleteModal"
+        :message="`¿Estás seguro que queres eliminar el hábito ${habit?.name}? Esta acción no se puede deshacer.`"
+        @confirm="confirmDelete"
+        @close="closeDeleteModal"
+    />
     <DefaultSection class="h-full">
         <div class="relative w-full flex justify-between items-center">
             <NavigationBackArrow class="text-gray" />
-            <NuxtImg 
-                @click="showMenu = !showMenu" 
-                src="/images/icons/options.svg" 
-                alt="Opciones" 
-                class="h-1 cursor-pointer" 
+            <NuxtImg
+                @click="showMenu = !showMenu"
+                src="/images/icons/options.svg"
+                alt="Opciones"
+                class="h-1 cursor-pointer"
             />
             <div v-show="showMenu" class="absolute z-10 right-0 top-7">
                 <ul class="w-[138px] bg-midlight rounded-xl shadow-lg">
@@ -14,7 +20,7 @@
                         <NuxtImg src="/images/icons/edit.svg" alt="Editar" class="h-[14px]" />
                         <p class="text-xs">Editar hábito</p>
                     </li>
-                    <li @click="deleteHabitWithConfirmation" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
+                    <li @click="openDeleteModal" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
                         <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="h-[14px]" />
                         <p class="text-xs text-error">Eliminar hábito</p>
                     </li>
@@ -74,6 +80,7 @@ const route = useRoute()
 const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress } = useHabits()
 const habit = ref(null)
 const showMenu = ref(false)
+const showDeleteModal = ref(false)
 
 onMounted(async () => {
     try {
@@ -116,18 +123,23 @@ const completeHabit = async () => {
     }
 }
 
-const deleteHabitWithConfirmation = async () => {
-    const confirmed = confirm(`¿Estás seguro de que deseas eliminar el hábito "${habit.value?.name}"? Esta acción no se puede deshacer.`)
+const openDeleteModal = () => {
+    showDeleteModal.value = true
+    showMenu.value = false
+}
 
-    if (!confirmed) return
+const closeDeleteModal = () => {
+    showDeleteModal.value = false
+}
 
+const confirmDelete = async () => {
     try {
         await deleteHabitAPI(route.params.id)
-        showMenu.value = false
+        showDeleteModal.value = false
         navigateTo('/')
     } catch (error) {
         console.error('Error eliminando hábito:', error)
-        alert('Error al eliminar el hábito')
+        closeDeleteModal()
     }
 }
 </script>
