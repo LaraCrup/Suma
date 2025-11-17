@@ -71,7 +71,6 @@ const linkErrorMsg = ref('')
 
 onMounted(async () => {
     try {
-        // Check if user has a valid session (from reset link)
         const { data: { session }, error } = await client.auth.getSession()
 
         if (error || !session) {

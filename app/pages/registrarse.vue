@@ -317,7 +317,6 @@ const signUp = async () => {
             return
         }
 
-        // Guardar email antes de limpiar el form
         const registeredEmail = form.email
 
         form.name = ''
@@ -330,7 +329,6 @@ const signUp = async () => {
             title: 'Registro exitoso'
         })
 
-        // Guardar email en sessionStorage para la página de confirmación
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('confirmationEmail', registeredEmail)
         }

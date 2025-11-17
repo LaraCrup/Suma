@@ -39,7 +39,6 @@
     const resendAttempted = ref(false)
 
     onMounted(async () => {
-        // Get the email from sessionStorage or redirect
         const storedEmail = sessionStorage.getItem('resetPasswordEmail')
 
         if (!storedEmail) {
@@ -74,7 +73,6 @@
                     duration: 5000
                 })
 
-                // Start countdown
                 resendCountdown.value = 60
                 const interval = setInterval(() => {
                     resendCountdown.value--

@@ -65,16 +65,12 @@ export const useHabits = () => {
             throw error
         }
 
-        // Migración automática: corregir hábitos con frequency_type incorrecto
         const migratedData = (data || []).map(habit => {
-            // Si frequency_type es 'diario' pero frequency_option es 'dias_especificos_semana' o similar,
-            // inferimos el frequency_type correcto basado en frequency_option
             if (habit.frequency_type === 'diario' && habit.frequency_option) {
                 const option = habit.frequency_option.toLowerCase()
 
                 if (option.includes('semana')) {
                     console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> semanal`)
-                    // Persistir el cambio en la BD de forma asincrónica sin bloquear
                     client
                         .from('habits')
                         .update({ frequency_type: 'semanal' })
@@ -86,7 +82,6 @@ export const useHabits = () => {
 
                 if (option.includes('mes')) {
                     console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> mensual`)
-                    // Persistir el cambio en la BD de forma asincrónica sin bloquear
                     client
                         .from('habits')
                         .update({ frequency_type: 'mensual' })
@@ -116,7 +111,6 @@ export const useHabits = () => {
             throw error
         }
 
-        // Aplicar migración si es necesario
         if (data && data.frequency_type === 'diario' && data.frequency_option) {
             const option = data.frequency_option.toLowerCase()
 
@@ -183,25 +177,21 @@ export const useHabits = () => {
      * Registrar progreso en un hábito
      */
     const logHabitProgress = async (habitId, amount = 1) => {
-        await getUserId() // Validar que el usuario está autenticado
+        await getUserId()
 
-        // Primero obtener el hábito actual
         const habit = await getHabitById(habitId)
         if (!habit) {
             throw new Error('Hábito no encontrado')
         }
 
-        // Calcular nuevo progreso
         let newProgressCount = (habit.progress_count || 0) + amount
-        newProgressCount = Math.max(0, newProgressCount) // No puede ser negativo
-        newProgressCount = Math.min(newProgressCount, habit.goal_value || 1) // No puede superar la meta
+        newProgressCount = Math.max(0, newProgressCount)
+        newProgressCount = Math.min(newProgressCount, habit.goal_value || 1)
 
         const isCompleted = newProgressCount >= (habit.goal_value || 1)
 
-        // Obtener la fecha de hoy en formato YYYY-MM-DD
         const today = new Date().toISOString().split('T')[0]
 
-        // Verificar si ya existe un log para hoy
         const { data: existingLog, error: searchError } = await client
             .from('habit_logs')
             .select('*')
@@ -214,7 +204,6 @@ export const useHabits = () => {
             throw searchError
         }
 
-        // Si existe un log para hoy, actualizarlo. Si no, crear uno nuevo
         if (existingLog) {
             const { error: updateLogError } = await client
                 .from('habit_logs')
@@ -244,10 +233,8 @@ export const useHabits = () => {
             }
         }
 
-        // Calcular si se completó por primera vez hoy para actualizar streak
         let streakUpdate = {}
         if (isCompleted && !existingLog?.completed) {
-            // Se completó por primera vez hoy
             const newStreak = (habit.streak || 0) + 1
             const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
             streakUpdate = {
@@ -255,13 +242,11 @@ export const useHabits = () => {
                 longest_streak: longestStreak
             }
         } else if (!isCompleted && existingLog?.completed) {
-            // Se desmarcó como completado
             streakUpdate = {
                 streak: Math.max(0, (habit.streak || 0) - 1)
             }
         }
 
-        // Actualizar el contador de progreso en habits
         const { data: updatedHabit, error: habitError } = await client
             .from('habits')
             .update({
@@ -286,13 +271,13 @@ export const useHabits = () => {
      */
     const letterDayToNumber = (letterDay) => {
         const dayMap = {
-            'D': 0,  // Domingo
-            'L': 1,  // Lunes
-            'M': 2,  // Martes
-            'X': 3,  // Miércoles
-            'J': 4,  // Jueves
-            'V': 5,  // Viernes
-            'S': 6   // Sábado
+            'D': 0,
+            'L': 1,
+            'M': 2,
+            'X': 3,
+            'J': 4,
+            'V': 5,
+            'S': 6
         }
         return dayMap[letterDay] !== undefined ? dayMap[letterDay] : -1
     }
@@ -311,7 +296,6 @@ export const useHabits = () => {
      * Determinar si un hábito debe mostrarse hoy basado en su frecuencia
      */
     const shouldShowHabitToday = (habit) => {
-        // Debug: log para verificar estructura del hábito
         console.log('Validando hábito:', {
             name: habit.name,
             frequency_type: habit.frequency_type,
@@ -321,10 +305,9 @@ export const useHabits = () => {
         })
 
         const today = new Date()
-        const dayOfWeek = today.getDay() // 0 = domingo, 1 = lunes, ..., 6 = sábado
+        const dayOfWeek = today.getDay()
         const dayOfMonth = today.getDate()
 
-        // Si no hay frequency_type, asumimos que se muestra todos los días
         if (!habit.frequency_type) {
             console.log('No hay frequency_type, mostrando hábito')
             return true
@@ -336,7 +319,6 @@ export const useHabits = () => {
                 return true
 
             case 'semanal':
-                // Si no está definido frequency_option, asumimos 'todos'
                 const weeklyOption = habit.frequency_option || 'todos'
 
                 if (weeklyOption === 'todos') {
@@ -345,7 +327,6 @@ export const useHabits = () => {
                 }
 
                 if (weeklyOption === 'dias_especificos_semana') {
-                    // frequency_detail.weekDays contiene array de letras (L, M, X, J, V, S, D)
                     const selectedDays = habit.frequency_detail?.weekDays || []
                     console.log('Días específicos seleccionados:', selectedDays, 'Día actual:', dayOfWeek)
 
@@ -359,7 +340,6 @@ export const useHabits = () => {
 
                 if (weeklyOption === 'cantidad_dias_semana') {
                     console.log('Opción semanal: cantidad de días')
-                    // Para cantidad de días, mostramos siempre (se controla en otro lado)
                     return true
                 }
 
@@ -367,7 +347,6 @@ export const useHabits = () => {
                 return false
 
             case 'mensual':
-                // Si no está definido frequency_option, asumimos 'todos'
                 const monthlyOption = habit.frequency_option || 'todos'
 
                 if (monthlyOption === 'todos') {
@@ -376,7 +355,6 @@ export const useHabits = () => {
                 }
 
                 if (monthlyOption === 'dias_especificos_mes') {
-                    // frequency_detail.monthDays contiene array de números (1-31)
                     const selectedDays = habit.frequency_detail?.monthDays || []
                     console.log('Días del mes seleccionados:', selectedDays, 'Día del mes actual:', dayOfMonth)
 
@@ -387,7 +365,6 @@ export const useHabits = () => {
 
                 if (monthlyOption === 'cantidad_dias_mes') {
                     console.log('Opción mensual: cantidad de días')
-                    // Para cantidad de días, mostramos siempre (se controla en otro lado)
                     return true
                 }
 
@@ -395,7 +372,6 @@ export const useHabits = () => {
                 return false
 
             case 'flexible':
-                // En frecuencia flexible, mostramos el hábito si aún no se cumplió la meta en este período
                 console.log('Hábito flexible, mostrando')
                 return true
 

@@ -85,7 +85,6 @@ const handleResetPassword = async () => {
             errorMsg.value = handleSupabaseError(error)
             emailSendAttempted.value = false
         } else {
-            // Store email in sessionStorage for confirmation page
             sessionStorage.setItem('resetPasswordEmail', form.email)
             form.email = ''
 

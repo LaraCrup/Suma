@@ -110,11 +110,9 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'success', 'error', 'update'])
 
-// Composables
 const { createHabit: createHabitDB, updateHabit: updateHabitDB } = useHabits()
 const { success, error: showError } = useNotification()
 
-// Form data
 const formData = reactive({
     habitName: '',
     habitIcon: '📝',
@@ -129,7 +127,6 @@ const formData = reactive({
     reminderEnabled: false
 })
 
-// Variantes de frecuencia
 const frequencyVariants = {
     'Diario': [
         'Todos los días',
@@ -148,7 +145,6 @@ const frequencyVariants = {
     ]
 }
 
-// Errors
 const errors = ref({
     habitName: null,
     habitIcon: null,
@@ -162,7 +158,6 @@ const errors = ref({
 const isLoading = ref(false)
 const frequencyModal = ref(null)
 
-// Métodos
 const openFrequencyModal = () => {
     frequencyModal.value?.openModal()
 }
@@ -189,7 +184,6 @@ const getFrequencyDescription = () => {
         return frequencyLabels[formData.frequencyType] || 'cada día'
     }
 
-    // Si es "Todos los días", "Toda la semana" o "Todo el mes"
     if (formData.frequencyVariant.includes('Todos') ||
         formData.frequencyVariant.includes('Toda') ||
         formData.frequencyVariant.includes('Todo')) {
@@ -201,7 +195,6 @@ const getFrequencyDescription = () => {
         return frequencyLabels[formData.frequencyType] || 'cada día'
     }
 
-    // Si incluye días de la semana específicos
     if (formData.frequencyVariant.includes('Dias especificos de la semana')) {
         const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
         if (match) {
@@ -210,13 +203,10 @@ const getFrequencyDescription = () => {
         return 'en días específicos de la semana'
     }
 
-    // Si incluye días del mes específicos
     if (formData.frequencyVariant.includes('Dias especificos del mes')) {
-        // Verifica que realmente tiene números (no letras de semana)
         const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
         if (match) {
             const content = match[1]
-            // Si contiene números, muéstralos como días del mes
             if (/\d/.test(content)) {
                 return `los días del mes: ${content}`
             }
@@ -224,13 +214,10 @@ const getFrequencyDescription = () => {
         return 'en días específicos del mes'
     }
 
-    // Si incluye cantidad de días
     if (formData.frequencyVariant.includes('Cantidad de')) {
-        // Busca un número entre paréntesis que NO sea una lista de números
         const match = formData.frequencyVariant.match(/\((\d+)\)$/)
         if (match) {
             const cantidad = match[1]
-            // Verificar si es cantidad de días de la semana o del mes según el texto del variant
             if (formData.frequencyVariant.includes('semana')) {
                 return `${cantidad} días a la semana`
             } else if (formData.frequencyVariant.includes('mes')) {
@@ -240,7 +227,6 @@ const getFrequencyDescription = () => {
         return 'algunos días'
     }
 
-    // Por defecto
     const frequencyLabels = {
         'diario': 'cada día',
         'semanal': 'cada semana',
@@ -260,19 +246,15 @@ const handleFrequencySelect = (confirmData) => {
     formData.frequencyVariant = confirmData.variant || null
     formData.frequencyVariantData = confirmData.variantData || {}
 
-    // Construir texto mejorado con detalles
     if (confirmData.variant) {
-        // Si hay días de la semana seleccionados
         if (confirmData.variantData.weekDays && confirmData.variantData.weekDays.length > 0) {
             const days = confirmData.variantData.weekDays.join(', ')
             formData.frequencyVariant = `${confirmData.variant} (${days})`
         }
-        // Si hay días del mes seleccionados
         else if (confirmData.variantData.monthDays && confirmData.variantData.monthDays.length > 0) {
             const days = confirmData.variantData.monthDays.join(', ')
             formData.frequencyVariant = `${confirmData.variant} (${days})`
         }
-        // Si hay contador
         else if (confirmData.variantData.counter && confirmData.variantData.counter > 0) {
             formData.frequencyVariant = `${confirmData.variant} (${confirmData.variantData.counter})`
         }
@@ -280,7 +262,6 @@ const handleFrequencySelect = (confirmData) => {
 }
 
 const validateForm = () => {
-    // Limpiar todos los errores
     errors.value.habitName = null
     errors.value.habitIcon = null
     errors.value.habitUnit = null
@@ -289,7 +270,6 @@ const validateForm = () => {
     errors.value.goalValue = null
     errors.value.frequencyVariant = null
 
-    // Validación: Nombre del hábito
     if (!formData.habitName || formData.habitName.trim().length === 0) {
         errors.value.habitName = 'El nombre del hábito es obligatorio'
         return false
@@ -305,21 +285,17 @@ const validateForm = () => {
         return false
     }
 
-    // Validación: Icono
     if (!formData.habitIcon || formData.habitIcon.trim().length === 0) {
         errors.value.habitIcon = 'El icono es obligatorio'
         return false
     }
 
-    // Contar caracteres reales (graphemes) en lugar de unidades UTF-16
-    // para soportar emojis complejos como 🏃‍♀️ que pueden tener múltiples componentes
     const iconLength = Array.from(formData.habitIcon.trim()).length
     if (iconLength > 5) {
         errors.value.habitIcon = 'El icono debe ser un carácter o emoji'
         return false
     }
 
-    // Validación: Unidad de medida
     if (!formData.habitUnit || formData.habitUnit.trim().length === 0) {
         errors.value.habitUnit = 'La unidad de medida es obligatoria'
         return false
@@ -330,7 +306,6 @@ const validateForm = () => {
         return false
     }
 
-    // Validación: Cuándo y dónde
     if (!formData.habitWhenWhere || formData.habitWhenWhere.trim().length === 0) {
         errors.value.habitWhenWhere = 'Cuándo y dónde es obligatorio'
         return false
@@ -346,7 +321,6 @@ const validateForm = () => {
         return false
     }
 
-    // Validación: Para convertirme en
     if (!formData.habitIdentity || formData.habitIdentity.trim().length === 0) {
         errors.value.habitIdentity = 'Para convertirme en es obligatorio'
         return false
@@ -362,7 +336,6 @@ const validateForm = () => {
         return false
     }
 
-    // Validación: Valor de la meta
     if (formData.goalValue === null || formData.goalValue === undefined || formData.goalValue === '') {
         errors.value.goalValue = 'La meta es obligatoria'
         return false
@@ -378,7 +351,6 @@ const validateForm = () => {
         return false
     }
 
-    // Validación: Variante de frecuencia (si es específica)
     if (formData.frequencyVariant && formData.frequencyVariant.includes('especificos')) {
         const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
         if (!match || !match[1] || match[1].trim().length === 0) {
@@ -397,12 +369,10 @@ const mapFrequencyOption = () => {
 
     const variantLower = formData.frequencyVariant.toLowerCase()
 
-    // Chequear "todos" primero
     if (variantLower.includes('todos') || variantLower.includes('toda') || variantLower.includes('todo')) {
         return 'todos'
     }
 
-    // Chequear si incluye "especificos" antes de "cantidad" porque "especificos" es más específico
     if (variantLower.includes('dias especificos de la semana')) {
         return 'dias_especificos_semana'
     }
@@ -411,7 +381,6 @@ const mapFrequencyOption = () => {
         return 'dias_especificos_mes'
     }
 
-    // Chequear "cantidad de dias"
     if (variantLower.includes('cantidad de dias')) {
         if (variantLower.includes('semana')) {
             return 'cantidad_dias_semana'
@@ -500,7 +469,6 @@ const handleSubmit = async () => {
     }
 }
 
-// Función para cargar datos del initialData
 const loadFormData = (data) => {
     if (data) {
         formData.habitName = data.name || ''
@@ -513,7 +481,6 @@ const loadFormData = (data) => {
         formData.frequencyOption = data.frequency_option || 'todos'
         formData.reminderEnabled = data.reminder_enabled || false
 
-        // Cargar frequency_detail si existe
         if (data.frequency_detail) {
             formData.frequencyVariant = data.frequency_detail.variant || null
             formData.frequencyVariantData = {
@@ -528,17 +495,14 @@ const loadFormData = (data) => {
     }
 }
 
-// Inicializar con datos si existen
 onMounted(() => {
     loadFormData(props.initialData)
 })
 
-// Watch para cambios en initialData
 watch(() => props.initialData, (newData) => {
     loadFormData(newData)
 }, { deep: true })
 
-// Emitir cambios en nombre e icono del hábito
 watch(() => [formData.habitName, formData.habitIcon], () => {
     emit('update', {
         name: formData.habitName,

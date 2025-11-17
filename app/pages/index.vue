@@ -80,7 +80,6 @@ const hiddenHabits = computed(() => {
 })
 
 const handleHabitUpdated = (updatedHabit) => {
-    // Encontrar el hábito en la lista y actualizar su progreso
     const habitIndex = habits.value.findIndex(h => h.id === updatedHabit.id)
     if (habitIndex !== -1) {
         habits.value[habitIndex] = updatedHabit

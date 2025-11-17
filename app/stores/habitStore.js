@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useHabitStore = defineStore('habit', () => {
-    // Estado para el hábito seleccionado
     const selectedHabit = ref(null)
     const isCustom = ref(false)
 

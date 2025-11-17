@@ -45,7 +45,6 @@ const props = defineProps({
 
 const emit = defineEmits(['habitUpdated'])
 
-// Variables para detectar swipe
 const touchStartX = ref(0)
 const touchStartTime = ref(0)
 const isSwipe = ref(false)
@@ -67,7 +66,6 @@ const handleTouchEnd = async (e) => {
     const swipeTime = touchEndTime - touchStartTime.value
     const swipeDirection = touchEndX > touchStartX.value ? 'right' : 'left'
 
-    // Si el desliz fue mayor a 50px y menor a 500ms, se considera un swipe
     if (swipeDistance > 50 && swipeTime < 500) {
         isSwipe.value = true
         if (swipeDirection === 'right') {
@@ -79,7 +77,6 @@ const handleTouchEnd = async (e) => {
 }
 
 const handleClick = () => {
-    // Solo navega si no fue un swipe
     if (!isSwipe.value) {
         goToHabit()
     }

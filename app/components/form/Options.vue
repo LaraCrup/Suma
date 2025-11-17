@@ -130,11 +130,9 @@ const variantMonthDays = ref({})
 const openModal = () => {
     isOpen.value = true
 
-    // Si hay selección previa, restaurarla
     if (props.previousSelection && props.previousSelection.mainOption) {
         const prevSelection = props.previousSelection
 
-        // Determinar si es mainOption o secondaryOption
         if (prevSelection.mainOption === props.mainOption) {
             isMainOptionSelected.value = true
             selectedSecondaryIndex.value = null
@@ -149,15 +147,12 @@ const openModal = () => {
             }
         }
 
-        // Cargar variantes del option seleccionado
         if (props.variantOptions[prevSelection.mainOption]) {
             currentVariants.value = props.variantOptions[prevSelection.mainOption]
 
-            // Encontrar el índice de la variante anterior
             const variantIndex = currentVariants.value.indexOf(prevSelection.variant)
             selectedVariantIndex.value = variantIndex !== -1 ? variantIndex : 0
 
-            // Restaurar datos de la variante
             if (prevSelection.variantData) {
                 const variantKey = isMainOptionSelected.value
                     ? `main-${selectedVariantIndex.value}`
@@ -175,10 +170,8 @@ const openModal = () => {
             }
         }
     } else {
-        // Inicializar con mainOption seleccionado por defecto
         isMainOptionSelected.value = true
         selectedSecondaryIndex.value = null
-        // Cargar variantes del mainOption
         if (props.mainOption && props.variantOptions[props.mainOption]) {
             currentVariants.value = props.variantOptions[props.mainOption]
             selectedVariantIndex.value = 0
@@ -199,11 +192,9 @@ const selectMainOption = () => {
     selectedSecondaryIndex.value = null
     selectedVariantIndex.value = 0
     selectedMainValue.value = props.mainOption
-    // Limpiar datos de variantes previas
     variantCounters.value = {}
     variantWeekDays.value = {}
     variantMonthDays.value = {}
-    // Cargar variantes si existen
     if (props.mainOption && props.variantOptions[props.mainOption]) {
         currentVariants.value = props.variantOptions[props.mainOption]
     }
@@ -215,11 +206,9 @@ const selectSecondaryOption = (index) => {
     selectedVariantIndex.value = 0
     const selectedOption = props.secondaryOptions[index]
     selectedMainValue.value = selectedOption
-    // Limpiar datos de variantes previas
     variantCounters.value = {}
     variantWeekDays.value = {}
     variantMonthDays.value = {}
-    // Cargar variantes si existen
     if (selectedOption && props.variantOptions[selectedOption]) {
         currentVariants.value = props.variantOptions[selectedOption]
     } else {
@@ -247,7 +236,6 @@ const confirmSelection = () => {
         }
     }
 
-    // Recolectar datos de la variante seleccionada
     if (selectedVariant && variantKey) {
         variantData = {
             variant: selectedVariant,
@@ -270,7 +258,6 @@ const confirmSelection = () => {
 }
 
 const getMaxForVariant = (variant) => {
-    // Extrae el número máximo de la variante si sigue el formato "Cantidad de X (máx: Y)"
     if (!variant) return null
 
     const match = variant.match(/máx:\s*(\d+)/i)

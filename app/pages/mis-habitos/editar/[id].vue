@@ -51,13 +51,11 @@ onMounted(async () => {
 })
 
 const handleFormSuccess = (updatedHabit) => {
-    // Navegar al detalle del h�bito despu�s de actualizar
     navigateTo(`/mis-habitos/${updatedHabit.id}`)
 }
 
 const handleFormError = (error) => {
     console.error('Error actualizando h�bito:', error)
-    // El formulario ya maneja el mensaje de error con la notificaci�n
 }
 
 const handleFormUpdate = (data) => {

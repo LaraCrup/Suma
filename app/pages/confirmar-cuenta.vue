@@ -33,7 +33,6 @@
     let waitInterval = null
 
     onMounted(() => {
-        // Obtener el email del sessionStorage que se guardó en registrarse.vue
         if (typeof window !== 'undefined') {
             const email = sessionStorage.getItem('confirmationEmail')
             if (email) {
@@ -43,16 +42,13 @@
     })
 
     const resendEmail = async () => {
-        // No hacer nada si aún está en espera
         if (isWaiting.value) {
             return
         }
 
         try {
-            // Limpiar mensaje anterior
             message.value = ''
 
-            // Usar el email guardado en sessionStorage
             if (!userEmail.value) {
                 message.value = 'No se pudo obtener tu correo electrónico'
                 isError.value = true
@@ -76,7 +72,6 @@
                 message.value = 'Correo de confirmación reenviado exitosamente. Revisa tu bandeja de entrada.'
                 isError.value = false
 
-                // Iniciar cooldown de 60 segundos
                 isWaiting.value = true
                 waitSeconds.value = 60
 
