@@ -32,7 +32,6 @@ export const useHabits = () => {
             frequency_option: habitData.frequency_option,
             frequency_detail: habitData.frequency_detail || null,
             reminder_enabled: habitData.reminder_enabled || false,
-            is_active: true,
         }
 
         console.log('Creando hábito con:', habitRecord)
@@ -60,7 +59,6 @@ export const useHabits = () => {
             .from('habits')
             .select('*')
             .eq('user_id', userId)
-            .eq('is_active', true)
             .order('created_at', { ascending: false })
 
         if (error) {
@@ -166,12 +164,12 @@ export const useHabits = () => {
     }
 
     /**
-     * Eliminar un hábito (soft delete)
+     * Eliminar un hábito (delete real)
      */
     const deleteHabit = async (habitId) => {
         const { error } = await client
             .from('habits')
-            .update({ is_active: false })
+            .delete()
             .eq('id', habitId)
 
         if (error) {

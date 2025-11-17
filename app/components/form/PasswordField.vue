@@ -6,7 +6,7 @@
             class="relative bg-light border border-primary rounded-full outline-none text-dark text-xs placeholder:text-gray placeholder:text-xs py-3 px-5">
             <input :id="inputId" :type="showPassword ? 'text' : 'password'" :placeholder="placeholder"
                 :value="modelValue" :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
-                autocomplete="current-password" class="w-full bg-light outline-none" />
+                autocomplete="current-password" class="w-full bg-light outline-none text-xs" />
 
             <button type="button"
                 class="flex justify-center items-center absolute right-3 top-1/2 transform -translate-y-1/2 text-dark"
