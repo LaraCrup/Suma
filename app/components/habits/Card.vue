@@ -65,11 +65,16 @@ const handleTouchEnd = async (e) => {
     const touchEndTime = Date.now()
     const swipeDistance = Math.abs(touchEndX - touchStartX.value)
     const swipeTime = touchEndTime - touchStartTime.value
+    const swipeDirection = touchEndX > touchStartX.value ? 'right' : 'left'
 
     // Si el desliz fue mayor a 50px y menor a 500ms, se considera un swipe
     if (swipeDistance > 50 && swipeTime < 500) {
         isSwipe.value = true
-        await completeHabit()
+        if (swipeDirection === 'right') {
+            await completeHabit()
+        } else {
+            await resetHabit()
+        }
     }
 }
 
@@ -96,6 +101,19 @@ const completeHabit = async () => {
         }
     } catch (error) {
         console.error('Error completando hábito:', error)
+    }
+}
+
+const resetHabit = async () => {
+    try {
+        const currentProgress = props.habit.progress_count || 0
+
+        if (currentProgress > 0) {
+            const updated = await logHabitProgress(props.habit.id, -currentProgress)
+            emit('habitUpdated', updated)
+        }
+    } catch (error) {
+        console.error('Error reiniciando hábito:', error)
     }
 }
 </script>
