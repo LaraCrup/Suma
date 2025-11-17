@@ -67,7 +67,41 @@ export const useHabits = () => {
             throw error
         }
 
-        return data || []
+        // Migración automática: corregir hábitos con frequency_type incorrecto
+        const migratedData = (data || []).map(habit => {
+            // Si frequency_type es 'diario' pero frequency_option es 'dias_especificos_semana' o similar,
+            // inferimos el frequency_type correcto basado en frequency_option
+            if (habit.frequency_type === 'diario' && habit.frequency_option) {
+                const option = habit.frequency_option.toLowerCase()
+
+                if (option.includes('semana')) {
+                    console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> semanal`)
+                    // Persistir el cambio en la BD de forma asincrónica sin bloquear
+                    client
+                        .from('habits')
+                        .update({ frequency_type: 'semanal' })
+                        .eq('id', habit.id)
+                        .then(() => console.log(`[MIGRACIÓN OK] ${habit.name}`))
+                        .catch(err => console.error(`[MIGRACIÓN ERROR] ${habit.name}:`, err))
+                    return { ...habit, frequency_type: 'semanal' }
+                }
+
+                if (option.includes('mes')) {
+                    console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> mensual`)
+                    // Persistir el cambio en la BD de forma asincrónica sin bloquear
+                    client
+                        .from('habits')
+                        .update({ frequency_type: 'mensual' })
+                        .eq('id', habit.id)
+                        .then(() => console.log(`[MIGRACIÓN OK] ${habit.name}`))
+                        .catch(err => console.error(`[MIGRACIÓN ERROR] ${habit.name}:`, err))
+                    return { ...habit, frequency_type: 'mensual' }
+                }
+            }
+            return habit
+        })
+
+        return migratedData
     }
 
     /**
@@ -82,6 +116,33 @@ export const useHabits = () => {
 
         if (error) {
             throw error
+        }
+
+        // Aplicar migración si es necesario
+        if (data && data.frequency_type === 'diario' && data.frequency_option) {
+            const option = data.frequency_option.toLowerCase()
+
+            if (option.includes('semana')) {
+                console.log(`[MIGRACIÓN] Corrigiendo ${data.name}: frequency_type diario -> semanal`)
+                client
+                    .from('habits')
+                    .update({ frequency_type: 'semanal' })
+                    .eq('id', habitId)
+                    .then(() => console.log(`[MIGRACIÓN OK] ${data.name}`))
+                    .catch(err => console.error(`[MIGRACIÓN ERROR] ${data.name}:`, err))
+                return { ...data, frequency_type: 'semanal' }
+            }
+
+            if (option.includes('mes')) {
+                console.log(`[MIGRACIÓN] Corrigiendo ${data.name}: frequency_type diario -> mensual`)
+                client
+                    .from('habits')
+                    .update({ frequency_type: 'mensual' })
+                    .eq('id', habitId)
+                    .then(() => console.log(`[MIGRACIÓN OK] ${data.name}`))
+                    .catch(err => console.error(`[MIGRACIÓN ERROR] ${data.name}:`, err))
+                return { ...data, frequency_type: 'mensual' }
+            }
         }
 
         return data
@@ -222,50 +283,126 @@ export const useHabits = () => {
     }
 
     /**
+     * Convertir letra de día a número (0-6)
+     * Correspondencia: D=0 (Domingo), L=1 (Lunes), M=2 (Martes), X=3 (Miércoles), J=4 (Jueves), V=5 (Viernes), S=6 (Sábado)
+     */
+    const letterDayToNumber = (letterDay) => {
+        const dayMap = {
+            'D': 0,  // Domingo
+            'L': 1,  // Lunes
+            'M': 2,  // Martes
+            'X': 3,  // Miércoles
+            'J': 4,  // Jueves
+            'V': 5,  // Viernes
+            'S': 6   // Sábado
+        }
+        return dayMap[letterDay] !== undefined ? dayMap[letterDay] : -1
+    }
+
+    /**
+     * Convertir array de letras de días a números (0-6)
+     */
+    const letterDaysToNumbers = (letterDays) => {
+        if (!Array.isArray(letterDays)) {
+            return []
+        }
+        return letterDays.map(letterDayToNumber).filter(day => day !== -1)
+    }
+
+    /**
      * Determinar si un hábito debe mostrarse hoy basado en su frecuencia
      */
     const shouldShowHabitToday = (habit) => {
+        // Debug: log para verificar estructura del hábito
+        console.log('Validando hábito:', {
+            name: habit.name,
+            frequency_type: habit.frequency_type,
+            frequency_option: habit.frequency_option,
+            frequency_detail: habit.frequency_detail,
+            dayOfWeek: new Date().getDay()
+        })
+
         const today = new Date()
         const dayOfWeek = today.getDay() // 0 = domingo, 1 = lunes, ..., 6 = sábado
         const dayOfMonth = today.getDate()
 
+        // Si no hay frequency_type, asumimos que se muestra todos los días
+        if (!habit.frequency_type) {
+            console.log('No hay frequency_type, mostrando hábito')
+            return true
+        }
+
         switch (habit.frequency_type) {
             case 'diario':
+                console.log('Hábito diario, mostrando')
                 return true
 
             case 'semanal':
-                // frequency_option: 'todos' = todos los días de la semana
-                // frequency_option: 'especifico' = solo días específicos
-                if (habit.frequency_option === 'todos') {
+                // Si no está definido frequency_option, asumimos 'todos'
+                const weeklyOption = habit.frequency_option || 'todos'
+
+                if (weeklyOption === 'todos') {
+                    console.log('Opción semanal: todos los días')
                     return true
                 }
-                if (habit.frequency_option === 'especifico') {
-                    // frequency_detail contiene array de días (0-6)
-                    const selectedDays = habit.frequency_detail || []
-                    return selectedDays.includes(dayOfWeek)
+
+                if (weeklyOption === 'dias_especificos_semana') {
+                    // frequency_detail.weekDays contiene array de letras (L, M, X, J, V, S, D)
+                    const selectedDays = habit.frequency_detail?.weekDays || []
+                    console.log('Días específicos seleccionados:', selectedDays, 'Día actual:', dayOfWeek)
+
+                    const selectedDayNumbers = letterDaysToNumbers(selectedDays)
+                    console.log('Números de días convertidos:', selectedDayNumbers)
+
+                    const shouldShow = selectedDayNumbers.includes(dayOfWeek)
+                    console.log('¿Mostrar hábito?', shouldShow)
+                    return shouldShow
                 }
+
+                if (weeklyOption === 'cantidad_dias_semana') {
+                    console.log('Opción semanal: cantidad de días')
+                    // Para cantidad de días, mostramos siempre (se controla en otro lado)
+                    return true
+                }
+
+                console.log('Opción semanal desconocida:', weeklyOption)
                 return false
 
             case 'mensual':
-                // frequency_option: 'todos' = todos los días del mes
-                // frequency_option: 'especifico' = solo días específicos del mes
-                if (habit.frequency_option === 'todos') {
+                // Si no está definido frequency_option, asumimos 'todos'
+                const monthlyOption = habit.frequency_option || 'todos'
+
+                if (monthlyOption === 'todos') {
+                    console.log('Opción mensual: todos los días')
                     return true
                 }
-                if (habit.frequency_option === 'especifico') {
-                    // frequency_detail contiene array de días del mes (1-31)
-                    const selectedDays = habit.frequency_detail || []
-                    return selectedDays.includes(dayOfMonth)
+
+                if (monthlyOption === 'dias_especificos_mes') {
+                    // frequency_detail.monthDays contiene array de números (1-31)
+                    const selectedDays = habit.frequency_detail?.monthDays || []
+                    console.log('Días del mes seleccionados:', selectedDays, 'Día del mes actual:', dayOfMonth)
+
+                    const shouldShow = selectedDays.includes(dayOfMonth)
+                    console.log('¿Mostrar hábito?', shouldShow)
+                    return shouldShow
                 }
+
+                if (monthlyOption === 'cantidad_dias_mes') {
+                    console.log('Opción mensual: cantidad de días')
+                    // Para cantidad de días, mostramos siempre (se controla en otro lado)
+                    return true
+                }
+
+                console.log('Opción mensual desconocida:', monthlyOption)
                 return false
 
             case 'flexible':
                 // En frecuencia flexible, mostramos el hábito si aún no se cumplió la meta en este período
-                // frequency_detail contiene la cantidad de veces en frequency_option (semana/mes)
-                // Por ahora solo mostramos si no se completó hoy
+                console.log('Hábito flexible, mostrando')
                 return true
 
             default:
+                console.log('frequency_type desconocido:', habit.frequency_type)
                 return true
         }
     }

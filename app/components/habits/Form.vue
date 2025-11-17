@@ -18,7 +18,7 @@
                 <FormLabelSecondary id="habit-icon" required>Icono del hábito</FormLabelSecondary>
                 <input id="habit-icon-input" v-model="formData.habitIcon" type="text"
                     class="w-8 text-xl text-center bg-transparent outline-nones"
-                    placeholder="❇️" maxlength="2" required aria-required="true"
+                    placeholder="." maxlength="2" required aria-required="true"
                     aria-invalid="errors.habitIcon ? 'true' : 'false'"
                     :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null" />
             </div>
@@ -108,7 +108,7 @@ const props = defineProps({
     }
 })
 
-const emit = defineEmits(['submit', 'success', 'error'])
+const emit = defineEmits(['submit', 'success', 'error', 'update'])
 
 // Composables
 const { createHabit: createHabitDB, updateHabit: updateHabitDB } = useHabits()
@@ -397,24 +397,28 @@ const mapFrequencyOption = () => {
 
     const variantLower = formData.frequencyVariant.toLowerCase()
 
+    // Chequear "todos" primero
     if (variantLower.includes('todos') || variantLower.includes('toda') || variantLower.includes('todo')) {
         return 'todos'
     }
 
+    // Chequear si incluye "especificos" antes de "cantidad" porque "especificos" es más específico
     if (variantLower.includes('dias especificos de la semana')) {
         return 'dias_especificos_semana'
-    }
-
-    if (variantLower.includes('cantidad de dias') && variantLower.includes('semana')) {
-        return 'cantidad_dias_semana'
     }
 
     if (variantLower.includes('dias especificos del mes')) {
         return 'dias_especificos_mes'
     }
 
-    if (variantLower.includes('cantidad de dias') && variantLower.includes('mes')) {
-        return 'cantidad_dias_mes'
+    // Chequear "cantidad de dias"
+    if (variantLower.includes('cantidad de dias')) {
+        if (variantLower.includes('semana')) {
+            return 'cantidad_dias_semana'
+        }
+        if (variantLower.includes('mes')) {
+            return 'cantidad_dias_mes'
+        }
     }
 
     return 'todos'
@@ -448,6 +452,15 @@ const handleSubmit = async () => {
     isLoading.value = true
 
     try {
+        const frequencyOption = mapFrequencyOption()
+        const frequencyDetail = buildFrequencyDetail()
+
+        console.log('=== DATOS DEL FORMULARIO ANTES DE GUARDAR ===')
+        console.log('frequencyVariant:', formData.frequencyVariant)
+        console.log('frequencyVariantData:', formData.frequencyVariantData)
+        console.log('frequency_option resultado:', frequencyOption)
+        console.log('frequency_detail resultado:', frequencyDetail)
+
         const habitData = {
             name: formData.habitName.trim(),
             icon: formData.habitIcon || '📝',
@@ -456,10 +469,12 @@ const handleSubmit = async () => {
             identity: formData.habitIdentity || null,
             goal_value: formData.goalValue || 1,
             frequency_type: formData.frequencyType,
-            frequency_option: mapFrequencyOption(),
-            frequency_detail: buildFrequencyDetail(),
+            frequency_option: frequencyOption,
+            frequency_detail: frequencyDetail,
             reminder_enabled: formData.reminderEnabled
         }
+
+        console.log('=== HABIT DATA COMPLETO ===', habitData)
 
         let result
         if (props.isEditing && props.initialData?.id) {
@@ -522,4 +537,12 @@ onMounted(() => {
 watch(() => props.initialData, (newData) => {
     loadFormData(newData)
 }, { deep: true })
+
+// Emitir cambios en nombre e icono del hábito
+watch(() => [formData.habitName, formData.habitIcon], () => {
+    emit('update', {
+        name: formData.habitName,
+        icon: formData.habitIcon
+    })
+})
 </script>

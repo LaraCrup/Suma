@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="relative w-full flex items-center">
-            <NavigationBackArrow class="absolute text-gray" @click="goBack" />
+            <NavigationBackArrow :url="ROUTE_NAMES.HABITS_CREATE" class="absolute text-gray" @click="goBack" />
             <HeadingH2 class="text-center">{{ displayIcon }} {{ initialData?.name || 'Nuevo hábito' }}</HeadingH2>
         </div>
 
@@ -15,6 +15,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { ref, computed, onMounted } from 'vue'
 import { useHabitStore } from '~/stores/habitStore'
 

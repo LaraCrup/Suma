@@ -1,13 +1,13 @@
 <template>
     <FormDelete
         :isOpen="showDeleteModal"
-        :message="`¿Estás seguro que queres eliminar el hábito ${habit?.name}? Esta acción no se puede deshacer.`"
+        :message="`¿Estás seguro que queres eliminar el hábito ${habit?.name} de manera permanente?`"
         @confirm="confirmDelete"
         @close="closeDeleteModal"
     />
     <DefaultSection class="h-full">
         <div class="relative w-full flex justify-between items-center">
-            <NavigationBackArrow class="text-gray" />
+            <NavigationBackArrow :url="ROUTE_NAMES.HOME" class="text-gray" />
             <NuxtImg
                 @click="showMenu = !showMenu"
                 src="/images/icons/options.svg"
@@ -16,7 +16,7 @@
             />
             <div v-show="showMenu" class="absolute z-10 right-0 top-7">
                 <ul class="w-[138px] bg-midlight rounded-xl shadow-lg">
-                    <li class="flex items-center gap-2 py-3 px-4">
+                    <li @click="editHabit" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
                         <NuxtImg src="/images/icons/edit.svg" alt="Editar" class="h-[14px]" />
                         <p class="text-xs">Editar hábito</p>
                     </li>
@@ -32,7 +32,7 @@
             <div class="flex flex-col items-center">
                 <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-secondary text-2xl">
                     {{ habit?.icon }}</div>
-                <div class="flex items-center gap-3 mt-2">
+                <div class="h-4 flex items-center gap-3 mt-2">
                     <div class="flex gap-[2px]">
                         <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
                         <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
@@ -63,7 +63,7 @@
             </div>
         </div>
         <div class="w-full flex justify-between items-center">
-            <button class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
+            <button @click="resetProgress" class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
                 <NuxtImg src="/images/icons/restart.svg" alt="Restablecer hábito" class="w-4" />
             </button>
             <button @click="completeHabit" class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 
 const route = useRoute()
@@ -114,13 +115,31 @@ const decreaseProgress = async () => {
     }
 }
 
+const resetProgress = async () => {
+    try {
+        const currentProgress = habit.value.progress_count || 0
+        const updated = await logHabitProgress(habit.value.id, -currentProgress)
+        habit.value = updated
+    } catch (error) {
+        console.error('Error reiniciando progreso:', error)
+    }
+}
+
 const completeHabit = async () => {
     try {
-        const updated = await logHabitProgress(habit.value.id, 1)
+        const currentProgress = habit.value.progress_count || 0
+        const goalValue = habit.value.goal_value || 1
+        const progressNeeded = goalValue - currentProgress
+        const updated = await logHabitProgress(habit.value.id, progressNeeded)
         habit.value = updated
     } catch (error) {
         console.error('Error completando hábito:', error)
     }
+}
+
+const editHabit = () => {
+    showMenu.value = false
+    navigateTo(`/mis-habitos/editar/${habit.value.id}`)
 }
 
 const openDeleteModal = () => {
