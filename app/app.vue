@@ -1,4 +1,5 @@
 <template>
+  <Splash />
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>

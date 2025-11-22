@@ -10,9 +10,8 @@
                 <p class="text-xs text-start">{{ habit.name }}</p>
                 <div class="flex gap-2 items-center">
                     <p class="text-[0.625rem] text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
-                    <div class="flex gap-[2px]">
-                        <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2"/>
-                        <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2"/>
+                    <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
+                        <NuxtImg v-for="i in brilloCount" :key="i" src="/images/brillo.svg" alt="Brillo" class="w-2 h-2"/>
                     </div>
                 </div>
             </div>
@@ -51,6 +50,38 @@ const isSwipe = ref(false)
 
 const isCompleted = computed(() => {
     return (props.habit.progress_count || 0) >= (props.habit.goal_value || 1)
+})
+
+const hasSpecificFrequency = computed(() => {
+    const specificOptions = [
+        'dias_especificos_semana',
+        'cantidad_dias_semana',
+        'dias_especificos_mes',
+        'cantidad_dias_mes'
+    ]
+    return specificOptions.includes(props.habit.frequency_option)
+})
+
+const brilloCount = computed(() => {
+    if (!props.habit.frequency_option || !props.habit.frequency_detail) {
+        return 0
+    }
+
+    const option = props.habit.frequency_option
+    const detail = props.habit.frequency_detail
+
+    switch (option) {
+        case 'dias_especificos_semana':
+            return detail.weekDays?.length || 0
+        case 'cantidad_dias_semana':
+            return detail.counter || 0
+        case 'dias_especificos_mes':
+            return detail.monthDays?.length || 0
+        case 'cantidad_dias_mes':
+            return detail.counter || 0
+        default:
+            return 0
+    }
 })
 
 const handleTouchStart = (e) => {

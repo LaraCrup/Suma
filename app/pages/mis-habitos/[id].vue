@@ -33,9 +33,8 @@
                 <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-secondary text-2xl">
                     {{ habit?.icon }}</div>
                 <div class="h-4 flex items-center gap-3 mt-2">
-                    <div class="flex gap-[2px]">
-                        <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
-                        <NuxtImg src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
+                    <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
+                        <NuxtImg v-for="i in brilloCount" :key="i" src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
                     </div>
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
                         <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
@@ -82,6 +81,38 @@ const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress } = useHabit
 const habit = ref(null)
 const showMenu = ref(false)
 const showDeleteModal = ref(false)
+
+const hasSpecificFrequency = computed(() => {
+    const specificOptions = [
+        'dias_especificos_semana',
+        'cantidad_dias_semana',
+        'dias_especificos_mes',
+        'cantidad_dias_mes'
+    ]
+    return specificOptions.includes(habit.value?.frequency_option)
+})
+
+const brilloCount = computed(() => {
+    if (!habit.value?.frequency_option || !habit.value?.frequency_detail) {
+        return 0
+    }
+
+    const option = habit.value.frequency_option
+    const detail = habit.value.frequency_detail
+
+    switch (option) {
+        case 'dias_especificos_semana':
+            return detail.weekDays?.length || 0
+        case 'cantidad_dias_semana':
+            return detail.counter || 0
+        case 'dias_especificos_mes':
+            return detail.monthDays?.length || 0
+        case 'cantidad_dias_mes':
+            return detail.counter || 0
+        default:
+            return 0
+    }
+})
 
 onMounted(async () => {
     try {

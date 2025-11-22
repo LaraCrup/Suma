@@ -14,4 +14,9 @@ export const ROUTE_NAMES = {
     HOME: '/',
     HABITS_CREATE: '/mis-habitos/crear',
     HABITS_EDIT: '/mis-habitos/editar/:habitId',
+    PROFILE: '/mi-perfil',
+    PROFILE_EDIT: '/mi-perfil/editar',
+    PROGRESS: '/progreso',
+    COMMUNITY: '/comunidad',
+    NEWS: '/novedades',
 };
