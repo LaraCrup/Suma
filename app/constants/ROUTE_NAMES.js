@@ -17,6 +17,6 @@ export const ROUTE_NAMES = {
     PROFILE: '/mi-perfil',
     PROFILE_EDIT: '/mi-perfil/editar',
     PROGRESS: '/progreso',
-    COMMUNITY: '/comunidad',
+    COMMUNITY: '/comunidades',
     NEWS: '/novedades',
 };

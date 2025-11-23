@@ -1,13 +1,15 @@
 <template>
-  <Transition name="fade">
-    <div v-if="isVisible" class="fixed inset-0 bg-gradient-primary flex flex-col items-center justify-center z-50">
-      <div class="flex flex-col items-center gap-5">
-          <NuxtImg src="images/logo-blanco.svg" alt="Logo Blanco Suma" class="w-20" />
-          
-          <p class="text-sm text-light">Pequeños pasos, grandes cambios.</p>
+  <ClientOnly>
+    <Transition name="fade">
+      <div v-if="isVisible" class="fixed inset-0 bg-gradient-primary flex flex-col items-center justify-center z-50">
+        <div class="flex flex-col items-center gap-5">
+            <NuxtImg src="images/logo-blanco.svg" alt="Logo Blanco Suma" class="w-20" />
+
+            <p class="text-sm text-light">Pequeños pasos, grandes cambios.</p>
+        </div>
       </div>
-    </div>
-  </Transition>
+    </Transition>
+  </ClientOnly>
 </template>
 
 <script setup>
