@@ -52,9 +52,7 @@
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Tip de hoy</HeadingH1>
         <div v-if="currentTip" class="w-full flex flex-col">
-            <div class="w-full h-32 rounded-t-lg overflow-hidden">
-                <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-full bg-cover" />
-            </div>
+            <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-48 rounded-t-lg object-cover" />
             <div class="w-full bg-midlight rounded-b-lg p-3">
                 <p class="text-primary text-sm">{{ currentTip.title }}</p>
                 <p class="text-[0.625rem] mt-1">{{ currentTip.description }}</p>
