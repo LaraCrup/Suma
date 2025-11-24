@@ -23,8 +23,8 @@
                 </div>
 
                 <div class="max-h-48 overflow-y-auto">
-                    <div v-if="loading" class="p-3 text-center text-gray-dark">
-                        Cargando...
+                    <div v-if="loading" class="p-3 flex justify-center">
+                        <Loader color="dark" />
                     </div>
                     <div v-else-if="filteredOptions.length === 0" class="p-3 text-center text-gray-500">
                         No se encontraron resultados

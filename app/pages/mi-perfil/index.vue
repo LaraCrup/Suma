@@ -57,26 +57,25 @@
             </div>
         </div>
         <div class="w-full flex flex-col gap-2">
-            <ButtonTerciary>Cambiar contrasña</ButtonTerciary>
+            <ButtonTerciary :to="ROUTE_NAMES.CHANGE_PASSWORD">Cambiar contrasña</ButtonTerciary>
             <form @submit.prevent="confirmLogout">
                 <ButtonPrimary type="submit">Cerrar sesión</ButtonPrimary>
             </form>
         </div>
     </DefaultSection>
 
-    <div v-if="showConfirmation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-sm mx-4">
-            <h3 class="text-lg font-bold mb-4">¿Estás seguro?</h3>
-            <p class="text-gray-600 mb-6">¿Deseas cerrar tu sesión?</p>
-            <div class="flex gap-3 justify-end">
-                <button type="button" @click="showConfirmation = false"
-                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded">
-                    Cancelar
-                </button>
-                <button type="button" @click="handleLogout"
-                    class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded">
-                    Cerrar sesión
-                </button>
+    <div v-if="showConfirmation" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showConfirmation = false"></div>
+    <div v-if="showConfirmation" class="fixed inset-0 z-50 flex items-end">
+        <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+            <button @click="showConfirmation = false" class="absolute top-4 right-4 text-gray">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <p class="text-center text-sm">¿Estas seguro de que deseas cerrar tu sesión?</p>
+            <div class="w-full flex flex-col items-center gap-2">
+                <ButtonPrimary type="button" @click="handleLogout">Si, cerrar sesión</ButtonPrimary>
+                <ButtonTerciary type="button" @click="showConfirmation = false">Cancelar</ButtonTerciary>
             </div>
         </div>
     </div>
@@ -88,8 +87,6 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useAuthStore } from '~/stores/authStore'
 
 const authStore = useAuthStore()
-const client = useSupabaseClient()
-const router = useRouter()
 const errorMsg = ref('')
 const showConfirmation = ref(false)
 
@@ -116,17 +113,18 @@ const handleLogout = async () => {
     showConfirmation.value = false
 
     try {
-        const { error } = await client.auth.signOut()
+        await authStore.logout()
 
-        if (error) {
-            errorMsg.value = 'No pudimos cerrar tu sesión. Por favor, intenta de nuevo.'
-            return
+        // Limpiar sessionStorage antes de redirigir
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('sessionPhrase')
+            sessionStorage.removeItem('sessionTip')
         }
 
-        authStore.$reset()
-        await router.push('/iniciar-sesion')
+        window.location.href = ROUTE_NAMES.LOGIN
     } catch (error) {
         errorMsg.value = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'
+        console.error('Error logging out:', error)
     }
 }
 </script>

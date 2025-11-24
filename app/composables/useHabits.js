@@ -34,8 +34,6 @@ export const useHabits = () => {
             reminder_enabled: habitData.reminder_enabled || false,
         }
 
-        console.log('Creando hábito con:', habitRecord)
-
         const { data, error } = await client
             .from('habits')
             .insert([habitRecord])
@@ -70,7 +68,6 @@ export const useHabits = () => {
                 const option = habit.frequency_option.toLowerCase()
 
                 if (option.includes('semana')) {
-                    console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> semanal`)
                     client
                         .from('habits')
                         .update({ frequency_type: 'semanal' })
@@ -81,7 +78,6 @@ export const useHabits = () => {
                 }
 
                 if (option.includes('mes')) {
-                    console.log(`[MIGRACIÓN] Corrigiendo ${habit.name}: frequency_type diario -> mensual`)
                     client
                         .from('habits')
                         .update({ frequency_type: 'mensual' })
@@ -115,7 +111,6 @@ export const useHabits = () => {
             const option = data.frequency_option.toLowerCase()
 
             if (option.includes('semana')) {
-                console.log(`[MIGRACIÓN] Corrigiendo ${data.name}: frequency_type diario -> semanal`)
                 client
                     .from('habits')
                     .update({ frequency_type: 'semanal' })
@@ -126,7 +121,6 @@ export const useHabits = () => {
             }
 
             if (option.includes('mes')) {
-                console.log(`[MIGRACIÓN] Corrigiendo ${data.name}: frequency_type diario -> mensual`)
                 client
                     .from('habits')
                     .update({ frequency_type: 'mensual' })
@@ -282,9 +276,7 @@ export const useHabits = () => {
         return dayMap[letterDay] !== undefined ? dayMap[letterDay] : -1
     }
 
-    /**
-     * Convertir array de letras de días a números (0-6)
-     */
+
     const letterDaysToNumbers = (letterDays) => {
         if (!Array.isArray(letterDays)) {
             return []
@@ -292,9 +284,6 @@ export const useHabits = () => {
         return letterDays.map(letterDayToNumber).filter(day => day !== -1)
     }
 
-    /**
-     * Obtener log del hábito para una fecha específica
-     */
     const getHabitLogByDate = async (habitId, date) => {
         const { data, error } = await client
             .from('habit_logs')
@@ -311,9 +300,6 @@ export const useHabits = () => {
         return data
     }
 
-    /**
-     * Obtener número de semana ISO
-     */
     const getWeekNumber = (date = new Date()) => {
         const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
         const dayNum = d.getUTCDay() || 7
@@ -322,9 +308,6 @@ export const useHabits = () => {
         return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
     }
 
-    /**
-     * Obtener fecha de inicio de la semana (lunes)
-     */
     const getWeekStart = (date = new Date()) => {
         const d = new Date(date)
         const day = d.getDay()
@@ -333,9 +316,6 @@ export const useHabits = () => {
         return getDateString(result)
     }
 
-    /**
-     * Obtener fecha de fin de la semana (domingo)
-     */
     const getWeekEnd = (date = new Date()) => {
         const d = new Date(date)
         const day = d.getDay()
@@ -344,9 +324,6 @@ export const useHabits = () => {
         return getDateString(result)
     }
 
-    /**
-     * Verificar si cambió de semana comparando con ayer
-     */
     const hasWeekChanged = () => {
         const today = new Date()
         const yesterday = new Date(today)
@@ -354,9 +331,6 @@ export const useHabits = () => {
         return getWeekNumber(today) !== getWeekNumber(yesterday)
     }
 
-    /**
-     * Verificar si cambió de mes comparando con ayer
-     */
     const hasMonthChanged = () => {
         const today = new Date()
         const yesterday = new Date(today)
@@ -364,9 +338,6 @@ export const useHabits = () => {
         return today.getMonth() !== yesterday.getMonth()
     }
 
-    /**
-     * Obtener letra del día desde una fecha (YYYY-MM-DD)
-     */
     const getDayLetterFromDate = (dateStr) => {
         const [year, month, day] = dateStr.split('-').map(Number)
         const date = new Date(year, month - 1, day)
@@ -375,9 +346,6 @@ export const useHabits = () => {
         return dayLetters[dayNum]
     }
 
-    /**
-     * Obtener logs del hábito para una semana específica
-     */
     const getWeekLogs = async (habitId, weekStartStr, weekEndStr) => {
         const { data, error } = await client
             .from('habit_logs')
@@ -394,9 +362,6 @@ export const useHabits = () => {
         return data || []
     }
 
-    /**
-     * Obtener logs del hábito para un mes específico
-     */
     const getMonthLogs = async (habitId, month, year) => {
         const startStr = `${year}-${String(month).padStart(2, '0')}-01`
         const lastDay = new Date(year, month, 0).getDate()
@@ -496,12 +461,10 @@ export const useHabits = () => {
                         streakUpdate = {
                             streak: (habit.streak || 0) + 1
                         }
-                        console.log(`[RACHA] ${habit.name}: Continuando racha (${habit.streak} → ${(habit.streak || 0) + 1})`)
                     } else {
                         streakUpdate = {
                             streak: 0
                         }
-                        console.log(`[RACHA] ${habit.name}: Reiniciando racha (no se completó ayer)`)
                     }
                 }
 
@@ -511,9 +474,7 @@ export const useHabits = () => {
                 return
             }
 
-            // Para hábitos semanales/mensuales, comparar periodos
             if (habit.frequency_type === 'semanal') {
-                // Obtener semana actual y anterior
                 const today = new Date()
                 const lastWeek = new Date(today)
                 lastWeek.setDate(lastWeek.getDate() - 7)
@@ -521,7 +482,6 @@ export const useHabits = () => {
                 const lastWeekStart = getWeekStart(lastWeek)
                 const lastWeekEnd = getWeekEnd(lastWeek)
 
-                // Verificar si la semana anterior estaba completa
                 const wasLastWeekComplete = await isPeriodComplete(habit, lastWeekStart, lastWeekEnd)
 
                 let streakUpdate = {}
@@ -530,12 +490,10 @@ export const useHabits = () => {
                     streakUpdate = {
                         streak: (habit.streak || 0) + 1
                     }
-                    console.log(`[RACHA] ${habit.name}: Semana completa, racha aumenta (${habit.streak} → ${(habit.streak || 0) + 1})`)
                 } else {
                     streakUpdate = {
                         streak: 0
                     }
-                    console.log(`[RACHA] ${habit.name}: Semana anterior incompleta, racha reinicia`)
                 }
 
                 if (Object.keys(streakUpdate).length > 0) {
@@ -545,7 +503,6 @@ export const useHabits = () => {
             }
 
             if (habit.frequency_type === 'mensual') {
-                // Obtener mes actual y anterior
                 const today = new Date()
                 const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
 
@@ -556,7 +513,6 @@ export const useHabits = () => {
                 const lastMonthStart = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-01`
                 const lastMonthEnd = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-                // Verificar si el mes anterior estaba completo
                 const wasLastMonthComplete = await isPeriodComplete(habit, lastMonthStart, lastMonthEnd)
 
                 let streakUpdate = {}
@@ -565,12 +521,10 @@ export const useHabits = () => {
                     streakUpdate = {
                         streak: (habit.streak || 0) + 1
                     }
-                    console.log(`[RACHA] ${habit.name}: Mes completo, racha aumenta (${habit.streak} → ${(habit.streak || 0) + 1})`)
                 } else {
                     streakUpdate = {
                         streak: 0
                     }
-                    console.log(`[RACHA] ${habit.name}: Mes anterior incompleto, racha reinicia`)
                 }
 
                 if (Object.keys(streakUpdate).length > 0) {
@@ -583,41 +537,26 @@ export const useHabits = () => {
         }
     }
 
-    /**
-     * Reset automático de hábitos para el nuevo día
-     * - Reseta progress_count a 0 para todos los hábitos
-     * - Actualiza la racha basándose en la frecuencia
-     * - Se ejecuta una vez por día cuando la app detecta un cambio de fecha
-     */
     const resetHabitsForNewDay = async () => {
         try {
-            console.log('[RESET DIARIO] Iniciando reset de hábitos para nuevo día')
 
             const habits = await getHabits()
 
             for (const habit of habits) {
-                // 1. Reseta progress_count a 0
                 await updateHabit(habit.id, {
                     progress_count: 0,
                     updated_at: new Date().toISOString()
                 })
 
-                // 2. Actualiza la racha basándose en si se completó ayer y si debe mostrarse hoy
                 await updateStreakForNewDay(habit)
 
-                console.log(`[RESET DIARIO] ${habit.name} reseteado correctamente`)
             }
 
-            console.log('[RESET DIARIO] Reset completado exitosamente')
         } catch (error) {
             console.error('[RESET DIARIO] Error durante reset:', error)
         }
     }
 
-    /**
-     * Verificar si debe ejecutarse el reset diario
-     * Compara la fecha almacenada en localStorage con la fecha actual
-     */
     const shouldResetToday = () => {
         if (typeof window === 'undefined') return false
 
@@ -632,101 +571,71 @@ export const useHabits = () => {
         return false
     }
 
-    /**
-     * Sincronizar hábitos con el nuevo día (si es necesario)
-     * Se ejecuta cuando la app inicializa o se trae al foreground
-     */
     const syncHabitsWithNewDay = async () => {
         if (shouldResetToday()) {
             await resetHabitsForNewDay()
         }
     }
 
-    /**
-     * Determinar si un hábito debe mostrarse hoy basado en su frecuencia
-     */
     const shouldShowHabitToday = (habit) => {
-        console.log('Validando hábito:', {
-            name: habit.name,
-            frequency_type: habit.frequency_type,
-            frequency_option: habit.frequency_option,
-            frequency_detail: habit.frequency_detail,
-            dayOfWeek: new Date().getDay()
-        })
-
         const today = new Date()
         const dayOfWeek = today.getDay()
         const dayOfMonth = today.getDate()
 
         if (!habit.frequency_type) {
-            console.log('No hay frequency_type, mostrando hábito')
             return true
         }
 
         switch (habit.frequency_type) {
             case 'diario':
-                console.log('Hábito diario, mostrando')
                 return true
 
             case 'semanal':
                 const weeklyOption = habit.frequency_option || 'todos'
 
                 if (weeklyOption === 'todos') {
-                    console.log('Opción semanal: todos los días')
                     return true
                 }
 
                 if (weeklyOption === 'dias_especificos_semana') {
                     const selectedDays = habit.frequency_detail?.weekDays || []
-                    console.log('Días específicos seleccionados:', selectedDays, 'Día actual:', dayOfWeek)
 
                     const selectedDayNumbers = letterDaysToNumbers(selectedDays)
-                    console.log('Números de días convertidos:', selectedDayNumbers)
 
                     const shouldShow = selectedDayNumbers.includes(dayOfWeek)
-                    console.log('¿Mostrar hábito?', shouldShow)
                     return shouldShow
                 }
 
                 if (weeklyOption === 'cantidad_dias_semana') {
-                    console.log('Opción semanal: cantidad de días')
                     return true
                 }
 
-                console.log('Opción semanal desconocida:', weeklyOption)
                 return false
 
             case 'mensual':
                 const monthlyOption = habit.frequency_option || 'todos'
 
                 if (monthlyOption === 'todos') {
-                    console.log('Opción mensual: todos los días')
                     return true
                 }
 
                 if (monthlyOption === 'dias_especificos_mes') {
                     const selectedDays = habit.frequency_detail?.monthDays || []
-                    console.log('Días del mes seleccionados:', selectedDays, 'Día del mes actual:', dayOfMonth)
 
                     const shouldShow = selectedDays.includes(dayOfMonth)
-                    console.log('¿Mostrar hábito?', shouldShow)
                     return shouldShow
                 }
 
                 if (monthlyOption === 'cantidad_dias_mes') {
-                    console.log('Opción mensual: cantidad de días')
                     return true
                 }
 
-                console.log('Opción mensual desconocida:', monthlyOption)
                 return false
 
             case 'flexible':
-                console.log('Hábito flexible, mostrando')
                 return true
 
             default:
-                console.log('frequency_type desconocido:', habit.frequency_type)
                 return true
         }
     }

@@ -10,6 +10,7 @@
             :isEditing="isEditing"
             @success="handleFormSuccess"
             @error="handleFormError"
+            @update="handleFormUpdate"
         ></HabitsForm>
     </DefaultSection>
 </template>
@@ -38,6 +39,13 @@ const handleFormSuccess = () => {
 
 const handleFormError = (err) => {
     console.error('Error with habit:', err)
+}
+
+const handleFormUpdate = (data) => {
+    if (initialData.value) {
+        initialData.value.name = data.name
+        initialData.value.icon = data.icon
+    }
 }
 
 onMounted(() => {

@@ -12,7 +12,6 @@
                 placeholder="Ej: Una persona más saludable" :error="errors.habitIdentity" required />
         </div>
 
-        <!-- Icono del hábito -->
         <div class="w-full flex flex-col gap-1">
             <div class="w-full flex justify-between">
                 <FormLabelSecondary id="habit-icon" required>Icono del hábito</FormLabelSecondary>
@@ -25,7 +24,6 @@
             <FormError v-if="errors.habitIcon" id="habit-icon-error">{{ errors.habitIcon }}</FormError>
         </div>
 
-        <!-- Frecuencia -->
         <div class="w-full flex flex-col gap-1">
             <FormLabelSecondary>Frecuencia</FormLabelSecondary>
             <button id="frequency-button" type="button"
@@ -49,14 +47,13 @@
             <FormError v-if="errors.frequencyVariant" id="frequency-error">{{ errors.frequencyVariant }}</FormError>
         </div>
 
-        <!-- Meta -->
         <fieldset class="w-full flex flex-col gap-1 border-none p-0">
             <div class="w-full flex items-center justify-between">
                 <FormLabelSecondary>Meta</FormLabelSecondary>
                 <div class="flex items-center gap-1">
                     <input id="goal-value" v-model.number="formData.goalValue" type="number"
                         class="w-12 text-center text-xs text-dark font-bold bg-accent rounded-lg p-1 border border-transparent outline-none"
-                        placeholder="2" min="1" max="999" step="1" required aria-required="true"
+                        placeholder="2" min="1" max="9999" step="1" required aria-required="true"
                         aria-invalid="errors.goalValue ? 'true' : 'false'"
                         :aria-describedby="errors.goalValue ? 'goal-value-error' : null" />
                     <input id="habit-unit" v-model="formData.habitUnit" type="text"
@@ -79,12 +76,11 @@
                 }} {{ getFrequencyDescription() }}
             </p>
         </div>
-        <div class="w-full flex justify-between items-center">
+        <div class="w-full hidden justify-between items-center">
             <FormLabelSecondary>Recordatorios</FormLabelSecondary>
             <FormSwitch id="habit-reminders" v-model="formData.reminderEnabled" />
         </div>
 
-        <!-- Botón de envío -->
         <ButtonPrimary type="submit" :disabled="isLoading">
             {{ isLoading ? (isEditing ? 'Actualizando...' : 'Creando...') : (isEditing ? 'Actualizar hábito' : 'Crear hábito') }}
         </ButtonPrimary>
@@ -346,8 +342,8 @@ const validateForm = () => {
         return false
     }
 
-    if (formData.goalValue > 999) {
-        errors.value.goalValue = 'La meta no puede ser mayor a 999'
+    if (formData.goalValue > 9999) {
+        errors.value.goalValue = 'La meta no puede ser mayor a 9999'
         return false
     }
 
@@ -424,12 +420,6 @@ const handleSubmit = async () => {
         const frequencyOption = mapFrequencyOption()
         const frequencyDetail = buildFrequencyDetail()
 
-        console.log('=== DATOS DEL FORMULARIO ANTES DE GUARDAR ===')
-        console.log('frequencyVariant:', formData.frequencyVariant)
-        console.log('frequencyVariantData:', formData.frequencyVariantData)
-        console.log('frequency_option resultado:', frequencyOption)
-        console.log('frequency_detail resultado:', frequencyDetail)
-
         const habitData = {
             name: formData.habitName.trim(),
             icon: formData.habitIcon || '📝',
@@ -442,8 +432,6 @@ const handleSubmit = async () => {
             frequency_detail: frequencyDetail,
             reminder_enabled: formData.reminderEnabled
         }
-
-        console.log('=== HABIT DATA COMPLETO ===', habitData)
 
         let result
         if (props.isEditing && props.initialData?.id) {

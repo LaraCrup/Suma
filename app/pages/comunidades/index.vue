@@ -1,5 +1,6 @@
 <template>
     <div>
-        <p>Procximamente...</p>
+        <HeadingH1 class="text-center mb-4">Comunidades</HeadingH1>
+        <p class="text-primary text-center">Proximamente...</p>
     </div>
 </template>

@@ -1,6 +1,6 @@
 <template>
     <NuxtLink v-if="to" :to="to"
-        class="inline-block w-full max-w-[480px] bg-light text-center text-primary text-xs rounded-full py-3 px-12">
+        class="inline-block w-full max-w-[480px] bg-light text-center text-primary text-xs border border-primary rounded-full py-3 px-12">
         <slot />
     </NuxtLink>
     <button v-else type="button"

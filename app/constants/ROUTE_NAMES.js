@@ -16,6 +16,7 @@ export const ROUTE_NAMES = {
     HABITS_EDIT: '/mis-habitos/editar/:habitId',
     PROFILE: '/mi-perfil',
     PROFILE_EDIT: '/mi-perfil/editar',
+    CHANGE_PASSWORD: '/mi-perfil/cambiar-contrasena',
     PROGRESS: '/progreso',
     COMMUNITY: '/comunidades',
     NEWS: '/novedades',

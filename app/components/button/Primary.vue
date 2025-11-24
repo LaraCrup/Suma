@@ -1,11 +1,11 @@
 <template>
     <NuxtLink v-if="to" :to="to"
-        class="inline-block w-full max-w-[480px] bg-primary text-center text-light text-xs rounded-full py-3 px-12">
+        class="w-full max-w-[480px] flex justify-center item bg-primary text-center text-light text-xs rounded-full py-3 px-12">
         <slot />
     </NuxtLink>
     <button v-else type="button"
         :disabled="disabled"
-        :class="['inline-block w-full max-w-[480px] text-center text-xs border border-primary rounded-full py-3 px-12 transition-colors', disabled ? 'bg-gray text-light border-none cursor-not-allowed' : 'bg-primary text-light']">
+        :class="['w-full max-w-[480px] flex justify-center text-center text-xs border border-primary rounded-full py-3 px-12 transition-colors', disabled ? 'bg-gray text-light border-none cursor-not-allowed' : 'bg-primary text-light']">
         <slot />
     </button>
 </template>

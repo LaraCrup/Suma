@@ -11,7 +11,13 @@
                 <div class="flex gap-2 items-center">
                     <p class="text-[0.625rem] text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
                     <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
-                        <NuxtImg v-for="i in brilloCount" :key="i" src="/images/brillo.svg" alt="Brillo" class="w-2 h-2"/>
+                        <NuxtImg
+                            v-for="i in brilloCount"
+                            :key="i"
+                            :src="i <= completedBrillos ? '/images/brillo-primary.svg' : '/images/brillo.svg'"
+                            alt="Brillo"
+                            class="w-2 h-2"
+                        />
                     </div>
                 </div>
             </div>
@@ -82,6 +88,10 @@ const brilloCount = computed(() => {
         default:
             return 0
     }
+})
+
+const completedBrillos = computed(() => {
+    return Math.min(props.habit.progress_count || 0, brilloCount.value)
 })
 
 const handleTouchStart = (e) => {

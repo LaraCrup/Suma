@@ -51,13 +51,13 @@
     </DefaultSection>
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Tip de hoy</HeadingH1>
-        <div class="w-full flex">
-            <div class="w-3/4 bg-midlight rounded-s-lg p-3">
-                <p class="text-primary text-sm">Empezá con el hábito más corto.</p>
-                <p class="text-[0.625rem]">El impulso te va a ayudar con el resto.</p>
+        <div v-if="currentTip" class="w-full flex flex-col">
+            <div class="w-full h-32 rounded-t-lg overflow-hidden">
+                <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-full bg-cover" />
             </div>
-            <div class="w-1/4 rounded-e-lg overflow-hidden">
-                <NuxtImg src="/images/placeholder.png" alt="Tip de hábito" class="w-full h-full" />
+            <div class="w-full bg-midlight rounded-b-lg p-3">
+                <p class="text-primary text-sm">{{ currentTip.title }}</p>
+                <p class="text-[0.625rem] mt-1">{{ currentTip.description }}</p>
             </div>
         </div>
     </DefaultSection>
@@ -66,10 +66,32 @@
 <script setup>
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
+import { useAuthStore } from '~/stores/authStore'
 
 const { getHabits, shouldShowHabitToday } = useHabits()
+const authStore = useAuthStore()
 const habits = ref([])
 const showAllHabits = ref(false)
+
+const tips = [
+    {
+        title: 'Empezá con el hábito más corto.',
+        description: 'El impulso te va a ayudar con el resto. Cuando empezás por lo simple, tu mente interpreta que “es fácil seguir”. Esa pequeña victoria inicial activa la motivación.',
+        image: 'habito-corto'
+    },
+    {
+        title: 'Hace tu hábito visible.',
+        description: 'Los hábitos empiezan con una señal. Si lo que querés hacer está a la vista, lo vas a hacer más fácil. Dejá la botella de agua en el escritorio, el libro en la mesa de luz o las zapatillas cerca de la puerta.',
+        image: 'hacelo-visible'
+    },
+    {
+        title: 'Dos minutos son suficientes.',
+        description: 'Cuando iniciar es difícil, reducí el hábito a su mínima expresión. Dos minutos de movimiento, lectura o foco son suficientes para activar la constancia.',
+        image: 'dos-minutos'
+    }
+]
+
+const currentTip = ref(null)
 
 const visibleHabits = computed(() => {
     return habits.value.filter(habit => shouldShowHabitToday(habit))
@@ -91,6 +113,26 @@ onMounted(async () => {
         habits.value = await getHabits()
     } catch (error) {
         console.error('Error cargando hábitos:', error)
+    }
+
+    if (typeof window !== 'undefined') {
+        const savedTip = sessionStorage.getItem('sessionTip')
+
+        if (savedTip) {
+            currentTip.value = JSON.parse(savedTip)
+        } else {
+            const randomIndex = Math.floor(Math.random() * tips.length)
+            const selectedTip = tips[randomIndex]
+            sessionStorage.setItem('sessionTip', JSON.stringify(selectedTip))
+            currentTip.value = selectedTip
+        }
+    }
+})
+
+watch(() => authStore.isLoggedIn, (isLoggedIn) => {
+    if (!isLoggedIn && typeof window !== 'undefined') {
+        sessionStorage.removeItem('sessionTip')
+        currentTip.value = null
     }
 })
 </script>
