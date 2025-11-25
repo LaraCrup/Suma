@@ -16,7 +16,7 @@
                 </li>
                 <li class="w-10 h-10 flex items-center justify-center bg-accent rounded-full -mt-6 shadow-lg">
                     <NuxtLink :to="ROUTE_NAMES.HOME">
-                        <NuxtImg src="/images/nav/habitos.svg" alt="habitos" class="w-5" />
+                        <NuxtImg src="/images/nav/habitos.svg" alt="Hábitos" class="w-5" />
                     </NuxtLink>
                 </li>
                 <li class="w-[3.25rem]">

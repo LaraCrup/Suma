@@ -48,6 +48,55 @@ export const useHabits = () => {
     }
 
     /**
+     * Corrige combinaciones inválidas de frequency_type + frequency_option
+     * Util cuando se cargan hábitos que tienen datos inconsistentes en la BD
+     */
+    const correctHabitFrequency = (habit) => {
+        if (!habit) return habit
+
+        const validOptionsPerType = {
+            'diario': ['todos', 'dias_especificos_semana', 'cantidad_dias_semana', 'dias_especificos_mes', 'cantidad_dias_mes'],
+            'semanal': ['todos', 'dias_especificos_semana'],
+            'mensual': ['todos', 'dias_especificos_mes']
+        }
+
+        const type = habit.frequency_type
+        const option = habit.frequency_option
+
+        // Si la combinación es válida, devolver como está
+        if (validOptionsPerType[type] && validOptionsPerType[type].includes(option)) {
+            return habit
+        }
+
+        // Si no es válida, corregir
+        let correctedType = type
+
+        if (option === 'cantidad_dias_semana' || option === 'dias_especificos_semana') {
+            if (option === 'cantidad_dias_semana') {
+                correctedType = 'diario'
+            }
+        }
+
+        if (option === 'cantidad_dias_mes' || option === 'dias_especificos_mes') {
+            if (option === 'cantidad_dias_mes') {
+                correctedType = 'diario'
+            }
+        }
+
+        // Si cambió el tipo, actualizar en BD asincronamente
+        if (correctedType !== type) {
+            client
+                .from('habits')
+                .update({ frequency_type: correctedType })
+                .eq('id', habit.id)
+                .then(() => console.log(`[CORRECCIÓN FRECUENCIA OK] ${habit.name}: ${type} → ${correctedType}`))
+                .catch(err => console.error(`[CORRECCIÓN FRECUENCIA ERROR] ${habit.name}:`, err))
+        }
+
+        return { ...habit, frequency_type: correctedType }
+    }
+
+    /**
      * Obtener todos los hábitos del usuario
      */
     const getHabits = async () => {
@@ -63,34 +112,9 @@ export const useHabits = () => {
             throw error
         }
 
-        const migratedData = (data || []).map(habit => {
-            if (habit.frequency_type === 'diario' && habit.frequency_option) {
-                const option = habit.frequency_option.toLowerCase()
+        const correctedData = (data || []).map(habit => correctHabitFrequency(habit))
 
-                if (option.includes('semana')) {
-                    client
-                        .from('habits')
-                        .update({ frequency_type: 'semanal' })
-                        .eq('id', habit.id)
-                        .then(() => console.log(`[MIGRACIÓN OK] ${habit.name}`))
-                        .catch(err => console.error(`[MIGRACIÓN ERROR] ${habit.name}:`, err))
-                    return { ...habit, frequency_type: 'semanal' }
-                }
-
-                if (option.includes('mes')) {
-                    client
-                        .from('habits')
-                        .update({ frequency_type: 'mensual' })
-                        .eq('id', habit.id)
-                        .then(() => console.log(`[MIGRACIÓN OK] ${habit.name}`))
-                        .catch(err => console.error(`[MIGRACIÓN ERROR] ${habit.name}:`, err))
-                    return { ...habit, frequency_type: 'mensual' }
-                }
-            }
-            return habit
-        })
-
-        return migratedData
+        return correctedData
     }
 
     /**
@@ -107,28 +131,8 @@ export const useHabits = () => {
             throw error
         }
 
-        if (data && data.frequency_type === 'diario' && data.frequency_option) {
-            const option = data.frequency_option.toLowerCase()
-
-            if (option.includes('semana')) {
-                client
-                    .from('habits')
-                    .update({ frequency_type: 'semanal' })
-                    .eq('id', habitId)
-                    .then(() => console.log(`[MIGRACIÓN OK] ${data.name}`))
-                    .catch(err => console.error(`[MIGRACIÓN ERROR] ${data.name}:`, err))
-                return { ...data, frequency_type: 'semanal' }
-            }
-
-            if (option.includes('mes')) {
-                client
-                    .from('habits')
-                    .update({ frequency_type: 'mensual' })
-                    .eq('id', habitId)
-                    .then(() => console.log(`[MIGRACIÓN OK] ${data.name}`))
-                    .catch(err => console.error(`[MIGRACIÓN ERROR] ${data.name}:`, err))
-                return { ...data, frequency_type: 'mensual' }
-            }
+        if (data) {
+            return correctHabitFrequency(data)
         }
 
         return data
@@ -228,16 +232,20 @@ export const useHabits = () => {
         }
 
         let streakUpdate = {}
-        if (isCompleted && !existingLog?.completed) {
-            const newStreak = (habit.streak || 0) + 1
-            const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
-            streakUpdate = {
-                streak: newStreak,
-                longest_streak: longestStreak
-            }
-        } else if (!isCompleted && existingLog?.completed) {
-            streakUpdate = {
-                streak: Math.max(0, (habit.streak || 0) - 1)
+        // Solo actualizar racha para hábitos DIARIOS inmediatamente
+        // Para hábitos SEMANALES y MENSUALES, la racha se actualiza en updateStreakForNewDay
+        if (habit.frequency_type === 'diario') {
+            if (isCompleted && !existingLog?.completed) {
+                const newStreak = (habit.streak || 0) + 1
+                const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
+                streakUpdate = {
+                    streak: newStreak,
+                    longest_streak: longestStreak
+                }
+            } else if (!isCompleted && existingLog?.completed) {
+                streakUpdate = {
+                    streak: Math.max(0, (habit.streak || 0) - 1)
+                }
             }
         }
 
@@ -476,13 +484,14 @@ export const useHabits = () => {
 
             if (habit.frequency_type === 'semanal') {
                 const today = new Date()
-                const lastWeek = new Date(today)
-                lastWeek.setDate(lastWeek.getDate() - 7)
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
 
-                const lastWeekStart = getWeekStart(lastWeek)
-                const lastWeekEnd = getWeekEnd(lastWeek)
+                // Obtener la semana en la que está ayer (semana anterior a la actual)
+                const previousWeekStart = getWeekStart(yesterday)
+                const previousWeekEnd = getWeekEnd(yesterday)
 
-                const wasLastWeekComplete = await isPeriodComplete(habit, lastWeekStart, lastWeekEnd)
+                const wasLastWeekComplete = await isPeriodComplete(habit, previousWeekStart, previousWeekEnd)
 
                 let streakUpdate = {}
 
@@ -504,16 +513,18 @@ export const useHabits = () => {
 
             if (habit.frequency_type === 'mensual') {
                 const today = new Date()
-                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+                const yesterday = new Date(today)
+                yesterday.setDate(yesterday.getDate() - 1)
 
-                const lastMonthNum = lastMonth.getMonth() + 1
-                const lastMonthYear = lastMonth.getFullYear()
+                // Obtener mes anterior (mes en el que está ayer)
+                const previousMonthNum = yesterday.getMonth() + 1
+                const previousMonthYear = yesterday.getFullYear()
 
-                const lastDay = new Date(lastMonthYear, lastMonthNum, 0).getDate()
-                const lastMonthStart = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-01`
-                const lastMonthEnd = `${lastMonthYear}-${String(lastMonthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+                const lastDay = new Date(previousMonthYear, previousMonthNum, 0).getDate()
+                const previousMonthStart = `${previousMonthYear}-${String(previousMonthNum).padStart(2, '0')}-01`
+                const previousMonthEnd = `${previousMonthYear}-${String(previousMonthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-                const wasLastMonthComplete = await isPeriodComplete(habit, lastMonthStart, lastMonthEnd)
+                const wasLastMonthComplete = await isPeriodComplete(habit, previousMonthStart, previousMonthEnd)
 
                 let streakUpdate = {}
 

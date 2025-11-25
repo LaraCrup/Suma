@@ -8,7 +8,7 @@
                     ? 'bg-green-light border-green-light'
                     : 'border-gray'
             ]" @click="$emit('click')">
-                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" class="w-3 h-3" />
+                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" alt="Brillo de Opciones" class="w-3 h-3" />
             </div>
         </div>
         <FormCounter
@@ -27,7 +27,7 @@
                     ? 'bg-green-light border-green-light'
                     : 'border-gray'
             ]" @click="$emit('click')">
-                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" class="w-3 h-3" />
+                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" alt="Opciones" class="w-3 h-3" />
             </div>
         </div>
         <div v-if="isSelected" class="w-full grid grid-cols-7 gap-1">
@@ -56,7 +56,7 @@
                     ? 'bg-green-light border-green-light'
                     : 'border-gray'
             ]" @click="$emit('click')">
-                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" class="w-3 h-3" />
+                <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" alt="Opciones" class="w-3 h-3" />
             </div>
         </div>
         <div v-if="isSelected" class="w-full grid grid-cols-7 gap-1">
@@ -84,7 +84,7 @@
                 ? 'bg-green-light border-green-light'
                 : 'border-gray'
         ]">
-            <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" class="w-3 h-3" />
+            <NuxtImg :src="isSelected ? '/images/brillo-blanco.svg' : '/images/brillo.svg'" alt="Opciones" class="w-3 h-3" />
         </div>
     </div>
 </template>

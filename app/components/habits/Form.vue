@@ -457,29 +457,85 @@ const handleSubmit = async () => {
     }
 }
 
+/**
+ * Corrige combinaciones inválidas de frequency_type + frequency_option
+ * Por ejemplo: type='semanal' con option='cantidad_dias_semana' debe ser type='diario'
+ */
+const correctInvalidFrequencyCombo = (type, option, variant) => {
+    // Definir qué options son válidas para cada type
+    const validOptionsPerType = {
+        'diario': ['todos', 'dias_especificos_semana', 'cantidad_dias_semana', 'dias_especificos_mes', 'cantidad_dias_mes'],
+        'semanal': ['todos', 'dias_especificos_semana'],
+        'mensual': ['todos', 'dias_especificos_mes']
+    }
+
+    // Si la combinación es válida, no hacer nada
+    if (validOptionsPerType[type] && validOptionsPerType[type].includes(option)) {
+        return { type, option, variant }
+    }
+
+    // Si la option no es válida para el type, encontrar el type correcto
+    if (option === 'cantidad_dias_semana' || option === 'dias_especificos_semana') {
+        // Estas options pueden ser diarias o semanales
+        // Si la variante dice "cantidad de dias de la semana", debe ser diario
+        if (variant && variant.includes('Cantidad de')) {
+            return { type: 'diario', option, variant }
+        }
+        // Si dice "dias especificos de la semana" podría ser cualquiera, pero preferir diario si está mal
+        if (type !== 'diario' && type !== 'semanal') {
+            return { type: 'diario', option, variant }
+        }
+    }
+
+    if (option === 'cantidad_dias_mes' || option === 'dias_especificos_mes') {
+        // Estas options pueden ser diarias o mensuales
+        if (variant && variant.includes('Cantidad de')) {
+            return { type: 'diario', option, variant }
+        }
+        if (type !== 'diario' && type !== 'mensual') {
+            return { type: 'diario', option, variant }
+        }
+    }
+
+    // Si no se puede corregir, volver a 'diario' con 'todos'
+    return { type: 'diario', option: 'todos', variant: null }
+}
+
 const loadFormData = (data) => {
     if (data) {
+        let frequencyType = data.frequency_type || 'diario'
+        let frequencyOption = data.frequency_option || 'todos'
+        let frequencyVariant = null
+        let frequencyVariantData = {}
+
+        // Cargar datos de frequency_detail
+        if (data.frequency_detail) {
+            frequencyVariant = data.frequency_detail.variant || null
+            frequencyVariantData = {
+                weekDays: data.frequency_detail.weekDays || [],
+                monthDays: data.frequency_detail.monthDays || [],
+                counter: data.frequency_detail.counter || null
+            }
+        }
+
+        // Corregir combinaciones inválidas
+        const corrected = correctInvalidFrequencyCombo(frequencyType, frequencyOption, frequencyVariant)
+        frequencyType = corrected.type
+        frequencyOption = corrected.option
+        frequencyVariant = corrected.variant
+
+        // Asignar al formulario
         formData.habitName = data.name || ''
         formData.habitIcon = data.icon || '📝'
         formData.habitUnit = data.unit || 'veces'
         formData.habitWhenWhere = data.when_where || ''
         formData.habitIdentity = data.identity || ''
         formData.goalValue = data.goal_value || 1
-        formData.frequencyType = data.frequency_type || 'diario'
-        formData.frequencyOption = data.frequency_option || 'todos'
+        formData.frequencyType = frequencyType
+        formData.frequencyOption = frequencyOption
+        formData.frequencyVariant = frequencyVariant
+        formData.frequencyVariantData = frequencyVariantData
         formData.reminderEnabled = data.reminder_enabled || false
-
-        if (data.frequency_detail) {
-            formData.frequencyVariant = data.frequency_detail.variant || null
-            formData.frequencyVariantData = {
-                weekDays: data.frequency_detail.weekDays || [],
-                monthDays: data.frequency_detail.monthDays || [],
-                counter: data.frequency_detail.counter || null
-            }
-        } else {
-            formData.frequencyVariant = null
-            formData.frequencyVariantData = {}
-        }
     }
 }
 

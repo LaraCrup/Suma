@@ -4,7 +4,7 @@ export default {
             'sm': '400px',
             'md': '480px',
             'lg': '660px',
-            'xl': '800px',
+            'xl': '768px',
             '2xl': '992px',
         },
         extend: {

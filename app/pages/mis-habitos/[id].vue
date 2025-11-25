@@ -34,7 +34,13 @@
                     {{ habit?.icon }}</div>
                 <div class="h-4 flex items-center gap-3 mt-2">
                     <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
-                        <NuxtImg v-for="i in brilloCount" :key="i" src="/images/brillo.svg" alt="Brillo" class="w-2 h-2" />
+                        <NuxtImg
+                            v-for="i in brilloCount"
+                            :key="i"
+                            :src="i <= completedBrillos ? '/images/brillo-primary.svg' : '/images/brillo.svg'"
+                            alt="Brillo"
+                            class="w-2 h-2"
+                        />
                     </div>
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
                         <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
@@ -112,6 +118,10 @@ const brilloCount = computed(() => {
         default:
             return 0
     }
+})
+
+const completedBrillos = computed(() => {
+    return Math.min(habit.value?.progress_count || 0, brilloCount.value)
 })
 
 onMounted(async () => {

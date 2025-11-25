@@ -1,6 +1,8 @@
 <template>
-  <Splash />
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <MobileOnlyScreen>
+    <Splash />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+  </MobileOnlyScreen>
 </template>
