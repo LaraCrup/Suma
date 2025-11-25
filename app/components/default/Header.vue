@@ -3,7 +3,7 @@
         <div class="w-full bg-green-light px-6 py-1">
             <p class="text-[0.625rem] text-center text-light">{{ dailyPhrase }}</p>
         </div>
-        <div class="w-full flex justify-between bg-light px-6 mt-4">
+        <div class="w-full flex justify-between bg-light px-6 pb-4 mt-4">
             <div class="flex gap-2 items-center">
                 <NuxtImg src="/images/isotipo.svg" alt="Logo Suma" class="w-4" />
                 <p class="text-[0.625rem]">Hola, <span class="font-bold text-primary">{{ userName }}</span></p>
