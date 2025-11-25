@@ -108,6 +108,9 @@ const handleHabitUpdated = (updatedHabit) => {
 
 onMounted(async () => {
     try {
+        // Cargar perfil del usuario para mostrar el nombre en el header
+        await authStore.fetchUser()
+
         habits.value = await getHabits()
     } catch (error) {
         console.error('Error cargando hábitos:', error)
