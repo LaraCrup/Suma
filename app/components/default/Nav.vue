@@ -1,5 +1,5 @@
 <template>
-    <div class="w-full pt-3">
+    <div class="w-full pt-3" style="grid-area: nav;">
         <nav class="w-full bg-primary rounded-t-[32px] px-5 py-3">
             <ul class="w-full flex items-center justify-between gap-2">
                 <li class="w-[3.25rem]">

@@ -2,7 +2,7 @@
     <DefaultSection class="pb-12">
         <div class="w-full flex items-center">
             <NavigationBackArrow class="absolute text-gray" />
-            <HeadingH2 class="text-center">{{ habit?.icon }} {{ habit?.name }}</HeadingH2>
+            <h1 class="w-full text-sm font-bold text-center">{{ habit?.icon }} {{ habit?.name }}</h1>
             <div class="w-6"></div>
         </div>
         <div v-if="habit">

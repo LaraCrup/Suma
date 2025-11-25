@@ -5,9 +5,9 @@
       Esta aplicación está optimizada únicamente para dispositivos móviles. Por favor, accede desde tu teléfono para poder utilizarla.
     </p>
   </div>
-  <div v-else>
+  <template v-else>
     <slot />
-  </div>
+  </template>
 </template>
 
 <script setup>
