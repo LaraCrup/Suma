@@ -66,7 +66,7 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'
 
-const { getHabits, shouldShowHabitToday } = useHabits()
+const { getHabits, shouldShowHabitToday, syncHabitsWithNewDay, getArgentineDate } = useHabits()
 const authStore = useAuthStore()
 const habits = ref([])
 const showAllHabits = ref(false)
@@ -109,11 +109,45 @@ const handleHabitUpdated = (updatedHabit) => {
 onMounted(async () => {
     try {
         // Cargar perfil del usuario para mostrar el nombre en el header
+        // IMPORTANTE: esto obtiene la sesión de Supabase
         await authStore.fetchUser()
+        console.log('[PAGE INDEX] Usuario autenticado:', authStore.isLoggedIn)
 
+        // Ahora que la sesión está lista, sincronizar hábitos
+        console.log('[PAGE INDEX] Iniciando sincronización de hábitos...')
+        await syncHabitsWithNewDay()
+        console.log('[PAGE INDEX] Sincronización completada')
+
+        // Cargar hábitos después del reset
         habits.value = await getHabits()
+        console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
     } catch (error) {
         console.error('Error cargando hábitos:', error)
+    }
+
+    // Monitorear cambios de fecha mientras la app está abierta
+    // Si pasan medianoche mientras estás usando la app, reseteará automáticamente
+    if (typeof window !== 'undefined') {
+        const dateCheckInterval = setInterval(async () => {
+            try {
+                const today = getArgentineDate()
+                const lastCheck = localStorage.getItem('lastHabitResetDate')
+
+                if (lastCheck && lastCheck !== today) {
+                    console.log('[PAGE INDEX] Detectado cambio de fecha! Reseteando hábitos...')
+                    await syncHabitsWithNewDay()
+                    habits.value = await getHabits()
+                    console.log('[PAGE INDEX] Hábitos reseteados por cambio de fecha')
+                }
+            } catch (error) {
+                console.error('[PAGE INDEX] Error en verificación de fecha:', error)
+            }
+        }, 5 * 60 * 1000) // Verifica cada 5 minutos
+
+        // Cleanup
+        onUnmounted(() => {
+            clearInterval(dateCheckInterval)
+        })
     }
 
     if (typeof window !== 'undefined') {

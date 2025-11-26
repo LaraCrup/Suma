@@ -573,21 +573,28 @@ export const useHabits = () => {
 
     const resetHabitsForNewDay = async () => {
         try {
+            console.log('[RESET DIARIO] Iniciando reset de hábitos...')
 
             const habits = await getHabits()
+            console.log('[RESET DIARIO] Hábitos obtenidos:', habits.length)
 
             for (const habit of habits) {
+                console.log(`[RESET DIARIO] Reseteando "${habit.name}": ${habit.progress_count} → 0`)
+
                 await updateHabit(habit.id, {
                     progress_count: 0,
                     updated_at: new Date().toISOString()
                 })
 
                 await updateStreakForNewDay(habit)
-
+                console.log(`[RESET DIARIO] "${habit.name}" resetado correctamente`)
             }
+
+            console.log('[RESET DIARIO] Reset completado exitosamente')
 
         } catch (error) {
             console.error('[RESET DIARIO] Error durante reset:', error)
+            console.error('[RESET DIARIO] Stack:', error.stack)
         }
     }
 
@@ -596,6 +603,10 @@ export const useHabits = () => {
 
         const lastResetDate = localStorage.getItem('lastHabitResetDate')
         const today = getArgentineDate()
+
+        console.log('[RESET DIARIO] lastResetDate:', lastResetDate)
+        console.log('[RESET DIARIO] today:', today)
+        console.log('[RESET DIARIO] Should reset?', !lastResetDate || lastResetDate !== today)
 
         if (!lastResetDate || lastResetDate !== today) {
             localStorage.setItem('lastHabitResetDate', today)
@@ -689,6 +700,7 @@ export const useHabits = () => {
         updateStreakForNewDay,
         getHabitLogByDate,
         getDateString,
+        getArgentineDate,
         getWeekStart,
         getWeekEnd,
         getWeekNumber,
