@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<any>(null)
-  const profile = ref<any>(null)
+  const user = ref(null)
+  const profile = ref(null)
   const loading = ref(false)
-  const error = ref<string | null>(null)
+  const error = ref(null)
 
   const isLoggedIn = computed(() => !!user.value)
 
@@ -15,7 +15,6 @@ export const useAuthStore = defineStore('auth', () => {
       loading.value = true
       error.value = null
 
-      // Obtener la sesión
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session?.user) {
@@ -26,7 +25,6 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = session.user
 
-      // Obtener datos del perfil
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -40,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
       }
 
       profile.value = profileData
-    } catch (err: any) {
+    } catch (err) {
       error.value = err.message
       console.error('Error fetching user:', err)
     } finally {
@@ -48,7 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const updateProfile = async (updates: Record<string, any>) => {
+  const updateProfile = async (updates) => {
     const supabase = useSupabaseClient()
     try {
       loading.value = true
@@ -73,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       profile.value = data
       return data
-    } catch (err: any) {
+    } catch (err) {
       error.value = err.message
       console.error('Error updating profile:', err)
       throw err
@@ -89,7 +87,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       profile.value = null
       error.value = null
-    } catch (err: any) {
+    } catch (err) {
       error.value = err.message
       console.error('Error logging out:', err)
     }

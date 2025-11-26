@@ -61,7 +61,7 @@
 
         try {
             const { error } = await client.auth.resetPasswordForEmail(userEmail.value, {
-                redirectTo: `${window.location.origin}/nueva-contrasena`
+                redirectTo: `${window.location.origin}${ROUTE_NAMES.NEW_PASSWORD}`
             })
 
             if (error) {

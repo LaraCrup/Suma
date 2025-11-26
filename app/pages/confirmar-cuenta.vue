@@ -50,7 +50,7 @@
             message.value = ''
 
             if (!userEmail.value) {
-                message.value = 'No se pudo obtener tu correo electrónico'
+                message.value = 'No se pudo obtener tu correo electrónico. Por favor vuelve a iniciar el proceso de registro.'
                 isError.value = true
                 return
             }

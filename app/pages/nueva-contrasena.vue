@@ -9,7 +9,7 @@
             <FormFieldsContainer>
                 <FormPasswordField v-model="form.password" label="Nueva contraseña" id="password"
                     placeholder="Nueva contraseña" :error="errors.password" required
-                    @blur="validatePassword" />
+                    @blur="handlePasswordInput" />
 
                 <FormPasswordField v-model="form.confirmPassword" label="Confirmar contraseña" id="confirmPassword"
                     placeholder="Repetir nueva contraseña" :error="errors.confirmPassword" required
@@ -20,7 +20,7 @@
                 {{ errorMsg }}
             </FormError>
 
-            <ButtonPrimary type="submit" :disabled="loading">
+            <ButtonPrimary type="submit" :disabled="loading || !isValid">
                 <span v-if="!loading">Actualizar contraseña</span>
                 <Loader v-else color="light" />
             </ButtonPrimary>
@@ -28,16 +28,16 @@
 
         <div v-else class="flex flex-col items-center gap-4">
             <div class="text-center">
-                <HeadingH1 class="text-red-500 mb-2">Enlace inválido o expirado</HeadingH1>
+                <HeadingH1 class="text-error mb-2">Enlace inválido o expirado</HeadingH1>
                 <p class="text-xs text-gray-500">{{ linkErrorMsg }}</p>
             </div>
             <ButtonPrimary :to="ROUTE_NAMES.RESET_PASSWORD">Solicitar nuevo enlace</ButtonPrimary>
         </div>
     </DefaultSection>
 
-    <DefaultSection v-else class="flex flex-col items-center justify-center gap-4">
-        <div class="text-4xl">⏳</div>
-        <p class="text-sm text-gray-500">Verificando tu enlace de recuperación...</p>
+    <DefaultSection v-else>
+        <Loader color="primary" />
+        <p class="text-sm text-gray">Verificando tu enlace de recuperación...</p>
     </DefaultSection>
 </template>
 
@@ -68,6 +68,18 @@ const passwordUpdateAttempted = ref(false)
 const linkValidating = ref(true)
 const linkValid = ref(false)
 const linkErrorMsg = ref('')
+const checkingPassword = ref(false)
+const isPasswordCompromised = ref(false)
+const passwordCheckCache = reactive(new Map())
+const passwordCheckTimeout = ref(null)
+
+const isValid = computed(() => {
+    return form.password.length > 0 &&
+        form.confirmPassword.length > 0 &&
+        !errors.password &&
+        !errors.confirmPassword &&
+        !isPasswordCompromised.value
+})
 
 onMounted(async () => {
     try {
@@ -91,18 +103,64 @@ onMounted(async () => {
     }
 })
 
+const handlePasswordInput = () => {
+    if (passwordCheckTimeout.value) {
+        clearTimeout(passwordCheckTimeout.value)
+    }
+
+    validatePassword()
+
+    if (!errors.password && form.password && form.password.length >= 8) {
+        passwordCheckTimeout.value = setTimeout(async () => {
+            await checkPasswordCompromise()
+        }, 800)
+    }
+}
+
 const validatePassword = () => {
     if (!form.password) {
         errors.password = 'La contraseña es requerida'
-    } else if (form.password.length < 8) {
-        errors.password = 'La contraseña debe tener al menos 8 caracteres'
-    } else {
-        errors.password = ''
+        isPasswordCompromised.value = false
+        return false
     }
+
+    if (form.password.length < 8) {
+        errors.password = 'La contraseña debe tener al menos 8 caracteres'
+        isPasswordCompromised.value = false
+        return false
+    }
+
+    if (!/[a-z]/.test(form.password)) {
+        errors.password = 'La contraseña debe contener al menos una minúscula'
+        isPasswordCompromised.value = false
+        return false
+    }
+
+    if (!/[A-Z]/.test(form.password)) {
+        errors.password = 'La contraseña debe contener al menos una mayúscula'
+        isPasswordCompromised.value = false
+        return false
+    }
+
+    if (!/[0-9]/.test(form.password)) {
+        errors.password = 'La contraseña debe contener al menos un número'
+        isPasswordCompromised.value = false
+        return false
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password)) {
+        errors.password = 'La contraseña debe contener al menos un caracter especial'
+        isPasswordCompromised.value = false
+        return false
+    }
+
+    errors.password = ''
 
     if (form.confirmPassword) {
         validateConfirmPassword()
     }
+
+    return true
 }
 
 const validateConfirmPassword = () => {
@@ -112,6 +170,76 @@ const validateConfirmPassword = () => {
         errors.confirmPassword = 'Las contraseñas no coinciden'
     } else {
         errors.confirmPassword = ''
+    }
+}
+
+const checkPasswordCompromise = async () => {
+    if (!form.password || form.password.length < 8) return
+
+    if (passwordCheckCache.has(form.password)) {
+        isPasswordCompromised.value = passwordCheckCache.get(form.password)
+
+        if (isPasswordCompromised.value) {
+            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+        }
+
+        return
+    }
+
+    try {
+        checkingPassword.value = true
+        isPasswordCompromised.value = await checkPasswordLeak(form.password)
+
+        passwordCheckCache.set(form.password, isPasswordCompromised.value)
+
+        if (isPasswordCompromised.value) {
+            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+        }
+    } catch (error) {
+        console.error('Error al verificar contraseña:', error)
+    } finally {
+        checkingPassword.value = false
+    }
+}
+
+async function checkPasswordLeak(password) {
+    try {
+        const encoder = new TextEncoder()
+        const data = encoder.encode(password)
+        const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+        const prefix = hashHex.substring(0, 5)
+        const suffix = hashHex.substring(5).toUpperCase()
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+        const response = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`, {
+            signal: controller.signal,
+            headers: {
+                'User-Agent': 'NuxtSupabaseApp'
+            }
+        })
+
+        clearTimeout(timeoutId)
+
+        if (!response.ok) {
+            console.warn('Error al consultar API de contraseñas comprometidas')
+            return false
+        }
+
+        const text = await response.text()
+
+        return text.split('\r\n').some(line => {
+            const [hashSuffix] = line.split(':')
+            return hashSuffix.toUpperCase() === suffix
+        })
+    } catch (error) {
+        console.error('Error al verificar contraseña:', error)
+        return false
     }
 }
 
@@ -125,7 +253,7 @@ const handleResetPassword = async () => {
     validatePassword()
     validateConfirmPassword()
 
-    if (errors.password || errors.confirmPassword) {
+    if (errors.password || errors.confirmPassword || isPasswordCompromised.value) {
         return
     }
 
@@ -168,5 +296,11 @@ watch(() => form.password, () => {
 
 watch(() => form.confirmPassword, () => {
     if (errors.confirmPassword) errors.confirmPassword = ''
+})
+
+onUnmounted(() => {
+    if (passwordCheckTimeout.value) {
+        clearTimeout(passwordCheckTimeout.value)
+    }
 })
 </script>

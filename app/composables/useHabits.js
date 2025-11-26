@@ -188,7 +188,7 @@ export const useHabits = () => {
 
         const isCompleted = newProgressCount >= (habit.goal_value || 1)
 
-        const today = new Date().toISOString().split('T')[0]
+        const today = getArgentineDate()
 
         const { data: existingLog, error: searchError } = await client
             .from('habit_logs')
@@ -340,10 +340,11 @@ export const useHabits = () => {
     }
 
     const hasMonthChanged = () => {
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
-        return today.getMonth() !== yesterday.getMonth()
+        const todayStr = getArgentineDate()
+        const yesterdayStr = getYesterdayString()
+        const [, todayMonth] = todayStr.split('-').map(Number)
+        const [, yesterdayMonth] = yesterdayStr.split('-').map(Number)
+        return todayMonth !== yesterdayMonth
     }
 
     const getDayLetterFromDate = (dateStr) => {
@@ -391,18 +392,37 @@ export const useHabits = () => {
     }
 
     /**
+     * Obtener la fecha actual en zona horaria de Argentina (UTC-3)
+     */
+    const getArgentineDate = () => {
+        const formatter = new Intl.DateTimeFormat('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        })
+        const parts = formatter.formatToParts(new Date())
+        const year = parts.find(p => p.type === 'year').value
+        const month = parts.find(p => p.type === 'month').value
+        const day = parts.find(p => p.type === 'day').value
+        return `${year}-${month}-${day}`
+    }
+
+    /**
      * Formato de fecha para comparación
      */
     const getDateString = (date = new Date()) => {
+        if (!date) return getArgentineDate()
         return date.toISOString().split('T')[0]
     }
 
     /**
-     * Obtener la fecha anterior
+     * Obtener la fecha anterior en zona horaria de Argentina
      */
     const getYesterdayString = () => {
-        const yesterday = new Date()
-        yesterday.setDate(yesterday.getDate() - 1)
+        const today = getArgentineDate()
+        const [year, month, day] = today.split('-').map(Number)
+        const yesterday = new Date(year, month - 1, day - 1)
         return getDateString(yesterday)
     }
 
@@ -483,9 +503,12 @@ export const useHabits = () => {
             }
 
             if (habit.frequency_type === 'semanal') {
-                const today = new Date()
-                const yesterday = new Date(today)
-                yesterday.setDate(yesterday.getDate() - 1)
+                const todayStr = getArgentineDate()
+                const yesterdayStr = getYesterdayString()
+                const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number)
+                const today = new Date(todayYear, todayMonth - 1, todayDay)
+                const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
+                const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
 
                 // Obtener la semana en la que está ayer (semana anterior a la actual)
                 const previousWeekStart = getWeekStart(yesterday)
@@ -512,9 +535,9 @@ export const useHabits = () => {
             }
 
             if (habit.frequency_type === 'mensual') {
-                const today = new Date()
-                const yesterday = new Date(today)
-                yesterday.setDate(yesterday.getDate() - 1)
+                const yesterdayStr = getYesterdayString()
+                const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
+                const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
 
                 // Obtener mes anterior (mes en el que está ayer)
                 const previousMonthNum = yesterday.getMonth() + 1
@@ -572,7 +595,7 @@ export const useHabits = () => {
         if (typeof window === 'undefined') return false
 
         const lastResetDate = localStorage.getItem('lastHabitResetDate')
-        const today = getDateString()
+        const today = getArgentineDate()
 
         if (!lastResetDate || lastResetDate !== today) {
             localStorage.setItem('lastHabitResetDate', today)
@@ -589,7 +612,9 @@ export const useHabits = () => {
     }
 
     const shouldShowHabitToday = (habit) => {
-        const today = new Date()
+        const todayStr = getArgentineDate()
+        const [year, month, day] = todayStr.split('-').map(Number)
+        const today = new Date(year, month - 1, day)
         const dayOfWeek = today.getDay()
         const dayOfMonth = today.getDate()
 

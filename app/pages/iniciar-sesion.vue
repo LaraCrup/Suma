@@ -97,14 +97,20 @@ const handleSignIn = async () => {
     }
 
     try {
-        const { data: profile } = await client
+        const { data: profile, error: profileError } = await client
             .from('profiles')
             .select('email')
             .eq('display_name', form.username)
             .maybeSingle()
 
+        if (profileError) {
+            errorMsg.value = handleSupabaseError(profileError)
+            isLoading.value = false
+            return
+        }
+
         if (!profile?.email) {
-            errorMsg.value = 'Usuario no encontrado'
+            errorMsg.value = 'Usuario no encontrado. Volvé a intentarlo.'
             isLoading.value = false
             return
         }

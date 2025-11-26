@@ -284,14 +284,38 @@ const signUp = async () => {
     }
 
     try {
-        const { data: existingProfile } = await client
+        const { data: existingEmail, error: emailError } = await client
             .from('profiles')
             .select('id')
             .eq('email', form.email)
             .maybeSingle()
 
-        if (existingProfile) {
-            errorMsg.value = 'Este correo ya está registrado'
+        if (emailError) {
+            errorMsg.value = handleSupabaseError(emailError)
+            loading.value = false
+            return
+        }
+
+        if (existingEmail) {
+            errorMsg.value = 'Este correo ya está registrado. Iniciá sesión o recuperá tu contraseña.'
+            loading.value = false
+            return
+        }
+
+        const { data: existingDisplayName, error: displayNameError } = await client
+            .from('profiles')
+            .select('id')
+            .eq('display_name', form.displayName)
+            .maybeSingle()
+
+        if (displayNameError) {
+            errorMsg.value = handleSupabaseError(displayNameError)
+            loading.value = false
+            return
+        }
+
+        if (existingDisplayName) {
+            errorMsg.value = 'Este nombre de usuario ya existe. Elige otro.'
             loading.value = false
             return
         }
