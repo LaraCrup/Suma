@@ -1,9 +1,7 @@
 export const useHabits = () => {
     const client = useSupabaseClient()
 
-    /**
-     * Obtener el user_id de la sesión actual
-     */
+
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
 
@@ -14,9 +12,6 @@ export const useHabits = () => {
         return session.user.id
     }
 
-    /**
-     * Crear un nuevo hábito
-     */
     const createHabit = async (habitData) => {
         const userId = await getUserId()
 
@@ -24,8 +19,8 @@ export const useHabits = () => {
             user_id: userId,
             name: habitData.name,
             icon: habitData.icon,
-            when_where: habitData.when_where || null,
-            identity: habitData.identity || null,
+            when_where: habitData.when_where,
+            identity: habitData.identity,
             unit: habitData.unit || null,
             goal_value: habitData.goal_value || 1,
             frequency_type: habitData.frequency_type,
@@ -47,58 +42,6 @@ export const useHabits = () => {
         return data?.[0] || null
     }
 
-    /**
-     * Corrige combinaciones inválidas de frequency_type + frequency_option
-     * Util cuando se cargan hábitos que tienen datos inconsistentes en la BD
-     */
-    const correctHabitFrequency = (habit) => {
-        if (!habit) return habit
-
-        const validOptionsPerType = {
-            'diario': ['todos', 'dias_especificos_semana', 'cantidad_dias_semana', 'dias_especificos_mes', 'cantidad_dias_mes'],
-            'semanal': ['todos', 'dias_especificos_semana'],
-            'mensual': ['todos', 'dias_especificos_mes']
-        }
-
-        const type = habit.frequency_type
-        const option = habit.frequency_option
-
-        // Si la combinación es válida, devolver como está
-        if (validOptionsPerType[type] && validOptionsPerType[type].includes(option)) {
-            return habit
-        }
-
-        // Si no es válida, corregir
-        let correctedType = type
-
-        if (option === 'cantidad_dias_semana' || option === 'dias_especificos_semana') {
-            if (option === 'cantidad_dias_semana') {
-                correctedType = 'diario'
-            }
-        }
-
-        if (option === 'cantidad_dias_mes' || option === 'dias_especificos_mes') {
-            if (option === 'cantidad_dias_mes') {
-                correctedType = 'diario'
-            }
-        }
-
-        // Si cambió el tipo, actualizar en BD asincronamente
-        if (correctedType !== type) {
-            client
-                .from('habits')
-                .update({ frequency_type: correctedType })
-                .eq('id', habit.id)
-                .then(() => console.log(`[CORRECCIÓN FRECUENCIA OK] ${habit.name}: ${type} → ${correctedType}`))
-                .catch(err => console.error(`[CORRECCIÓN FRECUENCIA ERROR] ${habit.name}:`, err))
-        }
-
-        return { ...habit, frequency_type: correctedType }
-    }
-
-    /**
-     * Obtener todos los hábitos del usuario
-     */
     const getHabits = async () => {
         const userId = await getUserId()
 
@@ -112,14 +55,9 @@ export const useHabits = () => {
             throw error
         }
 
-        const correctedData = (data || []).map(habit => correctHabitFrequency(habit))
-
-        return correctedData
+        return await enrichHabitsWithCompletedDays(data || [])
     }
 
-    /**
-     * Obtener un hábito por ID
-     */
     const getHabitById = async (habitId) => {
         const { data, error } = await client
             .from('habits')
@@ -131,16 +69,12 @@ export const useHabits = () => {
             throw error
         }
 
-        if (data) {
-            return correctHabitFrequency(data)
-        }
+        if (!data) return null
 
-        return data
+        const enriched = await enrichHabitsWithCompletedDays([data])
+        return enriched[0]
     }
 
-    /**
-     * Actualizar un hábito
-     */
     const updateHabit = async (habitId, updates) => {
         const { data, error } = await client
             .from('habits')
@@ -152,12 +86,12 @@ export const useHabits = () => {
             throw error
         }
 
-        return data?.[0] || null
+        if (!data?.[0]) return null
+
+        const enriched = await enrichHabitsWithCompletedDays([data[0]])
+        return enriched[0]
     }
 
-    /**
-     * Eliminar un hábito (delete real)
-     */
     const deleteHabit = async (habitId) => {
         const { error } = await client
             .from('habits')
@@ -171,9 +105,6 @@ export const useHabits = () => {
         return true
     }
 
-    /**
-     * Registrar progreso en un hábito
-     */
     const logHabitProgress = async (habitId, amount = 1) => {
         await getUserId()
 
@@ -232,8 +163,6 @@ export const useHabits = () => {
         }
 
         let streakUpdate = {}
-        // Solo actualizar racha para hábitos DIARIOS inmediatamente
-        // Para hábitos SEMANALES y MENSUALES, la racha se actualiza en updateStreakForNewDay
         if (habit.frequency_type === 'diario') {
             if (isCompleted && !existingLog?.completed) {
                 const newStreak = (habit.streak || 0) + 1
@@ -264,13 +193,12 @@ export const useHabits = () => {
             throw habitError
         }
 
-        return updatedHabit?.[0] || null
+        if (!updatedHabit?.[0]) return null
+
+        const enriched = await enrichHabitsWithCompletedDays([updatedHabit[0]])
+        return enriched[0]
     }
 
-    /**
-     * Convertir letra de día a número (0-6)
-     * Correspondencia: D=0 (Domingo), L=1 (Lunes), M=2 (Martes), X=3 (Miércoles), J=4 (Jueves), V=5 (Viernes), S=6 (Sábado)
-     */
     const letterDayToNumber = (letterDay) => {
         const dayMap = {
             'D': 0,
@@ -308,14 +236,6 @@ export const useHabits = () => {
         return data
     }
 
-    const getWeekNumber = (date = new Date()) => {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-        const dayNum = d.getUTCDay() || 7
-        d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7)
-    }
-
     const getWeekStart = (date = new Date()) => {
         const d = new Date(date)
         const day = d.getDay()
@@ -332,68 +252,6 @@ export const useHabits = () => {
         return getDateString(result)
     }
 
-    const hasWeekChanged = () => {
-        const today = new Date()
-        const yesterday = new Date(today)
-        yesterday.setDate(yesterday.getDate() - 1)
-        return getWeekNumber(today) !== getWeekNumber(yesterday)
-    }
-
-    const hasMonthChanged = () => {
-        const todayStr = getArgentineDate()
-        const yesterdayStr = getYesterdayString()
-        const [, todayMonth] = todayStr.split('-').map(Number)
-        const [, yesterdayMonth] = yesterdayStr.split('-').map(Number)
-        return todayMonth !== yesterdayMonth
-    }
-
-    const getDayLetterFromDate = (dateStr) => {
-        const [year, month, day] = dateStr.split('-').map(Number)
-        const date = new Date(year, month - 1, day)
-        const dayNum = date.getDay()
-        const dayLetters = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
-        return dayLetters[dayNum]
-    }
-
-    const getWeekLogs = async (habitId, weekStartStr, weekEndStr) => {
-        const { data, error } = await client
-            .from('habit_logs')
-            .select('*')
-            .eq('habit_id', habitId)
-            .gte('date', weekStartStr)
-            .lte('date', weekEndStr)
-
-        if (error) {
-            console.error('Error obteniendo logs de la semana:', error)
-            return []
-        }
-
-        return data || []
-    }
-
-    const getMonthLogs = async (habitId, month, year) => {
-        const startStr = `${year}-${String(month).padStart(2, '0')}-01`
-        const lastDay = new Date(year, month, 0).getDate()
-        const endStr = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
-        const { data, error } = await client
-            .from('habit_logs')
-            .select('*')
-            .eq('habit_id', habitId)
-            .gte('date', startStr)
-            .lte('date', endStr)
-
-        if (error) {
-            console.error('Error obteniendo logs del mes:', error)
-            return []
-        }
-
-        return data || []
-    }
-
-    /**
-     * Obtener la fecha actual en zona horaria de Argentina (UTC-3)
-     */
     const getArgentineDate = () => {
         const formatter = new Intl.DateTimeFormat('es-AR', {
             timeZone: 'America/Argentina/Buenos_Aires',
@@ -408,17 +266,65 @@ export const useHabits = () => {
         return `${year}-${month}-${day}`
     }
 
-    /**
-     * Formato de fecha para comparación
-     */
+    const getWeekCompletedDays = async (habitId) => {
+        const todayStr = getArgentineDate()
+        const [year, month, day] = todayStr.split('-').map(Number)
+        const today = new Date(year, month - 1, day)
+        const weekStart = getWeekStart(today)
+        const weekEnd = getWeekEnd(today)
+
+        const { data: weekLogs } = await client
+            .from('habit_logs')
+            .select('*')
+            .eq('habit_id', habitId)
+            .gte('date', weekStart)
+            .lte('date', weekEnd)
+            .eq('completed', true)
+
+        return weekLogs?.length || 0
+    }
+
+    const getMonthCompletedDays = async (habitId) => {
+        const todayStr = getArgentineDate()
+        const [year, month] = todayStr.split('-').map(Number)
+        const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
+        const lastDay = new Date(year, month, 0).getDate()
+        const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+        const { data: monthLogs } = await client
+            .from('habit_logs')
+            .select('*')
+            .eq('habit_id', habitId)
+            .gte('date', monthStart)
+            .lte('date', monthEnd)
+            .eq('completed', true)
+
+        return monthLogs?.length || 0
+    }
+
+    const enrichHabitsWithCompletedDays = async (habits) => {
+        const enriched = await Promise.all(
+            habits.map(async (habit) => {
+                const enrichedHabit = { ...habit }
+
+                if (habit.frequency_option === 'cantidad_dias_semana') {
+                    enrichedHabit.weekCompletedDays = await getWeekCompletedDays(habit.id)
+                } else if (habit.frequency_option === 'cantidad_dias_mes') {
+                    enrichedHabit.monthCompletedDays = await getMonthCompletedDays(habit.id)
+                }
+
+                return enrichedHabit
+            })
+        )
+
+        return enriched
+    }
+
     const getDateString = (date = new Date()) => {
         if (!date) return getArgentineDate()
         return date.toISOString().split('T')[0]
     }
 
-    /**
-     * Obtener la fecha anterior en zona horaria de Argentina
-     */
     const getYesterdayString = () => {
         const today = getArgentineDate()
         const [year, month, day] = today.split('-').map(Number)
@@ -426,10 +332,6 @@ export const useHabits = () => {
         return getDateString(yesterday)
     }
 
-    /**
-     * Verificar si un período (semana/mes) está completo para un hábito
-     * Compara los logs completados con el requisito del período
-     */
     const isPeriodComplete = async (habit, startDate, endDate) => {
         const { data: logs, error } = await client
             .from('habit_logs')
@@ -449,14 +351,12 @@ export const useHabits = () => {
         switch (habit.frequency_option) {
             case 'dias_especificos_semana':
             case 'dias_especificos_mes':
-                // Debe estar completado en TODOS los días específicos
                 const requiredDays = habit.frequency_detail?.weekDays?.length ||
                                     habit.frequency_detail?.monthDays?.length || 0
                 return completedCount >= requiredDays
 
             case 'cantidad_dias_semana':
             case 'cantidad_dias_mes':
-                // Debe estar completado en la cantidad especificada de días
                 const requiredCount = habit.frequency_detail?.counter || 0
                 return completedCount >= requiredCount
 
@@ -465,16 +365,8 @@ export const useHabits = () => {
         }
     }
 
-    /**
-     * Actualizar la racha al cambiar de período (semana/mes)
-     * Lógica según tipo de frecuencia:
-     * - DIARIO: compara día a día
-     * - SEMANAL: compara semana a semana (incrementa cuando se completa la semana)
-     * - MENSUAL: compara mes a mes (incrementa cuando se completa el mes)
-     */
     const updateStreakForNewDay = async (habit) => {
         try {
-            // Para hábitos diarios, usar lógica de día a día
             if (habit.frequency_type === 'diario') {
                 const yesterday = getYesterdayString()
                 const shouldShowToday = shouldShowHabitToday(habit)
@@ -510,7 +402,6 @@ export const useHabits = () => {
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
                 const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
 
-                // Obtener la semana en la que está ayer (semana anterior a la actual)
                 const previousWeekStart = getWeekStart(yesterday)
                 const previousWeekEnd = getWeekEnd(yesterday)
 
@@ -539,7 +430,6 @@ export const useHabits = () => {
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
                 const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
 
-                // Obtener mes anterior (mes en el que está ayer)
                 const previousMonthNum = yesterday.getMonth() + 1
                 const previousMonthYear = yesterday.getFullYear()
 
@@ -622,7 +512,7 @@ export const useHabits = () => {
         }
     }
 
-    const shouldShowHabitToday = (habit) => {
+    const shouldShowHabitToday = async (habit) => {
         const todayStr = getArgentineDate()
         const [year, month, day] = todayStr.split('-').map(Number)
         const today = new Date(year, month - 1, day)
@@ -646,15 +536,29 @@ export const useHabits = () => {
 
                 if (weeklyOption === 'dias_especificos_semana') {
                     const selectedDays = habit.frequency_detail?.weekDays || []
-
                     const selectedDayNumbers = letterDaysToNumbers(selectedDays)
-
                     const shouldShow = selectedDayNumbers.includes(dayOfWeek)
                     return shouldShow
                 }
 
                 if (weeklyOption === 'cantidad_dias_semana') {
-                    return true
+                    // Contar días completados en la semana actual
+                    const weekStart = getWeekStart(today)
+                    const weekEnd = getWeekEnd(today)
+
+                    const { data: weekLogs } = await client
+                        .from('habit_logs')
+                        .select('*')
+                        .eq('habit_id', habit.id)
+                        .gte('date', weekStart)
+                        .lte('date', weekEnd)
+                        .eq('completed', true)
+
+                    const completedCount = weekLogs?.length || 0
+                    const requiredCount = habit.frequency_detail?.counter || 0
+
+                    // Mostrar si aún no hemos completado los días requeridos
+                    return completedCount < requiredCount
                 }
 
                 return false
@@ -668,13 +572,29 @@ export const useHabits = () => {
 
                 if (monthlyOption === 'dias_especificos_mes') {
                     const selectedDays = habit.frequency_detail?.monthDays || []
-
                     const shouldShow = selectedDays.includes(dayOfMonth)
                     return shouldShow
                 }
 
                 if (monthlyOption === 'cantidad_dias_mes') {
-                    return true
+                    // Contar días completados en el mes actual
+                    const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
+                    const lastDay = new Date(year, month, 0).getDate()
+                    const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+                    const { data: monthLogs } = await client
+                        .from('habit_logs')
+                        .select('*')
+                        .eq('habit_id', habit.id)
+                        .gte('date', monthStart)
+                        .lte('date', monthEnd)
+                        .eq('completed', true)
+
+                    const completedCount = monthLogs?.length || 0
+                    const requiredCount = habit.frequency_detail?.counter || 0
+
+                    // Mostrar si aún no hemos completado los días requeridos
+                    return completedCount < requiredCount
                 }
 
                 return false
@@ -696,16 +616,9 @@ export const useHabits = () => {
         logHabitProgress,
         shouldShowHabitToday,
         syncHabitsWithNewDay,
-        resetHabitsForNewDay,
-        updateStreakForNewDay,
-        getHabitLogByDate,
-        getDateString,
         getArgentineDate,
-        getWeekStart,
-        getWeekEnd,
-        getWeekNumber,
-        hasWeekChanged,
-        hasMonthChanged,
-        isPeriodComplete
+        enrichHabitsWithCompletedDays,
+        getWeekCompletedDays,
+        getMonthCompletedDays
     }
 }

@@ -90,45 +90,55 @@ const tips = [
 ]
 
 const currentTip = ref(null)
+const visibleHabits = ref([])
+const hiddenHabits = ref([])
 
-const visibleHabits = computed(() => {
-    return habits.value.filter(habit => shouldShowHabitToday(habit))
-})
+const filterHabitsByVisibility = async () => {
+    const visible = []
+    const hidden = []
 
-const hiddenHabits = computed(() => {
-    return habits.value.filter(habit => !shouldShowHabitToday(habit))
-})
+    for (const habit of habits.value) {
+        const shouldShow = await shouldShowHabitToday(habit)
+        if (shouldShow) {
+            visible.push(habit)
+        } else {
+            hidden.push(habit)
+        }
+    }
 
-const handleHabitUpdated = (updatedHabit) => {
+    visibleHabits.value = visible
+    hiddenHabits.value = hidden
+}
+
+const handleHabitUpdated = async (updatedHabit) => {
     const habitIndex = habits.value.findIndex(h => h.id === updatedHabit.id)
     if (habitIndex !== -1) {
         habits.value[habitIndex] = updatedHabit
+        await filterHabitsByVisibility()
     }
 }
 
+let dateCheckInterval = null
+
 onMounted(async () => {
     try {
-        // Cargar perfil del usuario para mostrar el nombre en el header
-        // IMPORTANTE: esto obtiene la sesión de Supabase
         await authStore.fetchUser()
         console.log('[PAGE INDEX] Usuario autenticado:', authStore.isLoggedIn)
 
-        // Ahora que la sesión está lista, sincronizar hábitos
         console.log('[PAGE INDEX] Iniciando sincronización de hábitos...')
         await syncHabitsWithNewDay()
         console.log('[PAGE INDEX] Sincronización completada')
 
-        // Cargar hábitos después del reset
         habits.value = await getHabits()
         console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
+
+        await filterHabitsByVisibility()
     } catch (error) {
         console.error('Error cargando hábitos:', error)
     }
 
-    // Monitorear cambios de fecha mientras la app está abierta
-    // Si pasan medianoche mientras estás usando la app, reseteará automáticamente
     if (typeof window !== 'undefined') {
-        const dateCheckInterval = setInterval(async () => {
+        dateCheckInterval = setInterval(async () => {
             try {
                 const today = getArgentineDate()
                 const lastCheck = localStorage.getItem('lastHabitResetDate')
@@ -138,16 +148,13 @@ onMounted(async () => {
                     await syncHabitsWithNewDay()
                     habits.value = await getHabits()
                     console.log('[PAGE INDEX] Hábitos reseteados por cambio de fecha')
+
+                    await filterHabitsByVisibility()
                 }
             } catch (error) {
                 console.error('[PAGE INDEX] Error en verificación de fecha:', error)
             }
-        }, 5 * 60 * 1000) // Verifica cada 5 minutos
-
-        // Cleanup
-        onUnmounted(() => {
-            clearInterval(dateCheckInterval)
-        })
+        }, 5 * 60 * 1000)
     }
 
     if (typeof window !== 'undefined') {
@@ -161,6 +168,12 @@ onMounted(async () => {
             sessionStorage.setItem('sessionTip', JSON.stringify(selectedTip))
             currentTip.value = selectedTip
         }
+    }
+})
+
+onUnmounted(() => {
+    if (dateCheckInterval) {
+        clearInterval(dateCheckInterval)
     }
 })
 

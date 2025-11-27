@@ -5,9 +5,6 @@ export const useHabitStore = defineStore('habit', () => {
     const selectedHabit = ref(null)
     const isCustom = ref(false)
 
-    /**
-     * Establecer un hábito seleccionado desde la lista predefinida
-     */
     const setSelectedHabit = (habit) => {
         selectedHabit.value = {
             name: habit.name,
@@ -17,17 +14,11 @@ export const useHabitStore = defineStore('habit', () => {
         isCustom.value = false
     }
 
-    /**
-     * Preparar para crear un hábito personalizado
-     */
     const setCustomHabit = () => {
         selectedHabit.value = null
         isCustom.value = true
     }
 
-    /**
-     * Limpiar la selección
-     */
     const clearSelection = () => {
         selectedHabit.value = null
         isCustom.value = false

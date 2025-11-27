@@ -121,6 +121,17 @@ const brilloCount = computed(() => {
 })
 
 const completedBrillos = computed(() => {
+    const option = habit.value?.frequency_option
+
+    // Para cantidad_dias_semana y cantidad_dias_mes, usar el conteo de días completados
+    if (option === 'cantidad_dias_semana') {
+        return habit.value?.weekCompletedDays || 0
+    }
+    if (option === 'cantidad_dias_mes') {
+        return habit.value?.monthCompletedDays || 0
+    }
+
+    // Para otras opciones, usar progress_count
     return Math.min(habit.value?.progress_count || 0, brilloCount.value)
 })
 

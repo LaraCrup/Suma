@@ -1,7 +1,3 @@
-/**
- * Plugin para manejar el splash screen
- * Se ejecuta cuando la app inicializa
- */
 import { defineNuxtPlugin } from '#app'
 import { useRouter } from 'vue-router'
 import { useSplashStore } from '~/stores/splashStore'
