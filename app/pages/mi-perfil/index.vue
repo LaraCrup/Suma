@@ -45,7 +45,7 @@
         <div class="w-full grid grid-cols-2 gap-3">
             <div>
                 <p class="text-xs">Hábitos activos</p>
-                <p class="text-base font-bold text-primary mt-1">5</p>
+                <p class="text-base font-bold text-primary mt-1">{{ habitCount }}</p>
             </div>
             <div>
                 <p class="text-xs">Comunidades</p>
@@ -81,17 +81,27 @@
     </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import { ref, computed, onMounted } from 'vue'
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useAuthStore } from '~/stores/authStore'
+import { useHabits } from '~/composables/useHabits'
 
 const authStore = useAuthStore()
+const { getHabits } = useHabits()
 const errorMsg = ref('')
 const showConfirmation = ref(false)
+const habitCount = ref(0)
 
 onMounted(async () => {
-    await authStore.fetchUser()
+    try {
+        await authStore.fetchUser()
+        const habits = await getHabits()
+        habitCount.value = habits.length
+    } catch (error) {
+        console.error('Error cargando hábitos:', error)
+        habitCount.value = 0
+    }
 })
 
 const formattedCreatedAt = computed(() => {
