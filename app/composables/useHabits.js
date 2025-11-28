@@ -367,9 +367,15 @@ export const useHabits = () => {
 
     const updateStreakForNewDay = async (habit) => {
         try {
+            const todayStr = getArgentineDate()
+            const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number)
+            const today = new Date(todayYear, todayMonth - 1, todayDay)
+            const dayOfWeek = today.getDay()
+            const dayOfMonth = today.getDate()
+
             if (habit.frequency_type === 'diario') {
                 const yesterday = getYesterdayString()
-                const shouldShowToday = shouldShowHabitToday(habit)
+                const shouldShowToday = await shouldShowHabitToday(habit)
 
                 const yesterdayLog = await getHabitLogByDate(habit.id, yesterday)
                 const wasCompletedYesterday = yesterdayLog?.completed || false
@@ -395,10 +401,11 @@ export const useHabits = () => {
             }
 
             if (habit.frequency_type === 'semanal') {
-                const todayStr = getArgentineDate()
+                if (dayOfWeek !== 1) {
+                    return
+                }
+
                 const yesterdayStr = getYesterdayString()
-                const [todayYear, todayMonth, todayDay] = todayStr.split('-').map(Number)
-                const today = new Date(todayYear, todayMonth - 1, todayDay)
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
                 const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
 
@@ -426,6 +433,10 @@ export const useHabits = () => {
             }
 
             if (habit.frequency_type === 'mensual') {
+                if (dayOfMonth !== 1) {
+                    return
+                }
+
                 const yesterdayStr = getYesterdayString()
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
                 const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
@@ -542,7 +553,6 @@ export const useHabits = () => {
                 }
 
                 if (weeklyOption === 'cantidad_dias_semana') {
-                    // Contar días completados en la semana actual
                     const weekStart = getWeekStart(today)
                     const weekEnd = getWeekEnd(today)
 
@@ -557,7 +567,6 @@ export const useHabits = () => {
                     const completedCount = weekLogs?.length || 0
                     const requiredCount = habit.frequency_detail?.counter || 0
 
-                    // Mostrar si aún no hemos completado los días requeridos
                     return completedCount < requiredCount
                 }
 
@@ -577,7 +586,6 @@ export const useHabits = () => {
                 }
 
                 if (monthlyOption === 'cantidad_dias_mes') {
-                    // Contar días completados en el mes actual
                     const monthStart = `${year}-${String(month).padStart(2, '0')}-01`
                     const lastDay = new Date(year, month, 0).getDate()
                     const monthEnd = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
@@ -593,7 +601,6 @@ export const useHabits = () => {
                     const completedCount = monthLogs?.length || 0
                     const requiredCount = habit.frequency_detail?.counter || 0
 
-                    // Mostrar si aún no hemos completado los días requeridos
                     return completedCount < requiredCount
                 }
 

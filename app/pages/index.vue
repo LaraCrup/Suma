@@ -113,7 +113,19 @@ const filterHabitsByVisibility = async () => {
 const handleHabitUpdated = async (updatedHabit) => {
     const habitIndex = habits.value.findIndex(h => h.id === updatedHabit.id)
     if (habitIndex !== -1) {
+        // Actualizar el hábito con los datos devueltos
         habits.value[habitIndex] = updatedHabit
+
+        // Refrescar todos los hábitos para asegurar que los datos estén actualizados
+        // (especialmente para cantidad_dias_semana y cantidad_dias_mes)
+        try {
+            const refreshedHabits = await getHabits()
+            habits.value = refreshedHabits
+        } catch (error) {
+            console.error('Error refrescando hábitos:', error)
+        }
+
+        // Filtrar nuevamente para actualizar visibilidad
         await filterHabitsByVisibility()
     }
 }
