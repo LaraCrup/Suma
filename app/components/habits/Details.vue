@@ -67,7 +67,7 @@ onMounted(() => {
     } else {
         initialData.value = {
             name: '',
-            icon: '📝',
+            icon: '',
             unit: 'veces',
             when_where: '',
             identity: '',

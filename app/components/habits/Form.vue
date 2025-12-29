@@ -13,13 +13,17 @@
         </div>
 
         <div class="w-full flex flex-col gap-1">
-            <div class="w-full flex justify-between">
-                <FormLabelSecondary id="habit-icon" required>Icono del hábito</FormLabelSecondary>
-                <input id="habit-icon-input" v-model="formData.habitIcon" type="text"
-                    class="w-8 text-xl text-center bg-transparent outline-nones"
-                    placeholder="." maxlength="2" required aria-required="true"
-                    aria-invalid="errors.habitIcon ? 'true' : 'false'"
-                    :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null" />
+            <div class="w-full flex justify-between items-center">
+                <FormLabelSecondary for="habit-icon">Icono del hábito</FormLabelSecondary>
+                <div class="flex items-center gap-2">
+                    <input id="habit-icon" v-model="formData.habitIcon" type="text"
+                        class="w-12 h-12 text-xl text-center bg-transparent outline-none border border-gray rounded-full p-2"
+                        placeholder="📝" maxlength="10" required aria-required="true"
+                        aria-invalid="errors.habitIcon ? 'true' : 'false'"
+                        :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null"
+                        @input="validateEmojiInput"
+                        inputmode="text" />
+                </div>
             </div>
             <FormError v-if="errors.habitIcon" id="habit-icon-error">{{ errors.habitIcon }}</FormError>
         </div>
@@ -88,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useHabits } from '~/composables/useHabits'
 import { useNotification } from '~/composables/useNotification'
 import { handleSupabaseError } from '~/utils/handleSupabaseError'
@@ -111,7 +115,7 @@ const { success, error: showError } = useNotification()
 
 const formData = reactive({
     habitName: '',
-    habitIcon: '📝',
+    habitIcon: '',
     habitUnit: 'veces',
     habitWhenWhere: '',
     habitIdentity: '',
@@ -156,6 +160,14 @@ const frequencyModal = ref(null)
 
 const openFrequencyModal = () => {
     frequencyModal.value?.openModal()
+}
+
+const validateEmojiInput = () => {
+    // Permitir que el usuario escriba, pero limitamos a los primeros 10 caracteres
+    // Esto permite emojis complejos que pueden ser varios caracteres en Unicode
+    if (formData.habitIcon && formData.habitIcon.length > 10) {
+        formData.habitIcon = formData.habitIcon.substring(0, 10)
+    }
 }
 
 const getPreviousFrequencySelection = () => {
@@ -286,9 +298,10 @@ const validateForm = () => {
         return false
     }
 
+    // Validar usando Array.from para contar correctamente los emojis
     const iconLength = Array.from(formData.habitIcon.trim()).length
-    if (iconLength > 5) {
-        errors.value.habitIcon = 'El icono debe ser un carácter o emoji'
+    if (iconLength > 3) {
+        errors.value.habitIcon = 'El icono debe ser un emoji o carácter simple'
         return false
     }
 
