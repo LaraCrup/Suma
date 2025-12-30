@@ -51,12 +51,10 @@
             <p class="text-center text-sm">Voy a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span> cuando <span
                     class="font-bold">{{ habit?.when_where?.toLowerCase() || 'siempre' }}</span>, para ser <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejor persona' }}</span>.</p>
             <div>
-                <div class="w-full h-3 bg-green-dark rounded-full overflow-hidden">
-                    <div
-                        :style="{ width: `${((habit?.progress_count || 0) / (habit?.goal_value || 1)) * 100}%` }"
-                        class="h-full bg-gradient-primary-horizontal-reverse rounded-full transition-all duration-300"
-                    ></div>
-                </div>
+                <ProgressBar
+                    :progress-count="habit?.progress_count"
+                    :goal-value="habit?.goal_value"
+                />
                 <div class="w-full flex justify-center items-center gap-3 mt-3">
                     <button @click="decreaseProgress" class="h-4 w-4 flex justify-center items-center bg-accent rounded-full text-xs">-</button>
                     <div class="flex items-end gap-2">
