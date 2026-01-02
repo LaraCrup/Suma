@@ -383,15 +383,14 @@ export const useHabits = () => {
                 let streakUpdate = {}
 
                 if (shouldShowToday) {
-                    if (wasCompletedYesterday) {
-                        streakUpdate = {
-                            streak: (habit.streak || 0) + 1
-                        }
-                    } else {
+                    if (!wasCompletedYesterday) {
+                        // Solo resetear la racha si NO se completó ayer
+                        // NO incrementar aquí, eso debe ocurrir cuando el usuario complete el hábito hoy
                         streakUpdate = {
                             streak: 0
                         }
                     }
+                    // Si se completó ayer, mantener la racha actual (no hacer nada)
                 }
 
                 if (Object.keys(streakUpdate).length > 0) {
