@@ -11,7 +11,7 @@
             <div class="flex items-center gap-2">
                 <p class="text-[0.625rem]">Nivel</p>
                 <div class="w-6 h-6 flex justify-center items-center bg-primary rounded-full">
-                    <p class="text-xs text-light font-bold">1</p>
+                    <p class="text-xs text-light font-bold">{{ userLevel }}</p>
                 </div>
             </div>
         </div>
@@ -34,6 +34,10 @@ const dailyPhrase = ref('')
 
 const userName = computed(() => {
     return authStore.profile?.name
+})
+
+const userLevel = computed(() => {
+    return authStore.profile?.current_level || 1
 })
 
 onMounted(() => {

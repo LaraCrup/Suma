@@ -47,29 +47,43 @@
                 </div>
             </div>
 
-            <!-- Beneficios - Comentado hasta que se defina la lógica -->
-            <!-- <h2 class="w-full font-montserrat text-xl font-medium text-primary">Tus beneficios</h2>
+            <!-- Beneficios -->
+            <h2 class="w-full font-montserrat text-xl font-medium text-primary">Tus beneficios</h2>
             <div class="w-full flex flex-col gap-1">
                 <div class="w-full flex items-center justify-between">
-                    <span class="w-6 h-6 flex justify-center items-center bg-primary text-light text-xs font-bold rounded-full">
-                        1
+                    <span
+                        class="w-6 h-6 flex justify-center items-center bg-primary text-light text-xs font-bold rounded-full">
+                        {{ levelInfo.currentLevel }}
                     </span>
-                    <span class="w-6 h-6 flex justify-center items-center bg-gray text-light text-xs font-bold rounded-full">
-                        2
+                    <span
+                        :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
+                        class="w-6 h-6 flex justify-center items-center text-light text-xs font-bold rounded-full">
+                        {{ levelInfo.isMaxLevel ? '👑' : levelInfo.nextLevel }}
                     </span>
                 </div>
-                <ProgressBar :progress-count="10" :goal-value="15"
-                    bar-color="bg-gradient-secondary" />
+                <ProgressBar
+                    :progress-count="levelInfo.xpInCurrentLevel"
+                    :goal-value="levelInfo.xpNeededForNextLevel"
+                    bar-color="bg-gradient-secondary"
+                />
+                <div class="w-full flex items-center justify-between">
+                    <p class="text-[10px] text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-[10px] text-gray" v-if="!levelInfo.isMaxLevel">
+                        {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
+                    </p>
+                    <p class="text-[10px] text-gray" v-else>¡Nivel máximo!</p>
+                </div>
             </div>
             <div class="w-full flex flex-col gap-2">
                 <BenefitsCard></BenefitsCard>
-            </div> -->
+            </div>
         </template>
     </DefaultSection>
 </template>
 
 <script setup>
 const { getHabits, shouldShowHabitToday, getArgentineDate } = useHabits()
+const { getUserExperience, getLevelInfo } = useExperience()
 const client = useSupabaseClient()
 
 const loading = ref(true)
@@ -77,6 +91,17 @@ const habits = ref([])
 const todayStats = ref({ completed: 0, total: 0 })
 const mostConsistentHabit = ref(null)
 const consistencyPercentage = ref(0)
+const userXP = ref({ experience_points: 0, current_level: 1 })
+const levelInfo = ref({
+    currentLevel: 1,
+    nextLevel: 2,
+    currentLevelXP: 0,
+    nextLevelXP: 300,
+    xpInCurrentLevel: 0,
+    xpNeededForNextLevel: 300,
+    progressPercentage: 0,
+    isMaxLevel: false
+})
 
 const todayProgressPercentage = computed(() => {
     if (todayStats.value.total === 0) return 0
@@ -172,7 +197,8 @@ const loadData = async () => {
 
         await Promise.all([
             calculateTodayProgress(),
-            calculateConsistencyPercentage()
+            calculateConsistencyPercentage(),
+            loadUserXP()
         ])
 
         findMostConsistentHabit()
@@ -180,6 +206,15 @@ const loadData = async () => {
         console.error('Error cargando estadísticas:', error)
     } finally {
         loading.value = false
+    }
+}
+
+const loadUserXP = async () => {
+    try {
+        userXP.value = await getUserExperience()
+        levelInfo.value = await getLevelInfo(userXP.value.experience_points)
+    } catch (error) {
+        console.error('Error cargando XP:', error)
     }
 }
 

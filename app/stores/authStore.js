@@ -7,6 +7,8 @@ import { ref, computed } from 'vue'
  * @property {string} [name]
  * @property {string} [display_name]
  * @property {string} [avatar_url]
+ * @property {number} [experience_points]
+ * @property {number} [current_level]
  */
 
 /**

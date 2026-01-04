@@ -1,5 +1,6 @@
 export const useHabits = () => {
     const client = useSupabaseClient()
+    const { grantXP, checkStreakMilestone } = useExperience()
 
 
     const getUserId = async () => {
@@ -171,6 +172,12 @@ export const useHabits = () => {
                     streak: newStreak,
                     longest_streak: longestStreak
                 }
+
+                // 🎯 Otorgar XP por completar hábito
+                await grantXP('habit_completed')
+
+                // 🏆 Otorgar XP bonus por racha de 7 días
+                await checkStreakMilestone(newStreak)
             } else if (!isCompleted && existingLog?.completed) {
                 streakUpdate = {
                     streak: Math.max(0, (habit.streak || 0) - 1)

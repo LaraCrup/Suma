@@ -27,18 +27,28 @@
                 <div class="w-full flex justify-between">
                     <div
                         class="w-6 h-6 flex justify-center items-center bg-primary text-light font-bold text-xs rounded-full">
-                        1</div>
+                        {{ levelInfo.currentLevel }}</div>
                     <div
-                        class="w-6 h-6 flex justify-center items-center bg-gray text-light font-bold text-xs rounded-full">
-                        2</div>
+                        :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
+                        class="w-6 h-6 flex justify-center items-center text-light font-bold text-xs rounded-full">
+                        {{ levelInfo.isMaxLevel ? '👑' : levelInfo.nextLevel }}</div>
                 </div>
-                <div class="relative w-full">
-                    <div class="w-full h-3 bg-green-dark rounded-full"></div>
-                    <div class="absolute top-0 w-2/3 h-3 bg-gradient-secondary rounded-full"></div>
+                <ProgressBar
+                    :progress-count="levelInfo.xpInCurrentLevel"
+                    :goal-value="levelInfo.xpNeededForNextLevel"
+                    bar-color="bg-gradient-secondary"
+                    background-color="bg-green-dark"
+                />
+                <div class="w-full flex justify-between">
+                    <p class="text-[10px] text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-[10px] text-gray" v-if="!levelInfo.isMaxLevel">
+                        {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
+                    </p>
+                    <p class="text-[10px] text-gray" v-else>¡Nivel máximo!</p>
                 </div>
             </div>
             <div>
-                <NuxtLink :to="ROUTE_NAMES.PROGRESS" class="text-xs text-primary underline">Ver mis beneficios
+                <NuxtLink :to="ROUTE_NAMES.PROGRESS" class="text-xs text-primary underline">Ver mi progreso
                 </NuxtLink>
             </div>
         </div>
@@ -86,20 +96,37 @@ import { ref, computed, onMounted } from 'vue'
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useAuthStore } from '~/stores/authStore'
 import { useHabits } from '~/composables/useHabits'
+import { useExperience } from '~/composables/useExperience'
 
 const authStore = useAuthStore()
 const { getHabits } = useHabits()
+const { getUserExperience, getLevelInfo } = useExperience()
 const errorMsg = ref('')
 const showConfirmation = ref(false)
 const habitCount = ref(0)
+const userXP = ref({ experience_points: 0, current_level: 1 })
+const levelInfo = ref({
+    currentLevel: 1,
+    nextLevel: 2,
+    currentLevelXP: 0,
+    nextLevelXP: 300,
+    xpInCurrentLevel: 0,
+    xpNeededForNextLevel: 300,
+    progressPercentage: 0,
+    isMaxLevel: false
+})
 
 onMounted(async () => {
     try {
         await authStore.fetchUser()
         const habits = await getHabits()
         habitCount.value = habits.length
+
+        // Cargar información de XP y nivel
+        userXP.value = await getUserExperience()
+        levelInfo.value = await getLevelInfo(userXP.value.experience_points)
     } catch (error) {
-        console.error('Error cargando hábitos:', error)
+        console.error('Error cargando datos del perfil:', error)
         habitCount.value = 0
     }
 })
