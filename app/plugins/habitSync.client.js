@@ -12,8 +12,13 @@ export default defineNuxtPlugin(async (nuxtApp) => {
                 try {
                     console.log('[HABIT SYNC] Starting background sync...')
                     const { useHabits } = await import('~/composables/useHabits')
+                    const { useExperience } = await import('~/composables/useExperience')
                     const { syncHabitsWithNewDay } = useHabits()
+                    const { checkComeback } = useExperience()
+
                     await syncHabitsWithNewDay()
+                    await checkComeback()
+
                     console.log('[HABIT SYNC] Background sync completed')
                 } catch (error) {
                     console.error('[HABIT SYNC] Error during background sync:', error)

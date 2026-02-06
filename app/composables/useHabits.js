@@ -1,6 +1,6 @@
 export const useHabits = () => {
     const client = useSupabaseClient()
-    const { grantXP, checkStreakMilestone } = useExperience()
+    const { grantXP, checkStreakMilestone, checkAllHabitsDaily, checkFirstHabitCreated, checkWeeklyGoalMet } = useExperience()
 
 
     const getUserId = async () => {
@@ -39,6 +39,9 @@ export const useHabits = () => {
             console.error('Error en Supabase:', error)
             throw error
         }
+
+        // Verificar si es el primer hábito creado para otorgar XP
+        await checkFirstHabitCreated()
 
         return data?.[0] || null
     }
@@ -164,7 +167,125 @@ export const useHabits = () => {
         }
 
         let streakUpdate = {}
-        if (habit.frequency_type === 'diario') {
+        const isWeeklyPeriod = habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
+        const isMonthlyPeriod = habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
+
+        if (isWeeklyPeriod) {
+            if (isCompleted && !existingLog?.completed) {
+                const todayStr = getArgentineDate()
+                const [y, m, d] = todayStr.split('-').map(Number)
+                const todayDate = new Date(y, m - 1, d)
+                const weekStart = getWeekStart(todayDate)
+                const weekEnd = getWeekEnd(todayDate)
+
+                const { data: weekLogs } = await client
+                    .from('habit_logs')
+                    .select('*')
+                    .eq('habit_id', habitId)
+                    .gte('date', weekStart)
+                    .lte('date', weekEnd)
+                    .eq('completed', true)
+
+                const completedCount = weekLogs?.length || 0
+                const requiredCount = habit.frequency_option === 'dias_especificos_semana'
+                    ? (habit.frequency_detail?.weekDays?.length || 0)
+                    : (habit.frequency_detail?.counter || 0)
+
+                if (completedCount === requiredCount) {
+                    const newStreak = (habit.streak || 0) + 1
+                    const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
+                    streakUpdate = {
+                        streak: newStreak,
+                        longest_streak: longestStreak
+                    }
+                    await grantXP('habit_completed')
+                    await checkStreakMilestone(newStreak)
+                }
+            } else if (!isCompleted && existingLog?.completed) {
+                const todayStr = getArgentineDate()
+                const [y, m, d] = todayStr.split('-').map(Number)
+                const todayDate = new Date(y, m - 1, d)
+                const weekStart = getWeekStart(todayDate)
+                const weekEnd = getWeekEnd(todayDate)
+
+                const { data: weekLogs } = await client
+                    .from('habit_logs')
+                    .select('*')
+                    .eq('habit_id', habitId)
+                    .gte('date', weekStart)
+                    .lte('date', weekEnd)
+                    .eq('completed', true)
+
+                const completedCount = weekLogs?.length || 0
+                const requiredCount = habit.frequency_option === 'dias_especificos_semana'
+                    ? (habit.frequency_detail?.weekDays?.length || 0)
+                    : (habit.frequency_detail?.counter || 0)
+
+                if (completedCount === requiredCount - 1) {
+                    streakUpdate = {
+                        streak: Math.max(0, (habit.streak || 0) - 1)
+                    }
+                }
+            }
+        } else if (isMonthlyPeriod) {
+            if (isCompleted && !existingLog?.completed) {
+                const todayStr = getArgentineDate()
+                const [y, m] = todayStr.split('-').map(Number)
+                const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+                const lastDay = new Date(y, m, 0).getDate()
+                const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+                const { data: monthLogs } = await client
+                    .from('habit_logs')
+                    .select('*')
+                    .eq('habit_id', habitId)
+                    .gte('date', monthStart)
+                    .lte('date', monthEnd)
+                    .eq('completed', true)
+
+                const completedCount = monthLogs?.length || 0
+                const requiredCount = habit.frequency_option === 'dias_especificos_mes'
+                    ? (habit.frequency_detail?.monthDays?.length || 0)
+                    : (habit.frequency_detail?.counter || 0)
+
+                if (completedCount === requiredCount) {
+                    const newStreak = (habit.streak || 0) + 1
+                    const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
+                    streakUpdate = {
+                        streak: newStreak,
+                        longest_streak: longestStreak
+                    }
+                    await grantXP('habit_completed')
+                    await checkStreakMilestone(newStreak)
+                }
+            } else if (!isCompleted && existingLog?.completed) {
+                const todayStr = getArgentineDate()
+                const [y, m] = todayStr.split('-').map(Number)
+                const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+                const lastDay = new Date(y, m, 0).getDate()
+                const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+                const { data: monthLogs } = await client
+                    .from('habit_logs')
+                    .select('*')
+                    .eq('habit_id', habitId)
+                    .gte('date', monthStart)
+                    .lte('date', monthEnd)
+                    .eq('completed', true)
+
+                const completedCount = monthLogs?.length || 0
+                const requiredCount = habit.frequency_option === 'dias_especificos_mes'
+                    ? (habit.frequency_detail?.monthDays?.length || 0)
+                    : (habit.frequency_detail?.counter || 0)
+
+                if (completedCount === requiredCount - 1) {
+                    streakUpdate = {
+                        streak: Math.max(0, (habit.streak || 0) - 1)
+                    }
+                }
+            }
+        } else {
+            // Racha diaria simple (frequency_option === 'todos' o default)
             if (isCompleted && !existingLog?.completed) {
                 const newStreak = (habit.streak || 0) + 1
                 const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
@@ -172,11 +293,7 @@ export const useHabits = () => {
                     streak: newStreak,
                     longest_streak: longestStreak
                 }
-
-                // 🎯 Otorgar XP por completar hábito
                 await grantXP('habit_completed')
-
-                // 🏆 Otorgar XP bonus por racha de 7 días
                 await checkStreakMilestone(newStreak)
             } else if (!isCompleted && existingLog?.completed) {
                 streakUpdate = {
@@ -203,6 +320,13 @@ export const useHabits = () => {
         if (!updatedHabit?.[0]) return null
 
         const enriched = await enrichHabitsWithCompletedDays([updatedHabit[0]])
+
+        // Verificar si se completaron todos los hábitos del día
+        if (isCompleted && !existingLog?.completed) {
+            await checkAllHabitsDaily(getHabits, shouldShowHabitToday)
+            await checkWeeklyGoalMet(getHabits)
+        }
+
         return enriched[0]
     }
 
@@ -380,36 +504,12 @@ export const useHabits = () => {
             const dayOfWeek = today.getDay()
             const dayOfMonth = today.getDate()
 
-            if (habit.frequency_type === 'diario') {
-                const yesterday = getYesterdayString()
-                const shouldShowToday = await shouldShowHabitToday(habit)
+            const isWeeklyPeriod = habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
+            const isMonthlyPeriod = habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
 
-                const yesterdayLog = await getHabitLogByDate(habit.id, yesterday)
-                const wasCompletedYesterday = yesterdayLog?.completed || false
-
-                let streakUpdate = {}
-
-                if (shouldShowToday) {
-                    if (!wasCompletedYesterday) {
-                        // Solo resetear la racha si NO se completó ayer
-                        // NO incrementar aquí, eso debe ocurrir cuando el usuario complete el hábito hoy
-                        streakUpdate = {
-                            streak: 0
-                        }
-                    }
-                    // Si se completó ayer, mantener la racha actual (no hacer nada)
-                }
-
-                if (Object.keys(streakUpdate).length > 0) {
-                    await updateHabit(habit.id, streakUpdate)
-                }
-                return
-            }
-
-            if (habit.frequency_type === 'semanal') {
-                if (dayOfWeek !== 1) {
-                    return
-                }
+            if (isWeeklyPeriod) {
+                // Solo verificar los lunes
+                if (dayOfWeek !== 1) return
 
                 const yesterdayStr = getYesterdayString()
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
@@ -420,28 +520,15 @@ export const useHabits = () => {
 
                 const wasLastWeekComplete = await isPeriodComplete(habit, previousWeekStart, previousWeekEnd)
 
-                let streakUpdate = {}
-
-                if (wasLastWeekComplete) {
-                    streakUpdate = {
-                        streak: (habit.streak || 0) + 1
-                    }
-                } else {
-                    streakUpdate = {
-                        streak: 0
-                    }
-                }
-
-                if (Object.keys(streakUpdate).length > 0) {
-                    await updateHabit(habit.id, streakUpdate)
+                if (!wasLastWeekComplete) {
+                    await updateHabit(habit.id, { streak: 0 })
                 }
                 return
             }
 
-            if (habit.frequency_type === 'mensual') {
-                if (dayOfMonth !== 1) {
-                    return
-                }
+            if (isMonthlyPeriod) {
+                // Solo verificar el 1ro del mes
+                if (dayOfMonth !== 1) return
 
                 const yesterdayStr = getYesterdayString()
                 const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
@@ -456,22 +543,19 @@ export const useHabits = () => {
 
                 const wasLastMonthComplete = await isPeriodComplete(habit, previousMonthStart, previousMonthEnd)
 
-                let streakUpdate = {}
-
-                if (wasLastMonthComplete) {
-                    streakUpdate = {
-                        streak: (habit.streak || 0) + 1
-                    }
-                } else {
-                    streakUpdate = {
-                        streak: 0
-                    }
-                }
-
-                if (Object.keys(streakUpdate).length > 0) {
-                    await updateHabit(habit.id, streakUpdate)
+                if (!wasLastMonthComplete) {
+                    await updateHabit(habit.id, { streak: 0 })
                 }
                 return
+            }
+
+            // Racha diaria: verificar si se completó ayer
+            const yesterday = getYesterdayString()
+            const yesterdayLog = await getHabitLogByDate(habit.id, yesterday)
+            const wasCompletedYesterday = yesterdayLog?.completed || false
+
+            if (!wasCompletedYesterday) {
+                await updateHabit(habit.id, { streak: 0 })
             }
         } catch (error) {
             console.error('Error actualizando racha:', error)

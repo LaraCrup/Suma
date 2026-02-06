@@ -2,7 +2,7 @@
     <DefaultSection>
         <div class="relative w-full flex items-center">
             <NavigationBackArrow :url="ROUTE_NAMES.HABITS_CREATE" class="absolute text-gray" @click="goBack" />
-            <HeadingH2 class="text-center">{{ displayIcon }} {{ initialData?.name || 'Nuevo hábito' }}</HeadingH2>
+            <HeadingH2 class="text-center">{{ currentIcon }} {{ currentName || 'Nuevo hábito' }}</HeadingH2>
         </div>
 
         <HabitsForm
@@ -17,7 +17,7 @@
 
 <script setup>
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useHabitStore } from '~/stores/habitStore'
 
 const habitStore = useHabitStore()
@@ -25,7 +25,8 @@ const habitStore = useHabitStore()
 const initialData = ref(null)
 const isEditing = ref(false)
 
-const displayIcon = computed(() => initialData.value?.icon || '📝')
+const currentName = ref('')
+const currentIcon = ref('📝')
 
 const goBack = () => {
     habitStore.clearSelection()
@@ -42,10 +43,8 @@ const handleFormError = (err) => {
 }
 
 const handleFormUpdate = (data) => {
-    if (initialData.value) {
-        initialData.value.name = data.name
-        initialData.value.icon = data.icon
-    }
+    currentName.value = data.name
+    currentIcon.value = data.icon || '📝'
 }
 
 onMounted(() => {
@@ -63,6 +62,8 @@ onMounted(() => {
             frequency_variant_data: {},
             reminder_enabled: false
         }
+        currentName.value = habitStore.selectedHabit.name
+        currentIcon.value = habitStore.selectedHabit.icon
         isEditing.value = false
     } else {
         initialData.value = {
