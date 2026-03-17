@@ -8,7 +8,8 @@
             <p class="text-xs">{{ user?.display_name }}</p>
         </div>
         <div class="relative flex items-center justify-end" style="min-width: 2.5rem;">
-            <Transition name="toggle">
+            <NuxtImg v-if="isFriend" src="/images/brillo.svg" class="w-4 h-4 flex-shrink-0" />
+            <Transition v-else name="toggle">
                 <button
                     v-if="!isPending"
                     key="add"
@@ -35,6 +36,10 @@ const props = defineProps({
         required: true
     },
     isPending: {
+        type: Boolean,
+        default: false
+    },
+    isFriend: {
         type: Boolean,
         default: false
     }

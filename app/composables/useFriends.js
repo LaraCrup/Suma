@@ -54,6 +54,26 @@ export const useFriends = () => {
     }
 
     /**
+     * Obtiene IDs de todos los amigos aceptados del usuario actual.
+     */
+    const getFriendIds = async () => {
+        const userId = await getUserId()
+
+        const { data, error } = await client
+            .from('friend_requests')
+            .select('sender_id, receiver_id')
+            .eq('status', 'accepted')
+            .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+
+        if (error) {
+            console.error('Error obteniendo IDs de amigos:', error)
+            return []
+        }
+
+        return (data || []).map(r => r.sender_id === userId ? r.receiver_id : r.sender_id)
+    }
+
+    /**
      * Obtiene IDs de usuarios a los que el usuario actual les envió una solicitud pendiente.
      */
     const getSentPendingIds = async () => {
@@ -171,6 +191,7 @@ export const useFriends = () => {
         searchUsers,
         sendFriendRequest,
         cancelFriendRequest,
+        getFriendIds,
         getSentPendingIds,
         getPendingRequests,
         acceptFriendRequest,

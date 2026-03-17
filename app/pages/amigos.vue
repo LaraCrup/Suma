@@ -25,6 +25,7 @@
                 :key="user.id"
                 :user="user"
                 :isPending="pendingIds.includes(user.id)"
+                :isFriend="friendIds.includes(user.id)"
                 @request-sent="onRequestSent"
                 @request-cancelled="onRequestCancelled"
             />
@@ -36,12 +37,13 @@
 </template>
 
 <script setup>
-const { searchUsers, getSentPendingIds } = useFriends()
+const { searchUsers, getSentPendingIds, getFriendIds } = useFriends()
 
 const inputElement = ref(null)
 const query = ref('')
 const results = ref([])
 const pendingIds = ref([])
+const friendIds = ref([])
 const loading = ref(false)
 
 let debounceTimer = null
@@ -68,7 +70,9 @@ const onRequestCancelled = (userId) => {
 }
 
 onMounted(async () => {
-    pendingIds.value = await getSentPendingIds()
+    const [pending, friends] = await Promise.all([getSentPendingIds(), getFriendIds()])
+    pendingIds.value = pending
+    friendIds.value = friends
     nextTick(() => inputElement.value?.focus())
 })
 </script>
