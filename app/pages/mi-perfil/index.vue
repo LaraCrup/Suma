@@ -63,7 +63,7 @@
             </div>
             <div>
                 <p class="text-xs">Amigos</p>
-                <p class="text-xs font-bold text-primary mt-1">Proximamente...</p>
+                <p class="text-base font-bold text-primary mt-1">{{ friendCount }}</p>
             </div>
         </div>
         <div class="w-full flex flex-col gap-2">
@@ -97,13 +97,16 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useAuthStore } from '~/stores/authStore'
 import { useHabits } from '~/composables/useHabits'
 import { useExperience } from '~/composables/useExperience'
+import { useFriends } from '~/composables/useFriends'
 
 const authStore = useAuthStore()
 const { getHabits } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
+const { getFriends } = useFriends()
 const errorMsg = ref('')
 const showConfirmation = ref(false)
 const habitCount = ref(0)
+const friendCount = ref(0)
 const userXP = ref({ experience_points: 0, current_level: 1 })
 const levelInfo = ref({
     currentLevel: 1,
@@ -119,8 +122,9 @@ const levelInfo = ref({
 onMounted(async () => {
     try {
         await authStore.fetchUser()
-        const habits = await getHabits()
+        const [habits, friends] = await Promise.all([getHabits(), getFriends()])
         habitCount.value = habits.length
+        friendCount.value = friends.length
 
         // Cargar información de XP y nivel
         userXP.value = await getUserExperience()
