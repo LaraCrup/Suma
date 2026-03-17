@@ -1,12 +1,12 @@
 <template>
     <div class="w-full flex items-center justify-between bg-midlight rounded-lg p-3">
-        <div class="flex gap-3 items-center">
+        <NuxtLink :to="`/usuarios/${user?.id}`" class="flex gap-3 items-center">
             <div class="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-green-light flex-shrink-0">
                 <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user.display_name" class="w-full h-full object-cover" />
                 <span v-else class="text-[0.5rem] text-light font-bold">{{ user?.display_name?.charAt(0).toUpperCase() }}</span>
             </div>
             <p class="text-xs">{{ user?.display_name }}</p>
-        </div>
+        </NuxtLink>
         <div class="relative flex items-center justify-end" style="min-width: 2.5rem;">
             <NuxtImg v-if="isFriend" src="/images/brillo.svg" class="w-4 h-4 flex-shrink-0" />
             <Transition v-else name="toggle">

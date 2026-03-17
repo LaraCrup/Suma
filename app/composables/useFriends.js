@@ -187,6 +187,43 @@ export const useFriends = () => {
         })
     }
 
+    /**
+     * Obtiene el perfil público de cualquier usuario por ID.
+     * Retorna null si no existe.
+     */
+    const getProfileById = async (userId) => {
+        const { data, error } = await client
+            .from('profiles')
+            .select('id, display_name, avatar_url, experience_points, current_level')
+            .eq('id', userId)
+            .maybeSingle()
+
+        if (error) {
+            console.error('Error obteniendo perfil:', error)
+            return null
+        }
+
+        return data
+    }
+
+    /**
+     * Elimina la amistad entre el usuario actual y otherUserId.
+     */
+    const removeFriend = async (otherUserId) => {
+        const userId = await getUserId()
+
+        const { error } = await client
+            .from('friend_requests')
+            .delete()
+            .eq('status', 'accepted')
+            .or(`and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`)
+
+        if (error) {
+            console.error('Error eliminando amistad:', error)
+            throw error
+        }
+    }
+
     return {
         searchUsers,
         sendFriendRequest,
@@ -197,5 +234,7 @@ export const useFriends = () => {
         acceptFriendRequest,
         declineFriendRequest,
         getFriends,
+        getProfileById,
+        removeFriend,
     }
 }
