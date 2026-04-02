@@ -18,7 +18,7 @@
                 <div class="flex items-center gap-2">
                     <input id="habit-icon" v-model="formData.habitIcon" type="text"
                         class="w-12 h-12 text-xl text-center bg-transparent outline-none border border-gray rounded-full p-2"
-                        placeholder="📝" maxlength="10" required aria-required="true"
+                        placeholder="" maxlength="10" required aria-required="true"
                         aria-invalid="errors.habitIcon ? 'true' : 'false'"
                         :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null"
                         @input="validateEmojiInput"
@@ -163,11 +163,9 @@ const openFrequencyModal = () => {
 }
 
 const validateEmojiInput = () => {
-    // Permitir que el usuario escriba, pero limitamos a los primeros 10 caracteres
-    // Esto permite emojis complejos que pueden ser varios caracteres en Unicode
-    if (formData.habitIcon && formData.habitIcon.length > 10) {
-        formData.habitIcon = formData.habitIcon.substring(0, 10)
-    }
+    formData.habitIcon = [...formData.habitIcon]
+        .filter(char => /\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(char))
+        .join('')
 }
 
 const getPreviousFrequencySelection = () => {
