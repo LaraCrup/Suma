@@ -47,7 +47,7 @@
             <p class="text-xs font-medium text-dark">Miembros: {{ members.length + 1 }}</p>
             <div class="flex flex-wrap gap-4">
                 <!-- Agregar -->
-                <NuxtLink to="/comunidades/crear" class="flex flex-col items-center gap-1">
+                <NuxtLink :to="{ path: '/comunidades/crear', query: { members: members.map(m => m.id).join(',') } }" class="flex flex-col items-center gap-1">
                     <div class="w-10 h-10 rounded-full bg-green-dark flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                             viewBox="0 0 24 24">
@@ -75,12 +75,14 @@
             </div>
         </div>
 
+        <FormError v-if="errors.members">{{ errors.members }}</FormError>
         <ButtonPrimary @click="siguiente">Siguiente</ButtonPrimary>
     </DefaultSection>
 </template>
 
 <script setup>
 const route = useRoute()
+const router = useRouter()
 const { getProfileById } = useFriends()
 const authStore = useAuthStore()
 
@@ -88,7 +90,7 @@ const name = ref('')
 const icon = ref('')
 const members = ref([])
 const currentProfile = computed(() => authStore.profile)
-const errors = ref({ name: null, icon: null })
+const errors = ref({ name: null, icon: null, members: null })
 
 const filterEmojiIcon = () => {
     icon.value = [...icon.value]
@@ -97,6 +99,11 @@ const filterEmojiIcon = () => {
 }
 
 const removeMember = (id) => {
+    if (members.value.length <= 1) {
+        errors.value.members = 'Debe haber al menos dos miembros para crear una comunidad.'
+        return
+    }
+    errors.value.members = null
     members.value = members.value.filter(m => m.id !== id)
 }
 
@@ -112,10 +119,14 @@ const siguiente = () => {
     }
     if (errors.value.name || errors.value.icon) return
 
-    navigateTo({ path: '/comunidades/crear/paso3', query: { members: route.query.members } })
+    const currentMembers = members.value.map(m => m.id).join(',')
+    router.replace({ query: { members: currentMembers } })
+    navigateTo({ path: '/comunidades/crear/paso3', query: { members: currentMembers, name: name.value, icon: icon.value } })
 }
 
 onMounted(async () => {
+    if (route.query.name) name.value = route.query.name
+    if (route.query.icon) icon.value = route.query.icon
     const memberIds = route.query.members?.split(',').filter(Boolean) ?? []
     members.value = await Promise.all(memberIds.map(id => getProfileById(id)))
 })

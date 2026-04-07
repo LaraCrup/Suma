@@ -56,6 +56,7 @@
 </template>
 
 <script setup>
+const route = useRoute()
 const { getFriends } = useFriends()
 
 const friends = ref([])
@@ -89,5 +90,7 @@ const siguiente = () => {
 
 onMounted(async () => {
     friends.value = await getFriends()
+    const preselected = route.query.members?.split(',').filter(Boolean) ?? []
+    selectedIds.value = preselected
 })
 </script>

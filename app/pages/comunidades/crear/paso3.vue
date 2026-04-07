@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="w-full flex items-center gap-3">
-            <NavigationBackArrow class="!w-fit" color="text-gray" />
+            <NavigationBackArrow class="!w-fit" color="text-gray" :url="{ path: '/comunidades/crear/paso2', query: { members: route.query.members, name: route.query.name, icon: route.query.icon } }" />
             <HeadingH1>Nueva comunidad</HeadingH1>
         </div>
 
@@ -136,6 +136,7 @@
 
 <script setup>
 const route = useRoute()
+const { createCommunity } = useCommunities()
 
 const frequencyModal = ref(null)
 const isLoading = ref(false)
@@ -238,9 +239,31 @@ const handleSubmit = async () => {
     if (!validateForm()) return
     isLoading.value = true
     try {
-        // TODO: crear comunidad con los datos del formulario y los miembros del paso anterior
-        // const memberIds = route.query.members?.split(',').filter(Boolean) ?? []
+        const memberIds = route.query.members?.split(',').filter(Boolean) ?? []
+
+        const habitPayload = {
+            name: formData.habitName,
+            icon: formData.habitIcon,
+            identity: formData.habitIdentity,
+            unit: formData.habitUnit,
+            goal_value: formData.goalValue,
+            frequency_type: formData.frequencyType,
+            frequency_option: formData.frequencyVariant || null,
+            frequency_detail: Object.keys(formData.frequencyVariantData || {}).length
+                ? formData.frequencyVariantData
+                : null,
+        }
+
+        await createCommunity(
+            route.query.name,
+            route.query.icon,
+            memberIds,
+            habitPayload
+        )
+
         navigateTo('/comunidades')
+    } catch (e) {
+        console.error('Error creando comunidad:', e)
     } finally {
         isLoading.value = false
     }
