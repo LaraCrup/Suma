@@ -1,22 +1,9 @@
 <template>
     <DefaultSection>
         <div class="w-full flex flex-col gap-3">
-            <div class="w-full flex items-center gap-3">
-                <NavigationBackArrow class="!w-fit" color="text-gray" />
-                <div class="w-full flex items-center gap-3">
-                    <div class="w-8 h-8 flex items-center justify-center bg-green-dark rounded-full overflow-hidden">
-                        <p class="text-lg">{{ community?.icon }}</p>
-                    </div>
-                    <div class="h-full flex flex-col justify-between">
-                        <h1 class="text-sm text-dark">{{ community?.name }}</h1>
-                        <p class="text-[0.625rem] text-green-dark">
-                            {{ community?.member_count }} participante{{ community?.member_count === 1 ? '' : 's' }}
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <CommunityHeader :community="community" />
             <div v-if="habit" class="w-full">
-                <HabitsCommunityCard :habit="habit" />
+                <HabitsCommunityCard :habit="habit" :members="completions" />
             </div>
         </div>
         <div ref="messagesContainer" class="relative w-full h-[60vh] flex flex-col justify-end gap-2 overflow-y-auto">
@@ -50,10 +37,11 @@
 <script setup>
 const route = useRoute()
 const authStore = useAuthStore()
-const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage } = useCommunities()
+const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions } = useCommunities()
 
 const community = ref(null)
 const habit = ref(null)
+const completions = ref([])
 const messages = ref([])
 const newMessage = ref('')
 const isSending = ref(false)
@@ -79,6 +67,9 @@ const loadCommunity = async () => {
     community.value = communityData
     habit.value = habitData
     messages.value = messagesData
+    if (habitData) {
+        completions.value = await getCommunityHabitCompletions(habitData.id)
+    }
     scrollToBottom()
 }
 

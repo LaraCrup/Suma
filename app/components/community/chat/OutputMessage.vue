@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex flex-col items-end gap-[2px]">
-        <div class="w-fit max-w-52 flex flex-col items-end gap-[2px] bg-[#D7F560] rounded-lg px-2 py-[6px]">
+        <div class="w-fit max-w-52 flex flex-col items-end gap-[2px] bg-[#D7F560]/60 rounded-lg px-2 py-[6px]">
             <span class="text-[0.625rem] font-bold text-primary">{{ message.sender?.display_name }}</span>
             <p class="text-sm text-dark">{{ message.content }}</p>
         </div>

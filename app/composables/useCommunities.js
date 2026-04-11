@@ -255,6 +255,93 @@ export const useCommunities = () => {
         return true
     }
 
+    /**
+     * Obtiene el estado de completación del hábito de comunidad para todos los miembros hoy.
+     * Retorna array de { id, display_name, avatar_url, progress_count, completed }
+     */
+    const getCommunityHabitCompletions = async (habitId) => {
+        const today = new Date().toISOString().split('T')[0]
+
+        const { data: habit } = await client
+            .from('community_habits')
+            .select('community_id')
+            .eq('id', habitId)
+            .single()
+        if (!habit) return []
+
+        const { data: members } = await client
+            .from('community_members')
+            .select('profile:user_id(id, display_name, avatar_url)')
+            .eq('community_id', habit.community_id)
+
+        const { data: logs } = await client
+            .from('community_habit_logs')
+            .select('user_id, progress_count, completed')
+            .eq('community_habit_id', habitId)
+            .eq('date', today)
+
+        const logsMap = Object.fromEntries((logs || []).map(l => [l.user_id, l]))
+
+        return (members || []).map(m => ({
+            ...m.profile,
+            progress_count: logsMap[m.profile.id]?.progress_count || 0,
+            completed: logsMap[m.profile.id]?.completed || false,
+        }))
+    }
+
+    /**
+     * Registra progreso del usuario actual en el hábito de comunidad para hoy.
+     * Retorna el log actualizado.
+     */
+    const logCommunityHabitProgress = async (habitId, amount, goalValue = 1) => {
+        const userId = await getUserId()
+        const today = new Date().toISOString().split('T')[0]
+
+        const { data: existing } = await client
+            .from('community_habit_logs')
+            .select('progress_count')
+            .eq('community_habit_id', habitId)
+            .eq('user_id', userId)
+            .eq('date', today)
+            .maybeSingle()
+
+        const newCount = Math.max(0, Math.min((existing?.progress_count || 0) + amount, goalValue))
+        const isCompleted = newCount >= goalValue
+
+        const { data, error } = await client
+            .from('community_habit_logs')
+            .upsert({
+                community_habit_id: habitId,
+                user_id: userId,
+                date: today,
+                progress_count: newCount,
+                completed: isCompleted,
+            }, { onConflict: 'community_habit_id,user_id,date' })
+            .select()
+            .single()
+
+        if (error) throw error
+        return data
+    }
+
+    /**
+     * Obtiene el log del usuario actual para el hábito de comunidad hoy.
+     */
+    const getCommunityHabitMyLog = async (habitId) => {
+        const userId = await getUserId()
+        const today = new Date().toISOString().split('T')[0]
+
+        const { data } = await client
+            .from('community_habit_logs')
+            .select('*')
+            .eq('community_habit_id', habitId)
+            .eq('user_id', userId)
+            .eq('date', today)
+            .maybeSingle()
+
+        return data || null
+    }
+
     return {
         createCommunity,
         getCommunities,
@@ -263,5 +350,8 @@ export const useCommunities = () => {
         getCommunityMessages,
         sendMessage,
         leaveCommunity,
+        getCommunityHabitCompletions,
+        logCommunityHabitProgress,
+        getCommunityHabitMyLog,
     }
 }
