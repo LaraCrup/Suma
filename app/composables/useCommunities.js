@@ -201,7 +201,7 @@ export const useCommunities = () => {
     const getCommunityMessages = async (communityId) => {
         const { data, error } = await client
             .from('community_messages')
-            .select('id, content, created_at, sender:user_id(id, display_name, avatar_url)')
+            .select('id, content, created_at, user_id, sender:user_id(id, display_name, avatar_url)')
             .eq('community_id', communityId)
             .order('created_at', { ascending: true })
             .limit(100)
@@ -224,7 +224,7 @@ export const useCommunities = () => {
         const { data, error } = await client
             .from('community_messages')
             .insert({ community_id: communityId, user_id: userId, content: content.trim() })
-            .select('id, content, created_at, sender:user_id(id, display_name, avatar_url)')
+            .select('id, content, created_at, user_id, sender:user_id(id, display_name, avatar_url)')
             .single()
 
         if (error) {
@@ -342,6 +342,82 @@ export const useCommunities = () => {
         return data || null
     }
 
+    /**
+     * Actualiza el nombre de una comunidad.
+     */
+    const updateCommunityName = async (communityId, name) => {
+        const { error } = await client
+            .from('communities')
+            .update({ name })
+            .eq('id', communityId)
+
+        if (error) {
+            console.error('Error actualizando nombre:', error)
+            throw error
+        }
+
+        return true
+    }
+
+    /**
+     * Elimina una comunidad completa (solo admin).
+     * Las eliminaciones en cascada del lado de la BD limpian miembros, hábitos, logs y mensajes.
+     */
+    const deleteCommunity = async (communityId) => {
+        const { error } = await client
+            .from('communities')
+            .delete()
+            .eq('id', communityId)
+
+        if (error) {
+            console.error('Error eliminando comunidad:', error)
+            throw error
+        }
+
+        return true
+    }
+
+    /**
+     * Elimina un miembro específico de una comunidad.
+     */
+    const removeMemberFromCommunity = async (communityId, userId) => {
+        const { error } = await client
+            .from('community_members')
+            .delete()
+            .eq('community_id', communityId)
+            .eq('user_id', userId)
+
+        if (error) {
+            console.error('Error eliminando miembro:', error)
+            throw error
+        }
+
+        return true
+    }
+
+    /**
+     * Agrega nuevos miembros a una comunidad existente.
+     */
+    const addMembersToExistingCommunity = async (communityId, memberIds) => {
+        const currentUserId = await getUserId()
+        const records = memberIds
+            .filter(id => id !== currentUserId)
+            .map(id => ({ community_id: communityId, user_id: id, role: 'member' }))
+
+        if (records.length === 0) return true
+
+        const { error } = await client
+            .from('community_members')
+            .insert(records)
+
+        if (error) {
+            console.error('Error agregando miembros:', error)
+            throw error
+        }
+
+        return true
+    }
+
     return {
         createCommunity,
         getCommunities,
@@ -353,5 +429,9 @@ export const useCommunities = () => {
         getCommunityHabitCompletions,
         logCommunityHabitProgress,
         getCommunityHabitMyLog,
+        updateCommunityName,
+        deleteCommunity,
+        removeMemberFromCommunity,
+        addMembersToExistingCommunity,
     }
 }

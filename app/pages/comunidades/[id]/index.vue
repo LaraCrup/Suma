@@ -6,15 +6,15 @@
                 <HabitsCommunityCard :habit="habit" :members="completions" />
             </div>
         </div>
-        <div ref="messagesContainer" class="relative w-full h-[60vh] flex flex-col justify-end gap-2 overflow-y-auto">
+        <div ref="messagesContainer" class="relative w-full h-[50dvh] flex flex-col justify-end gap-2 overflow-y-auto">
             <template v-for="msg in messages" :key="msg.id">
-                <CommunityChatOutputMessage v-if="msg.sender?.id === currentUserId" :message="msg" />
+                <CommunityChatOutputMessage v-if="msg.user_id === currentUserId" :message="msg" />
                 <CommunityChatInputMessage v-else :message="msg" />
             </template>
             <p v-if="messages.length === 0" class="text-[0.625rem] text-gray text-center pb-2">
                 No hay mensajes aún. ¡Escribí el primero!
             </p>
-            <div class="absolute top-0 left-0 h-[60vh] w-full bg-[linear-gradient(180deg,_rgba(243,252,247,1)_0%,rgba(243,252,247,0)_12%)] pointer-events-none"></div>
+            <div class="absolute top-0 left-0 h-[50dvh] w-full bg-[linear-gradient(180deg,_rgba(243,252,247,1)_0%,rgba(243,252,247,0)_12%)] pointer-events-none"></div>
         </div>
         <form @submit.prevent="handleSend" class="relative w-full">
             <input
@@ -28,7 +28,7 @@
                 :disabled="isSending || !newMessage.trim()"
                 class="w-7 h-7 absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center bg-primary rounded-full disabled:opacity-50"
             >
-                <img src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3">
+                <NuxtImg src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3" />
             </button>
         </form>
     </DefaultSection>
@@ -36,7 +36,6 @@
 
 <script setup>
 const route = useRoute()
-const authStore = useAuthStore()
 const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions } = useCommunities()
 
 const community = ref(null)
@@ -46,8 +45,7 @@ const messages = ref([])
 const newMessage = ref('')
 const isSending = ref(false)
 const messagesContainer = ref(null)
-
-const currentUserId = computed(() => authStore.user?.id)
+const currentUserId = ref(null)
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -59,6 +57,9 @@ const scrollToBottom = () => {
 
 const loadCommunity = async () => {
     const id = route.params.id
+    const { data: { session } } = await useSupabaseClient().auth.getSession()
+    currentUserId.value = session?.user?.id ?? null
+
     const [communityData, habitData, messagesData] = await Promise.all([
         getCommunityById(id),
         getCommunityHabit(id),
