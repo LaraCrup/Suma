@@ -43,7 +43,7 @@
             </div>
             <div class="w-full flex flex-col gap-2">
                 <CommunityFriendsCard v-for="member in community?.members" :key="member.profile.id"
-                    :friend="member.profile" />
+                    :friend="member.profile" :badge="member.role === 'admin' ? 'Admin' : ''" />
             </div>
         </div>
 
@@ -93,9 +93,12 @@
                                         {{ member.profile.display_name?.[0]?.toUpperCase() }}
                                     </span>
                                 </div>
-                                <p class="text-xs text-dark">{{ member.profile.display_name }}</p>
+                                <div class="flex items-center gap-1">
+                                    <p class="text-xs text-dark">{{ member.profile.display_name }}</p>
+                                    <span v-if="member.role === 'admin'" class="text-[0.6rem] text-primary font-semibold">(Admin)</span>
+                                </div>
                             </div>
-                            <button @click="askRemoveMember(member)" class="w-6 h-6 flex items-center justify-center">
+                            <button v-if="member.role !== 'admin'" @click="askRemoveMember(member)" class="w-6 h-6 flex items-center justify-center">
                                 <NuxtImg src="/images/icons/delete.svg" alt="Eliminar miembro" class="w-4" />
                             </button>
                         </div>
@@ -131,13 +134,15 @@
                             class="w-full h-10 bg-midlight text-xs text-dark focus:outline-none rounded-lg border-[1px] border-solid border-gray pl-9 pr-3" />
                     </div>
 
-                    <!-- Lista de amigos (excluye miembros actuales) -->
+                    <!-- Lista de todos los amigos (miembros actuales marcados en verde) -->
                     <div class="flex flex-col gap-2">
                         <CommunityFriendsCard v-for="friend in filteredFriendsToAdd" :key="friend.id" :friend="friend"
-                            :selectable="true" :selected="selectedToAdd.includes(friend.id)"
+                            :selectable="true"
+                            :selected="currentMemberIds.includes(friend.id) || selectedToAdd.includes(friend.id)"
+                            :disabled="currentMemberIds.includes(friend.id)"
                             @toggle="toggleAddMember" />
                         <p v-if="filteredFriendsToAdd.length === 0" class="text-xs text-gray text-center py-2">
-                            No hay amigos para agregar.
+                            No tenés amigos para agregar.
                         </p>
                     </div>
 
@@ -168,6 +173,7 @@
                         de esta comunidad?
                     </p>
                 </div>
+                <p v-if="removeError" class="text-xs text-red-500 text-center">{{ removeError }}</p>
                 <div class="w-full flex flex-col items-center gap-2">
                     <ButtonPrimary :disabled="isSaving" @click="confirmRemoveMember">Sí, eliminar</ButtonPrimary>
                     <ButtonTerciary @click="memberToRemove = null">Cancelar</ButtonTerciary>
@@ -197,6 +203,7 @@
                             permanente?
                         </p>
                     </div>
+                    <p v-if="deleteCommunityError" class="text-xs text-red-500 text-center">{{ deleteCommunityError }}</p>
                     <div class="w-full flex flex-col items-center gap-2">
                         <ButtonPrimary :disabled="isSaving" @click="confirmDeleteCommunity">Sí, eliminar</ButtonPrimary>
                         <ButtonTerciary @click="showDeleteCommunity = false">Cancelar</ButtonTerciary>
@@ -209,7 +216,7 @@
 
 <script setup>
 const route = useRoute()
-const authStore = useAuthStore()
+const supabase = useSupabaseClient()
 const {
     getCommunityById,
     getCommunityHabit,
@@ -226,6 +233,7 @@ const habit = ref(null)
 const completions = ref([])
 const friends = ref([])
 const isSaving = ref(false)
+const currentUserId = ref(null)
 
 // Edición de nombre
 const isEditingName = ref(false)
@@ -256,12 +264,12 @@ const showEditMembers = ref(false)
 const showAddMembers = ref(false)
 const showDeleteCommunity = ref(false)
 const memberToRemove = ref(null)
+const removeError = ref('')
+const deleteCommunityError = ref('')
 
 // Add members state
 const searchQuery = ref('')
 const selectedToAdd = ref([])
-
-const currentUserId = computed(() => authStore.user?.id)
 
 const isAdmin = computed(() =>
     community.value?.members?.some(
@@ -279,14 +287,15 @@ const currentMemberIds = computed(() =>
 
 const filteredFriendsToAdd = computed(() => {
     const query = searchQuery.value.toLowerCase()
-    return friends.value.filter(f =>
-        !currentMemberIds.value.includes(f.id) &&
-        (!query || f.display_name?.toLowerCase().includes(query))
-    )
+    if (!query) return friends.value
+    return friends.value.filter(f => f.display_name?.toLowerCase().includes(query))
 })
 
 const loadData = async () => {
     const id = route.params.id
+    const { data: { session } } = await supabase.auth.getSession()
+    currentUserId.value = session?.user?.id ?? null
+
     const [communityData, habitData, friendsData] = await Promise.all([
         getCommunityById(id),
         getCommunityHabit(id),
@@ -309,6 +318,7 @@ const openAddMembers = () => {
 }
 
 const toggleAddMember = (id) => {
+    if (currentMemberIds.value.includes(id)) return
     const idx = selectedToAdd.value.indexOf(id)
     if (idx === -1) {
         selectedToAdd.value.push(id)
@@ -333,18 +343,20 @@ const saveNewMembers = async () => {
 
 const askRemoveMember = (member) => {
     memberToRemove.value = member
+    removeError.value = ''
     showEditMembers.value = false
 }
 
 const confirmRemoveMember = async () => {
     if (!memberToRemove.value || isSaving.value) return
     isSaving.value = true
+    removeError.value = ''
     try {
         await removeMemberFromCommunity(route.params.id, memberToRemove.value.profile.id)
         await loadData()
         memberToRemove.value = null
     } catch (e) {
-        console.error('Error eliminando miembro:', e)
+        removeError.value = e.message || 'Error al eliminar el miembro.'
     } finally {
         isSaving.value = false
     }
@@ -352,12 +364,13 @@ const confirmRemoveMember = async () => {
 
 const confirmDeleteCommunity = async () => {
     isSaving.value = true
+    deleteCommunityError.value = ''
     try {
         await deleteCommunity(route.params.id)
         showDeleteCommunity.value = false
         await navigateTo('/comunidades')
     } catch (e) {
-        console.error('Error eliminando comunidad:', e)
+        deleteCommunityError.value = e.message || 'Error al eliminar la comunidad.'
     } finally {
         isSaving.value = false
     }

@@ -9,15 +9,18 @@
                 <img v-if="friend?.avatar_url" :src="friend.avatar_url" :alt="friend.display_name" class="w-full h-full object-cover" />
                 <span v-else class="text-[0.5rem] text-light font-bold">{{ friend?.display_name?.charAt(0).toUpperCase() }}</span>
             </div>
-            <p class="text-xs">{{ friend?.display_name }}</p>
+            <div class="flex items-center gap-1">
+                <p class="text-xs">{{ friend?.display_name }}</p>
+                <span v-if="badge" class="text-[0.6rem] text-primary font-semibold">({{ badge }})</span>
+            </div>
         </div>
         <button
             v-if="selectable"
             type="button"
-            @click="emit('toggle', friend?.id)"
-            :class="['w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0', selected ? 'border border-primary' : 'border border-gray']"
+            @click="!disabled && emit('toggle', friend?.id)"
+            :class="['w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0', selected ? 'bg-primary border border-primary' : 'border border-gray']"
         >
-            <NuxtImg v-if="selected" src="/images/brillo-primary.svg" class="w-3 h-3" />
+            <NuxtImg v-if="selected" src="/images/brillo-blanco.svg" class="w-3 h-3" />
             <NuxtImg v-else src="/images/brillo.svg" class="w-3 h-3" />
         </button>
     </component>
@@ -38,6 +41,14 @@ const props = defineProps({
     selected: {
         type: Boolean,
         default: false
+    },
+    disabled: {
+        type: Boolean,
+        default: false
+    },
+    badge: {
+        type: String,
+        default: ''
     }
 })
 

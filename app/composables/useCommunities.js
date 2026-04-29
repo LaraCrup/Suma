@@ -364,14 +364,18 @@ export const useCommunities = () => {
      * Las eliminaciones en cascada del lado de la BD limpian miembros, hábitos, logs y mensajes.
      */
     const deleteCommunity = async (communityId) => {
-        const { error } = await client
+        const { error, count } = await client
             .from('communities')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('id', communityId)
 
         if (error) {
             console.error('Error eliminando comunidad:', error)
             throw error
+        }
+
+        if (count === 0) {
+            throw new Error('No se pudo eliminar la comunidad. Verificá que tenés permisos de administrador.')
         }
 
         return true
@@ -381,15 +385,19 @@ export const useCommunities = () => {
      * Elimina un miembro específico de una comunidad.
      */
     const removeMemberFromCommunity = async (communityId, userId) => {
-        const { error } = await client
+        const { error, count } = await client
             .from('community_members')
-            .delete()
+            .delete({ count: 'exact' })
             .eq('community_id', communityId)
             .eq('user_id', userId)
 
         if (error) {
             console.error('Error eliminando miembro:', error)
             throw error
+        }
+
+        if (count === 0) {
+            throw new Error('No se pudo eliminar el miembro. Verificá que tenés permisos de administrador.')
         }
 
         return true

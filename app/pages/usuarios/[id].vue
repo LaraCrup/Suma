@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p class="text-xs">Comunidades</p>
-                    <p class="text-xs font-bold text-primary mt-1">Próximamente...</p>
+                    <p class="text-base font-bold text-primary mt-1">{{ communityCount }}</p>
                 </div>
                 <div>
                     <p class="text-xs">Amigos</p>
@@ -97,6 +97,7 @@ const showRemoveConfirmation = ref(false)
 const profile = ref(null)
 const habitCount = ref(0)
 const friendCount = ref(0)
+const communityCount = ref(0)
 const isFriend = ref(false)
 const isPending = ref(false)
 onMounted(async () => {
@@ -115,7 +116,7 @@ onMounted(async () => {
         }
         profile.value = profileData
 
-        const [habitsResult, friendsResult, friendIds, pendingIds] = await Promise.all([
+        const [habitsResult, friendsResult, communitiesResult, friendIds, pendingIds] = await Promise.all([
             client
                 .from('habits')
                 .select('id', { count: 'exact', head: true })
@@ -125,12 +126,17 @@ onMounted(async () => {
                 .select('id', { count: 'exact', head: true })
                 .eq('status', 'accepted')
                 .or(`sender_id.eq.${targetId},receiver_id.eq.${targetId}`),
+            client
+                .from('community_members')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', targetId),
             getFriendIds(),
             getSentPendingIds()
         ])
 
         habitCount.value = habitsResult.count ?? 0
         friendCount.value = friendsResult.count ?? 0
+        communityCount.value = communitiesResult.count ?? 0
         isFriend.value = friendIds.includes(targetId)
         isPending.value = pendingIds.includes(targetId)
 
