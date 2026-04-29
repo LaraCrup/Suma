@@ -323,7 +323,7 @@ const signUp = async () => {
         const baseUrl = window.location.origin
         const loginPath = ROUTE_NAMES.LOGIN
 
-        const { error } = await client.auth.signUp({
+        const { data: authData, error } = await client.auth.signUp({
             email: form.email,
             password: form.password,
             options: {
@@ -336,7 +336,17 @@ const signUp = async () => {
         })
 
         if (error) {
-            errorMsg.value = handleSupabaseError(error)
+            if (error.status === 429) {
+                errorMsg.value = 'Demasiados intentos. Esperá unos minutos antes de volver a intentarlo.'
+            } else {
+                errorMsg.value = handleSupabaseError(error)
+            }
+            loading.value = false
+            return
+        }
+
+        if (authData?.user?.identities?.length === 0) {
+            errorMsg.value = 'Este correo ya está registrado. Iniciá sesión o recuperá tu contraseña.'
             loading.value = false
             return
         }
