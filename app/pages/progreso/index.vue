@@ -75,7 +75,14 @@
                 </div>
             </div>
             <div class="w-full flex flex-col gap-2">
-                <BenefitsCard></BenefitsCard>
+                <template v-if="benefits.length > 0">
+                    <BenefitsCard
+                        v-for="benefit in benefits"
+                        :key="benefit.id"
+                        :benefit="benefit"
+                    />
+                </template>
+                <p v-else class="text-xs text-gray">Aún no desbloqueaste ningún beneficio.</p>
             </div>
         </template>
     </DefaultSection>
@@ -88,6 +95,7 @@ const client = useSupabaseClient()
 
 const loading = ref(true)
 const habits = ref([])
+const benefits = ref([])
 const todayStats = ref({ completed: 0, total: 0 })
 const mostConsistentHabit = ref(null)
 const consistencyPercentage = ref(0)
@@ -201,6 +209,8 @@ const loadData = async () => {
             loadUserXP()
         ])
 
+        await loadBenefits()
+
         findMostConsistentHabit()
     } catch (error) {
         console.error('Error cargando estadísticas:', error)
@@ -215,6 +225,33 @@ const loadUserXP = async () => {
         levelInfo.value = await getLevelInfo(userXP.value.experience_points)
     } catch (error) {
         console.error('Error cargando XP:', error)
+    }
+}
+
+const loadBenefits = async () => {
+    try {
+        const currentLevel = levelInfo.value.currentLevel
+        const { data, error } = await client
+            .from('benefits')
+            .select('id, title, image_url, brands ( name, image_url )')
+            .eq('status', 'approved')
+            .eq('level', currentLevel)
+            .order('created_at', { ascending: true })
+
+        if (error) {
+            console.error('Error cargando beneficios:', error)
+            return
+        }
+
+        benefits.value = (data || []).map(b => ({
+            id: b.id,
+            title: b.title,
+            image: b.image_url || null,
+            brand_name: b.brands?.name || '',
+            brand_image: b.brands?.image_url || null
+        }))
+    } catch (error) {
+        console.error('Error cargando beneficios:', error)
     }
 }
 

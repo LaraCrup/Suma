@@ -18,6 +18,7 @@ export const ROUTE_NAMES = {
     PROFILE_EDIT: '/mi-perfil/editar',
     CHANGE_PASSWORD: '/mi-perfil/cambiar-contrasena',
     PROGRESS: '/progreso',
+    BENEFITS_DETAIL: '/progreso/beneficios',
     COMMUNITY: '/comunidades',
     NEWS: '/novedades',
 };
