@@ -45,6 +45,10 @@ const props = defineProps({
     habit: {
         type: Object,
         required: true
+    },
+    selectedDate: {
+        type: String,
+        default: null
     }
 });
 
@@ -145,7 +149,7 @@ const completeHabit = async () => {
         const progressNeeded = goalValue - currentProgress
 
         if (progressNeeded > 0) {
-            const updated = await logHabitProgress(props.habit.id, progressNeeded)
+            const updated = await logHabitProgress(props.habit.id, progressNeeded, props.selectedDate)
             emit('habitUpdated', updated)
         }
     } catch (error) {
@@ -158,7 +162,7 @@ const resetHabit = async () => {
         const currentProgress = props.habit.progress_count || 0
 
         if (currentProgress > 0) {
-            const updated = await logHabitProgress(props.habit.id, -currentProgress)
+            const updated = await logHabitProgress(props.habit.id, -currentProgress, props.selectedDate)
             emit('habitUpdated', updated)
         }
     } catch (error) {

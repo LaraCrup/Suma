@@ -1,5 +1,6 @@
 <template>
     <DefaultSection class="!gap-2">
+        <HabitsDateNavigator v-model="selectedDate" />
         <div class="w-full flex justify-between items-center">
             <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
             <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="min-w-6 min-h-6 flex justify-center items-center bg-green-dark text-light rounded-full">+</NuxtLink>
@@ -9,6 +10,7 @@
                 v-for="habit in visibleHabits"
                 :key="habit.id"
                 :habit="habit"
+                :selectedDate="selectedDate"
                 @habitUpdated="handleHabitUpdated"
             />
             <p v-if="visibleHabits.length === 0" class="text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
@@ -37,6 +39,7 @@
                         v-for="habit in hiddenHabits"
                         :key="habit.id"
                         :habit="habit"
+                        :selectedDate="selectedDate"
                         @habitUpdated="handleHabitUpdated"
                     />
                 </div>
@@ -72,12 +75,13 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'
 
-const { getHabits, shouldShowHabitToday, syncHabitsWithNewDay, getArgentineDate } = useHabits()
+const { getHabitsForDate, shouldShowHabitForDate, syncHabitsWithNewDay, getArgentineDate } = useHabits()
 const { getCommunities, getCommunityHabitCompletions } = useCommunities()
 const authStore = useAuthStore()
 const habits = ref([])
 const showAllHabits = ref(false)
 const communityHabits = ref([])
+const selectedDate = ref(getArgentineDate())
 
 const tips = [
     {
@@ -106,7 +110,7 @@ const filterHabitsByVisibility = async () => {
     const hidden = []
 
     for (const habit of habits.value) {
-        const shouldShow = await shouldShowHabitToday(habit)
+        const shouldShow = await shouldShowHabitForDate(habit, selectedDate.value)
         if (shouldShow) {
             visible.push(habit)
         } else {
@@ -121,22 +125,27 @@ const filterHabitsByVisibility = async () => {
 const handleHabitUpdated = async (updatedHabit) => {
     const habitIndex = habits.value.findIndex(h => h.id === updatedHabit.id)
     if (habitIndex !== -1) {
-        // Actualizar el hábito con los datos devueltos
         habits.value[habitIndex] = updatedHabit
 
-        // Refrescar todos los hábitos para asegurar que los datos estén actualizados
-        // (especialmente para cantidad_dias_semana y cantidad_dias_mes)
         try {
-            const refreshedHabits = await getHabits()
+            const refreshedHabits = await getHabitsForDate(selectedDate.value)
             habits.value = refreshedHabits
         } catch (error) {
             console.error('Error refrescando hábitos:', error)
         }
 
-        // Filtrar nuevamente para actualizar visibilidad
         await filterHabitsByVisibility()
     }
 }
+
+watch(selectedDate, async (newDate) => {
+    try {
+        habits.value = await getHabitsForDate(newDate)
+        await filterHabitsByVisibility()
+    } catch (error) {
+        console.error('Error cargando hábitos para fecha:', error)
+    }
+})
 
 let dateCheckInterval = null
 
@@ -149,7 +158,7 @@ onMounted(async () => {
         await syncHabitsWithNewDay()
         console.log('[PAGE INDEX] Sincronización completada')
 
-        habits.value = await getHabits()
+        habits.value = await getHabitsForDate(selectedDate.value)
         console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
 
         await filterHabitsByVisibility()
@@ -175,8 +184,9 @@ onMounted(async () => {
 
                 if (lastCheck && lastCheck !== today) {
                     console.log('[PAGE INDEX] Detectado cambio de fecha! Reseteando hábitos...')
+                    selectedDate.value = today
                     await syncHabitsWithNewDay()
-                    habits.value = await getHabits()
+                    habits.value = await getHabitsForDate(selectedDate.value)
                     console.log('[PAGE INDEX] Hábitos reseteados por cambio de fecha')
 
                     await filterHabitsByVisibility()

@@ -1,0 +1,134 @@
+<template>
+    <div
+        class="w-full"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd"
+    >
+        <div class="flex justify-between items-start w-full">
+            <button
+                v-for="day in days"
+                :key="day.dateStr"
+                @click="selectDay(day.dateStr)"
+                class="flex flex-col items-center gap-1 flex-1"
+            >
+                <p class="text-[0.6rem] text-gray">{{ day.label }}</p>
+                <div
+                    :class="[
+                        'w-7 h-7 flex items-center justify-center rounded-full transition-colors',
+                        isSelected(day.dateStr)
+                            ? 'bg-primary text-light'
+                            : isToday(day.dateStr)
+                                ? 'border border-green-dark text-green-dark'
+                                : 'text-dark'
+                    ]"
+                >
+                    <p class="text-xs font-medium">{{ day.number }}</p>
+                </div>
+            </button>
+        </div>
+    </div>
+</template>
+
+<script setup>
+const props = defineProps({
+    modelValue: {
+        type: String,
+        required: true
+    }
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+const weekOffset = ref(0)
+const touchStartX = ref(0)
+
+const TODAY = (() => {
+    const formatter = new Intl.DateTimeFormat('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    })
+    const parts = formatter.formatToParts(new Date())
+    const year = parts.find(p => p.type === 'year').value
+    const month = parts.find(p => p.type === 'month').value
+    const day = parts.find(p => p.type === 'day').value
+    return `${year}-${month}-${day}`
+})()
+
+const DAY_LABELS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
+
+const addDays = (dateStr, n) => {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const date = new Date(y, m - 1, d + n)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+const days = computed(() => {
+    const baseDate = addDays(TODAY, weekOffset.value * 7)
+    return Array.from({ length: 7 }, (_, i) => {
+        const dateStr = addDays(baseDate, i - 6)
+        const [, , dayNum] = dateStr.split('-').map(Number)
+        const [year, month, day] = dateStr.split('-').map(Number)
+        const dayOfWeek = new Date(year, month - 1, day).getDay()
+        return {
+            dateStr,
+            label: DAY_LABELS[dayOfWeek],
+            number: dayNum
+        }
+    })
+})
+
+const isSelected = (dateStr) => props.modelValue === dateStr
+const isToday = (dateStr) => dateStr === TODAY
+
+const selectDay = (dateStr) => {
+    emit('update:modelValue', dateStr)
+}
+
+const handleTouchStart = (e) => {
+    touchStartX.value = e.touches[0].clientX
+}
+
+const handleTouchEnd = (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.value
+    if (Math.abs(dx) < 40) return
+
+    if (dx < 0) {
+        // Swipe izquierda: ir hacia atrás en el tiempo
+        weekOffset.value--
+        // Si el día seleccionado queda fuera, seleccionar el más reciente visible
+        const lastDay = days.value[6].dateStr
+        if (props.modelValue > lastDay || props.modelValue < days.value[0].dateStr) {
+            emit('update:modelValue', lastDay)
+        }
+    } else {
+        // Swipe derecha: ir hacia adelante (máximo hoy)
+        if (weekOffset.value < 0) {
+            weekOffset.value++
+            const lastDay = days.value[6].dateStr
+            if (props.modelValue > lastDay || props.modelValue < days.value[0].dateStr) {
+                emit('update:modelValue', lastDay)
+            }
+        }
+    }
+}
+
+// Cuando el modelValue cambia externamente, ajustar weekOffset si es necesario
+watch(() => props.modelValue, (newDate) => {
+    const firstDay = days.value[0].dateStr
+    const lastDay = days.value[6].dateStr
+    if (newDate < firstDay || newDate > lastDay) {
+        // Calcular cuántas semanas de diferencia hay desde hoy
+        const [ty, tm, td] = TODAY.split('-').map(Number)
+        const [ny, nm, nd] = newDate.split('-').map(Number)
+        const todayMs = new Date(ty, tm - 1, td).getTime()
+        const targetMs = new Date(ny, nm - 1, nd).getTime()
+        const diffDays = Math.floor((targetMs - todayMs) / (1000 * 60 * 60 * 24))
+        weekOffset.value = Math.min(0, Math.floor(diffDays / 7))
+    }
+})
+</script>
