@@ -167,8 +167,8 @@ export const useHabits = () => {
         }
 
         let streakUpdate = {}
-        const isWeeklyPeriod = habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
-        const isMonthlyPeriod = habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
+        const isWeeklyPeriod = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
+        const isMonthlyPeriod = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
 
         if (isWeeklyPeriod) {
             if (isCompleted && !existingLog?.completed) {
@@ -189,7 +189,9 @@ export const useHabits = () => {
                 const completedCount = weekLogs?.length || 0
                 const requiredCount = habit.frequency_option === 'dias_especificos_semana'
                     ? (habit.frequency_detail?.weekDays?.length || 0)
-                    : (habit.frequency_detail?.counter || 0)
+                    : habit.frequency_option === 'todos'
+                        ? 7
+                        : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount) {
                     const newStreak = (habit.streak || 0) + 1
@@ -219,7 +221,9 @@ export const useHabits = () => {
                 const completedCount = weekLogs?.length || 0
                 const requiredCount = habit.frequency_option === 'dias_especificos_semana'
                     ? (habit.frequency_detail?.weekDays?.length || 0)
-                    : (habit.frequency_detail?.counter || 0)
+                    : habit.frequency_option === 'todos'
+                        ? 7
+                        : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
                     streakUpdate = {
@@ -246,7 +250,9 @@ export const useHabits = () => {
                 const completedCount = monthLogs?.length || 0
                 const requiredCount = habit.frequency_option === 'dias_especificos_mes'
                     ? (habit.frequency_detail?.monthDays?.length || 0)
-                    : (habit.frequency_detail?.counter || 0)
+                    : habit.frequency_option === 'todos'
+                        ? lastDay
+                        : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount) {
                     const newStreak = (habit.streak || 0) + 1
@@ -276,7 +282,9 @@ export const useHabits = () => {
                 const completedCount = monthLogs?.length || 0
                 const requiredCount = habit.frequency_option === 'dias_especificos_mes'
                     ? (habit.frequency_detail?.monthDays?.length || 0)
-                    : (habit.frequency_detail?.counter || 0)
+                    : habit.frequency_option === 'todos'
+                        ? lastDay
+                        : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
                     streakUpdate = {
@@ -480,6 +488,16 @@ export const useHabits = () => {
         const completedCount = logs?.length || 0
 
         switch (habit.frequency_option) {
+            case 'todos':
+                if (habit.frequency_type === 'semanal') {
+                    return completedCount >= 7
+                } else if (habit.frequency_type === 'mensual') {
+                    const [y, m] = startDate.split('-').map(Number)
+                    const lastDay = new Date(y, m, 0).getDate()
+                    return completedCount >= lastDay
+                }
+                return false
+
             case 'dias_especificos_semana':
             case 'dias_especificos_mes':
                 const requiredDays = habit.frequency_detail?.weekDays?.length ||
@@ -504,8 +522,8 @@ export const useHabits = () => {
             const dayOfWeek = today.getDay()
             const dayOfMonth = today.getDate()
 
-            const isWeeklyPeriod = habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
-            const isMonthlyPeriod = habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
+            const isWeeklyPeriod = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
+            const isMonthlyPeriod = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
 
             if (isWeeklyPeriod) {
                 // Solo verificar los lunes

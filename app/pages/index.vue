@@ -46,7 +46,13 @@
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos comunitarios</HeadingH1>
         <div class="w-full flex flex-col gap-1">
-            <p class="text-sm text-gray text-center py-4">Próximamente...</p>
+            <HabitsCommunityCard
+                v-for="item in communityHabits"
+                :key="item.habit.id"
+                :habit="item.habit"
+                :members="item.members"
+            />
+            <p v-if="communityHabits.length === 0" class="text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">
@@ -67,9 +73,11 @@ import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'
 
 const { getHabits, shouldShowHabitToday, syncHabitsWithNewDay, getArgentineDate } = useHabits()
+const { getCommunities, getCommunityHabitCompletions } = useCommunities()
 const authStore = useAuthStore()
 const habits = ref([])
 const showAllHabits = ref(false)
+const communityHabits = ref([])
 
 const tips = [
     {
@@ -145,6 +153,16 @@ onMounted(async () => {
         console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
 
         await filterHabitsByVisibility()
+
+        const communities = await getCommunities()
+        const items = []
+        for (const community of communities) {
+            if (!community.habit) continue
+            const habit = { ...community.habit, community_id: community.id }
+            const members = await getCommunityHabitCompletions(community.habit.id)
+            items.push({ habit, members })
+        }
+        communityHabits.value = items
     } catch (error) {
         console.error('Error cargando hábitos:', error)
     }
