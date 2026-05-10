@@ -27,7 +27,8 @@ export default defineNuxtConfig({
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'apple-touch-icon', href: 'shared/.svg' }
+        { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/apple-touch-icon.png' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
       ]
     }
   },
@@ -46,7 +47,7 @@ export default defineNuxtConfig({
       ]
     },
     cookieOptions: {
-      maxAge: 60 * 60 * 8,
+      maxAge: 60 * 60 * 24 * 365,
       secure: process.env.NODE_ENV === 'production'
     },
     clientOptions: {

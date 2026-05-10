@@ -1,5 +1,9 @@
 <template>
     <DefaultSection>
+        <div v-if="isLoading" class="w-full flex justify-center py-10">
+            <Loader color="primary" />
+        </div>
+        <template v-else>
         <div class="w-full flex flex-col gap-3">
             <CommunityHeader :community="community" />
             <div v-if="habit" class="w-full">
@@ -31,6 +35,7 @@
                 <NuxtImg src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3" />
             </button>
         </form>
+        </template>
     </DefaultSection>
 </template>
 
@@ -46,6 +51,7 @@ const newMessage = ref('')
 const isSending = ref(false)
 const messagesContainer = ref(null)
 const currentUserId = ref(null)
+const isLoading = ref(true)
 
 const scrollToBottom = () => {
     nextTick(() => {
@@ -56,22 +62,26 @@ const scrollToBottom = () => {
 }
 
 const loadCommunity = async () => {
-    const id = route.params.id
-    const { data: { session } } = await useSupabaseClient().auth.getSession()
-    currentUserId.value = session?.user?.id ?? null
+    try {
+        const id = route.params.id
+        const { data: { session } } = await useSupabaseClient().auth.getSession()
+        currentUserId.value = session?.user?.id ?? null
 
-    const [communityData, habitData, messagesData] = await Promise.all([
-        getCommunityById(id),
-        getCommunityHabit(id),
-        getCommunityMessages(id),
-    ])
-    community.value = communityData
-    habit.value = habitData
-    messages.value = messagesData
-    if (habitData) {
-        completions.value = await getCommunityHabitCompletions(habitData.id)
+        const [communityData, habitData, messagesData] = await Promise.all([
+            getCommunityById(id),
+            getCommunityHabit(id),
+            getCommunityMessages(id),
+        ])
+        community.value = communityData
+        habit.value = habitData
+        messages.value = messagesData
+        if (habitData) {
+            completions.value = await getCommunityHabitCompletions(habitData.id)
+        }
+        scrollToBottom()
+    } finally {
+        isLoading.value = false
     }
-    scrollToBottom()
 }
 
 const handleSend = async () => {

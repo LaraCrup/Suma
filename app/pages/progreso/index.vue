@@ -2,9 +2,7 @@
     <DefaultSection>
         <HeadingH1 class="w-full">Tu progreso</HeadingH1>
 
-        <div v-if="loading" class="w-full flex justify-center py-8">
-            <Loader />
-        </div>
+        <SkeletonProgresoDashboard v-if="loading" />
 
         <template v-else>
             <!-- Progreso de hoy -->

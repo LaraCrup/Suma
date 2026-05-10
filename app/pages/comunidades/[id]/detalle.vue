@@ -1,5 +1,9 @@
 <template>
     <DefaultSection>
+        <div v-if="isLoading" class="w-full flex justify-center py-10">
+            <Loader color="primary" />
+        </div>
+        <template v-else>
         <!-- Header con back arrow -->
         <div class="w-full">
             <NavigationBackArrow color="text-gray" />
@@ -211,6 +215,7 @@
                 </div>
             </div>
         </Transition>
+        </template>
     </DefaultSection>
 </template>
 
@@ -234,6 +239,7 @@ const completions = ref([])
 const friends = ref([])
 const isSaving = ref(false)
 const currentUserId = ref(null)
+const isLoading = ref(true)
 
 // Edición de nombre
 const isEditingName = ref(false)
@@ -292,22 +298,26 @@ const filteredFriendsToAdd = computed(() => {
 })
 
 const loadData = async () => {
-    const id = route.params.id
-    const { data: { session } } = await supabase.auth.getSession()
-    currentUserId.value = session?.user?.id ?? null
+    try {
+        const id = route.params.id
+        const { data: { session } } = await supabase.auth.getSession()
+        currentUserId.value = session?.user?.id ?? null
 
-    const [communityData, habitData, friendsData] = await Promise.all([
-        getCommunityById(id),
-        getCommunityHabit(id),
-        getFriends(),
-    ])
-    community.value = communityData
-    editedName.value = communityData?.name ?? ''
-    habit.value = habitData
-    friends.value = friendsData || []
+        const [communityData, habitData, friendsData] = await Promise.all([
+            getCommunityById(id),
+            getCommunityHabit(id),
+            getFriends(),
+        ])
+        community.value = communityData
+        editedName.value = communityData?.name ?? ''
+        habit.value = habitData
+        friends.value = friendsData || []
 
-    if (habitData) {
-        completions.value = await getCommunityHabitCompletions(habitData.id)
+        if (habitData) {
+            completions.value = await getCommunityHabitCompletions(habitData.id)
+        }
+    } finally {
+        isLoading.value = false
     }
 }
 

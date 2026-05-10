@@ -1,8 +1,10 @@
 <template>
     <button
+        ref="cardRef"
         @click="handleClick"
         @touchstart="handleTouchStart"
         @touchend="handleTouchEnd"
+        :style="swipeStyle"
         :class="['w-full flex justify-between rounded-lg p-3 transition-colors', isCompleted ? 'bg-accent' : 'bg-midlight']">
         <div class="flex gap-3 items-center">
             <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm leading-3">{{ habit.icon }}</p></div>
@@ -35,7 +37,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useHabits } from '~/composables/useHabits'
 
 const router = useRouter();
@@ -54,9 +56,19 @@ const props = defineProps({
 
 const emit = defineEmits(['habitUpdated'])
 
+const cardRef = ref(null)
 const touchStartX = ref(0)
+const touchStartY = ref(0)
 const touchStartTime = ref(0)
 const isSwipe = ref(false)
+const touchDeltaX = ref(0)
+const isHorizontalGesture = ref(false)
+
+const swipeStyle = computed(() => {
+    if (!isHorizontalGesture.value || touchDeltaX.value === 0) return {}
+    const clampedDelta = Math.max(-60, Math.min(60, touchDeltaX.value * 0.35))
+    return { transform: `translateX(${clampedDelta}px)`, transition: 'none' }
+})
 
 const isCompleted = computed(() => {
     return (props.habit.progress_count || 0) >= (props.habit.goal_value || 1)
@@ -97,7 +109,6 @@ const brilloCount = computed(() => {
 const completedBrillos = computed(() => {
     const option = props.habit.frequency_option
 
-    // Para cantidad_dias_semana y cantidad_dias_mes, usar el conteo de días completados
     if (option === 'cantidad_dias_semana') {
         return props.habit.weekCompletedDays || 0
     }
@@ -105,14 +116,38 @@ const completedBrillos = computed(() => {
         return props.habit.monthCompletedDays || 0
     }
 
-    // Para otras opciones, usar progress_count
     return Math.min(props.habit.progress_count || 0, brilloCount.value)
+})
+
+const handleTouchMove = (e) => {
+    const dx = e.touches[0].clientX - touchStartX.value
+    const dy = e.touches[0].clientY - touchStartY.value
+
+    // Si el gesto es claramente vertical, no interceptar
+    if (!isHorizontalGesture.value && Math.abs(dy) > Math.abs(dx) + 5) return
+
+    if (Math.abs(dx) > 8) {
+        isHorizontalGesture.value = true
+        e.preventDefault()
+        touchDeltaX.value = dx
+    }
+}
+
+onMounted(() => {
+    cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
+})
+
+onUnmounted(() => {
+    cardRef.value?.removeEventListener('touchmove', handleTouchMove)
 })
 
 const handleTouchStart = (e) => {
     touchStartX.value = e.touches[0].clientX
+    touchStartY.value = e.touches[0].clientY
     touchStartTime.value = Date.now()
     isSwipe.value = false
+    touchDeltaX.value = 0
+    isHorizontalGesture.value = false
 }
 
 const handleTouchEnd = async (e) => {
@@ -122,7 +157,11 @@ const handleTouchEnd = async (e) => {
     const swipeTime = touchEndTime - touchStartTime.value
     const swipeDirection = touchEndX > touchStartX.value ? 'right' : 'left'
 
-    if (swipeDistance > 50 && swipeTime < 500) {
+    // Resetear feedback visual
+    touchDeltaX.value = 0
+    isHorizontalGesture.value = false
+
+    if (swipeDistance > 40 && swipeTime < 800) {
         isSwipe.value = true
         if (swipeDirection === 'right') {
             await completeHabit()

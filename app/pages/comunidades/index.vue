@@ -1,4 +1,19 @@
 <template>
+    <template v-if="isLoading">
+        <DefaultSection class="!gap-3">
+            <HeadingH1>Mis Comunidades</HeadingH1>
+            <div class="w-full flex flex-col gap-2">
+                <SkeletonCommunityCard v-for="i in 2" :key="i" />
+            </div>
+        </DefaultSection>
+        <DefaultSection class="!gap-3">
+            <HeadingH1>Mis amigos</HeadingH1>
+            <div class="w-full flex flex-col gap-2">
+                <SkeletonFriendCard v-for="i in 3" :key="i" />
+            </div>
+        </DefaultSection>
+    </template>
+    <template v-else>
     <DefaultSection class="!gap-3">
         <div class="w-full flex justify-between items-center">
             <HeadingH1>Mis Comunidades</HeadingH1>
@@ -47,6 +62,7 @@
             </p>
         </div>
     </DefaultSection>
+    </template>
 </template>
 
 <script setup>
@@ -56,16 +72,21 @@ const { getCommunities } = useCommunities()
 const pendingRequests = ref([])
 const friends = ref([])
 const communities = ref([])
+const isLoading = ref(true)
 
 const loadData = async () => {
-    const [requests, friendsList, communitiesList] = await Promise.all([
-        getPendingRequests(),
-        getFriends(),
-        getCommunities()
-    ])
-    pendingRequests.value = requests
-    friends.value = friendsList
-    communities.value = communitiesList
+    try {
+        const [requests, friendsList, communitiesList] = await Promise.all([
+            getPendingRequests(),
+            getFriends(),
+            getCommunities()
+        ])
+        pendingRequests.value = requests
+        friends.value = friendsList
+        communities.value = communitiesList
+    } finally {
+        isLoading.value = false
+    }
 }
 
 const onRequestHandled = (requestId) => {

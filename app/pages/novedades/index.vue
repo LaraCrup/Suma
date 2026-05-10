@@ -20,8 +20,8 @@
             </div>
         </div>
 
-        <div v-if="loading" class="w-full flex justify-center py-8">
-            <Loader />
+        <div v-if="loading" class="w-full flex flex-col gap-3">
+            <SkeletonNewsCard v-for="i in 3" :key="i" />
         </div>
 
         <div v-else class="w-full flex flex-col gap-3">

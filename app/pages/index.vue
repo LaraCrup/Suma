@@ -1,19 +1,24 @@
 <template>
-    <DefaultSection class="!gap-2">
+    <DefaultSection class="!gap-3">
         <HabitsDateNavigator v-model="selectedDate" />
-        <div class="w-full flex justify-between items-center">
+        <div class="w-full flex justify-between items-center mt-2">
             <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
-            <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="min-w-6 min-h-6 flex justify-center items-center bg-green-dark text-light rounded-full">+</NuxtLink>
+            <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="w-7 h-7 flex-shrink-0 flex justify-center items-center bg-green-dark text-light rounded-full text-lg leading-none">+</NuxtLink>
         </div>
         <div class="w-full flex flex-col gap-1">
-            <HabitsCard
-                v-for="habit in visibleHabits"
-                :key="habit.id"
-                :habit="habit"
-                :selectedDate="selectedDate"
-                @habitUpdated="handleHabitUpdated"
-            />
-            <p v-if="visibleHabits.length === 0" class="text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
+            <template v-if="isLoading">
+                <SkeletonHabitCard v-for="i in 3" :key="i" />
+            </template>
+            <template v-else>
+                <HabitsCard
+                    v-for="habit in visibleHabits"
+                    :key="habit.id"
+                    :habit="habit"
+                    :selectedDate="selectedDate"
+                    @habitUpdated="handleHabitUpdated"
+                />
+                <p v-if="visibleHabits.length === 0" class="text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
+            </template>
         </div>
 
         <div v-if="hiddenHabits.length > 0" class="w-full flex flex-col gap-1">
@@ -82,6 +87,8 @@ const habits = ref([])
 const showAllHabits = ref(false)
 const communityHabits = ref([])
 const selectedDate = ref(getArgentineDate())
+
+const isLoading = ref(true)
 
 const tips = [
     {
@@ -162,6 +169,7 @@ onMounted(async () => {
         console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
 
         await filterHabitsByVisibility()
+        isLoading.value = false
 
         const communities = await getCommunities()
         const items = []
@@ -174,6 +182,7 @@ onMounted(async () => {
         communityHabits.value = items
     } catch (error) {
         console.error('Error cargando hábitos:', error)
+        isLoading.value = false
     }
 
     if (typeof window !== 'undefined') {

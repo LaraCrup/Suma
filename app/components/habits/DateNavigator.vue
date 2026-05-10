@@ -12,17 +12,49 @@
                 class="flex flex-col items-center gap-1 flex-1"
             >
                 <p class="text-[0.6rem] text-gray">{{ day.label }}</p>
-                <div
-                    :class="[
-                        'w-7 h-7 flex items-center justify-center rounded-full transition-colors',
-                        isSelected(day.dateStr)
-                            ? 'bg-primary text-light'
-                            : isToday(day.dateStr)
-                                ? 'border border-green-dark text-green-dark'
-                                : 'text-dark'
-                    ]"
-                >
-                    <p class="text-xs font-medium">{{ day.number }}</p>
+                <div class="relative w-9 h-9 flex items-center justify-center">
+                    <svg
+                        class="absolute inset-0 w-full h-full text-primary -rotate-90"
+                        viewBox="0 0 36 36"
+                    >
+                        <circle
+                            cx="18"
+                            cy="18"
+                            r="15"
+                            fill="none"
+                            :stroke="day.dateStr > TODAY ? '#E5E7EB' : '#D1D5DB'"
+                            stroke-width="1.5"
+                            :stroke-dasharray="CIRCUMFERENCE"
+                            stroke-dashoffset="0"
+                        />
+                        <!-- Arco de progreso encima, solo si hay completion -->
+                        <circle
+                            v-if="getCompletionRatio(day.dateStr) > 0"
+                            cx="18"
+                            cy="18"
+                            r="15"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            :stroke-dasharray="CIRCUMFERENCE"
+                            :stroke-dashoffset="getStrokeDashOffset(day.dateStr)"
+                        />
+                    </svg>
+                    <div
+                        :class="[
+                            'w-7 h-7 flex items-center justify-center rounded-full transition-colors',
+                            isSelected(day.dateStr)
+                                ? 'bg-accent text-green-dark'
+                                : isToday(day.dateStr)
+                                    ? 'border border-green-dark text-green-dark'
+                                    : day.dateStr > TODAY
+                                        ? 'text-gray opacity-50'
+                                        : 'text-dark'
+                        ]"
+                    >
+                        <p class="text-xs font-medium">{{ day.number }}</p>
+                    </div>
                 </div>
             </button>
         </div>
@@ -39,8 +71,13 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+const client = useSupabaseClient()
+
 const weekOffset = ref(0)
 const touchStartX = ref(0)
+const dayCompletions = ref({})
+
+const CIRCUMFERENCE = 2 * Math.PI * 15
 
 const TODAY = (() => {
     const formatter = new Intl.DateTimeFormat('es-AR', {
@@ -82,6 +119,62 @@ const days = computed(() => {
     })
 })
 
+const fetchWeekCompletions = async () => {
+    // Usar getSession() igual que el resto del app — no depende del ref reactivo
+    const { data: { session } } = await client.auth.getSession()
+    const userId = session?.user?.id
+    if (!userId) return
+
+    const pastAndTodayDates = days.value
+        .map(d => d.dateStr)
+        .filter(d => d <= TODAY)
+
+    if (pastAndTodayDates.length === 0) return
+
+    const { data: habits } = await client
+        .from('habits')
+        .select('id')
+        .eq('user_id', userId)
+
+    const total = habits?.length || 0
+    if (total === 0) return
+
+    const habitIds = habits.map(h => h.id)
+
+    const { data: logs } = await client
+        .from('habit_logs')
+        .select('date, habit_id')
+        .in('date', pastAndTodayDates)
+        .in('habit_id', habitIds)
+        .eq('completed', true)
+
+    const countPerDay = {}
+    logs?.forEach(log => {
+        countPerDay[log.date] = (countPerDay[log.date] || 0) + 1
+    })
+
+    const result = {}
+    pastAndTodayDates.forEach(date => {
+        result[date] = { completed: countPerDay[date] || 0, total }
+    })
+    dayCompletions.value = result
+}
+
+const getCompletionRatio = (dateStr) => {
+    if (dateStr > TODAY) return 0
+    const data = dayCompletions.value[dateStr]
+    if (!data || data.total === 0) return 0
+    return Math.min(data.completed / data.total, 1)
+}
+
+const getStrokeDashOffset = (dateStr) => {
+    const ratio = getCompletionRatio(dateStr)
+    return CIRCUMFERENCE * (1 - ratio)
+}
+
+onMounted(fetchWeekCompletions)
+watch(weekOffset, fetchWeekCompletions)
+
 const isSelected = (dateStr) => props.modelValue === dateStr
 const isToday = (dateStr) => dateStr === TODAY
 
@@ -98,15 +191,12 @@ const handleTouchEnd = (e) => {
     if (Math.abs(dx) < 40) return
 
     if (dx < 0) {
-        // Swipe izquierda: ir hacia atrás en el tiempo
         weekOffset.value--
-        // Si el día seleccionado queda fuera, seleccionar el más reciente visible
         const lastDay = days.value[6].dateStr
         if (props.modelValue > lastDay || props.modelValue < days.value[0].dateStr) {
             emit('update:modelValue', lastDay)
         }
     } else {
-        // Swipe derecha: ir hacia adelante (máximo hoy)
         if (weekOffset.value < 0) {
             weekOffset.value++
             const lastDay = days.value[6].dateStr
@@ -117,12 +207,10 @@ const handleTouchEnd = (e) => {
     }
 }
 
-// Cuando el modelValue cambia externamente, ajustar weekOffset si es necesario
 watch(() => props.modelValue, (newDate) => {
     const firstDay = days.value[0].dateStr
     const lastDay = days.value[6].dateStr
     if (newDate < firstDay || newDate > lastDay) {
-        // Calcular cuántas semanas de diferencia hay desde hoy
         const [ty, tm, td] = TODAY.split('-').map(Number)
         const [ny, nm, nd] = newDate.split('-').map(Number)
         const todayMs = new Date(ty, tm - 1, td).getTime()

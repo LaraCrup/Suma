@@ -19,7 +19,10 @@
                 <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" />
             </div>
         </form>
-        <div v-if="results.length > 0" class="w-full flex flex-col gap-2">
+        <div v-if="loading && query.length > 0 && results.length === 0" class="w-full flex justify-center py-4">
+            <Loader color="primary" />
+        </div>
+        <div v-else-if="results.length > 0" class="w-full flex flex-col gap-2">
             <CommunityFriendsCardAdd
                 v-for="user in results"
                 :key="user.id"
