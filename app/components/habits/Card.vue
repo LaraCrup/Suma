@@ -4,9 +4,17 @@
         @click="handleClick"
         @touchstart="handleTouchStart"
         @touchend="handleTouchEnd"
-        :style="swipeStyle"
-        :class="['w-full flex justify-between rounded-lg p-3 transition-colors', isCompleted ? 'bg-accent' : 'bg-midlight']">
-        <div class="flex gap-3 items-center min-w-0 flex-1">
+        :class="['w-full relative overflow-hidden flex justify-between rounded-lg p-3 transition-colors', isCompleted ? 'bg-accent' : 'bg-midlight']">
+        <div
+            v-if="showSwipeFill"
+            class="absolute inset-y-0 pointer-events-none"
+            :class="[
+                swipeDirection === 'right' ? 'left-0 bg-accent' : 'right-0 bg-midlight',
+                pendingDirection ? 'transition-[width] duration-150' : ''
+            ]"
+            :style="{ width: swipeFillPercent + '%' }"
+        />
+        <div class="relative flex gap-3 items-center min-w-0 flex-1">
             <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm leading-3">{{ habit.icon }}</p></div>
             <div class="min-w-0">
                 <p class="text-xs text-start truncate">{{ habit.name }}</p>
@@ -24,7 +32,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <div class="relative flex items-center gap-2 flex-shrink-0">
             <div v-if="habit.streak > 0" class="flex flex-shrink-0 items-center gap-1">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
                 <p class="text-xs">{{ habit.streak }}</p>
@@ -63,15 +71,38 @@ const touchStartTime = ref(0)
 const isSwipe = ref(false)
 const touchDeltaX = ref(0)
 const isHorizontalGesture = ref(false)
+const pendingDirection = ref(null)
 
-const swipeStyle = computed(() => {
-    if (!isHorizontalGesture.value || touchDeltaX.value === 0) return {}
-    const clampedDelta = Math.max(-60, Math.min(60, touchDeltaX.value * 0.35))
-    return { transform: `translateX(${clampedDelta}px)`, transition: 'none' }
-})
+const SWIPE_THRESHOLD = 40
+const FILL_FULL_DISTANCE = 60
 
 const isCompleted = computed(() => {
     return (props.habit.progress_count || 0) >= (props.habit.goal_value || 1)
+})
+
+const swipeDirection = computed(() => {
+    if (pendingDirection.value) return pendingDirection.value
+    if (touchDeltaX.value > 0) return 'right'
+    if (touchDeltaX.value < 0) return 'left'
+    return null
+})
+
+const isActionable = computed(() => {
+    const dir = swipeDirection.value
+    if (dir === 'right') return !isCompleted.value
+    if (dir === 'left') return (props.habit.progress_count || 0) > 0
+    return false
+})
+
+const swipeFillPercent = computed(() => {
+    if (pendingDirection.value) return 100
+    if (!isHorizontalGesture.value) return 0
+    const distance = Math.abs(touchDeltaX.value)
+    return Math.min((distance / FILL_FULL_DISTANCE) * 100, 100)
+})
+
+const showSwipeFill = computed(() => {
+    return isActionable.value && swipeFillPercent.value > 0
 })
 
 const hasSpecificFrequency = computed(() => {
@@ -155,18 +186,31 @@ const handleTouchEnd = async (e) => {
     const touchEndTime = Date.now()
     const swipeDistance = Math.abs(touchEndX - touchStartX.value)
     const swipeTime = touchEndTime - touchStartTime.value
-    const swipeDirection = touchEndX > touchStartX.value ? 'right' : 'left'
+    const direction = touchEndX > touchStartX.value ? 'right' : 'left'
 
-    // Resetear feedback visual
+    const isValidSwipe = swipeDistance > SWIPE_THRESHOLD && swipeTime < 800
+    const willAct = isValidSwipe && (
+        (direction === 'right' && !isCompleted.value) ||
+        (direction === 'left' && (props.habit.progress_count || 0) > 0)
+    )
+
+    if (willAct) {
+        isSwipe.value = true
+        pendingDirection.value = direction
+    }
+
     touchDeltaX.value = 0
     isHorizontalGesture.value = false
 
-    if (swipeDistance > 40 && swipeTime < 800) {
-        isSwipe.value = true
-        if (swipeDirection === 'right') {
-            await completeHabit()
-        } else {
-            await resetHabit()
+    if (willAct) {
+        try {
+            if (direction === 'right') {
+                await completeHabit()
+            } else {
+                await resetHabit()
+            }
+        } finally {
+            pendingDirection.value = null
         }
     }
 }

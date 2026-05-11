@@ -175,6 +175,8 @@ const getStrokeDashOffset = (dateStr) => {
 onMounted(fetchWeekCompletions)
 watch(weekOffset, fetchWeekCompletions)
 
+defineExpose({ refreshCompletions: fetchWeekCompletions })
+
 const isSelected = (dateStr) => props.modelValue === dateStr
 const isToday = (dateStr) => dateStr === TODAY
 

@@ -1,6 +1,6 @@
 <template>
     <DefaultSection class="!gap-3">
-        <HabitsDateNavigator v-model="selectedDate" />
+        <HabitsDateNavigator ref="dateNavigatorRef" v-model="selectedDate" />
         <div class="w-full flex justify-between items-center mt-2">
             <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
             <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="w-7 h-7 flex-shrink-0 flex justify-center items-center bg-green-dark text-light rounded-full text-lg leading-none">+</NuxtLink>
@@ -89,6 +89,7 @@ const communityHabits = ref([])
 const selectedDate = ref(getArgentineDate())
 
 const isLoading = ref(true)
+const dateNavigatorRef = ref(null)
 
 const tips = [
     {
@@ -142,6 +143,7 @@ const handleHabitUpdated = async (updatedHabit) => {
         }
 
         await filterHabitsByVisibility()
+        await dateNavigatorRef.value?.refreshCompletions()
     }
 }
 
