@@ -2,12 +2,12 @@
     <button
         @click="goToHabit"
         :class="['w-full flex justify-between rounded-lg p-3 transition-colors', myMember?.completed ? 'bg-accent' : 'bg-midlight']">
-        <div class="flex gap-3 items-center">
-            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-secondary">
+        <div class="flex gap-3 items-center min-w-0 flex-1">
+            <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary">
                 <p class="text-sm leading-3">{{ habit?.icon ?? '✨' }}</p>
             </div>
-            <div>
-                <p class="text-xs text-start">{{ habit?.name ?? 'Hábito compartido' }}</p>
+            <div class="min-w-0">
+                <p class="text-xs text-start truncate">{{ habit?.name ?? 'Hábito compartido' }}</p>
                 <div class="flex gap-1 items-center mt-1">
                     <template v-for="member in visibleMembers" :key="member.id">
                         <div
@@ -34,7 +34,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center">
+        <div class="flex items-center flex-shrink-0">
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', myMember?.completed ? 'bg-green-dark' : 'border-gray border-[1px]']">
                 <NuxtImg
                     :src="myMember?.completed ? '/images/icons/brillo-light-green.svg' : '/images/brillo.svg'"

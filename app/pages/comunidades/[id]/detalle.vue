@@ -99,7 +99,7 @@
                                 </div>
                                 <div class="flex items-center gap-1">
                                     <p class="text-xs text-dark">{{ member.profile.display_name }}</p>
-                                    <span v-if="member.role === 'admin'" class="text-[0.6rem] text-primary font-semibold">(Admin)</span>
+                                    <span v-if="member.role === 'admin'" class="text-xs text-primary font-semibold">(Admin)</span>
                                 </div>
                             </div>
                             <button v-if="member.role !== 'admin'" @click="askRemoveMember(member)" class="w-6 h-6 flex items-center justify-center">

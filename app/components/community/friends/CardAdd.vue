@@ -16,13 +16,13 @@
                     @click.prevent="handleSendRequest"
                     class="absolute w-5 h-5 flex justify-center items-center rounded-full border-green-light border-[1px]"
                 >
-                    <span class="text-green-light font-bold text-[0.625rem]">+</span>
+                    <span class="text-green-light font-bold text-xs">+</span>
                 </button>
                 <button
                     v-else
                     key="pending"
                     @click.prevent="handleCancelRequest"
-                    class="absolute right-0 text-[0.625rem] text-green-dark font-medium border border-green-dark rounded-full px-2 py-[2px]"
+                    class="absolute right-0 text-xs text-green-dark font-medium border border-green-dark rounded-full px-2 py-[2px]"
                 >Pendiente</button>
             </Transition>
         </div>

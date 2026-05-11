@@ -16,8 +16,8 @@
                 <Avatar :name="profile.display_name" :initial="profile.display_name?.charAt(0).toUpperCase()"
                     :image="profile.avatar_url" />
                 <div class="flex items-center gap-2">
-                    <p class="text-xs text-dark">Nivel</p><span
-                        class="w-5 h-5 flex justify-center items-center bg-green-dark text-light font-bold text-[0.625rem] rounded-full">
+                    <p class="text-sm text-dark">Nivel</p><span
+                        class="w-5 h-5 flex justify-center items-center bg-green-dark text-light text-xs rounded-full">
                         {{ profile.current_level }}
                     </span>
                 </div>

@@ -48,7 +48,7 @@
                     </div>
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
                         <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                        <p class="text-[0.625rem]">{{ habit?.streak || 0 }}</p>
+                        <p class="text-xs">{{ habit?.streak || 0 }}</p>
                     </div>
                 </div>
             </div>
@@ -60,12 +60,12 @@
                     :goal-value="habit?.goal_value"
                 />
                 <div class="w-full flex justify-center items-center gap-3 mt-3">
-                    <button @click="decreaseProgress" class="h-7 w-7 flex justify-center items-center bg-accent rounded-full text-lg leading-none">-</button>
-                    <div class="flex items-end gap-2">
+                    <button @click="decreaseProgress" class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg leading-none">-</button>
+                    <div class="flex items-end gap-1">
                         <p class="text-xl">{{ habit?.progress_count || 0 }}</p>
-                        <p class="text-[0.625rem]/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
+                        <p class="text-xs/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
                     </div>
-                    <button @click="increaseProgress" :disabled="(habit?.progress_count || 0) >= (habit?.goal_value || 1)" :class="{ 'opacity-50 cursor-not-allowed': (habit?.progress_count || 0) >= (habit?.goal_value || 1) }" class="h-7 w-7 flex justify-center items-center bg-accent rounded-full text-lg leading-none">+</button>
+                    <button @click="increaseProgress" :disabled="(habit?.progress_count || 0) >= (habit?.goal_value || 1)" :class="{ 'opacity-50 cursor-not-allowed': (habit?.progress_count || 0) >= (habit?.goal_value || 1) }" class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg leading-none">+</button>
                 </div>
             </div>
         </div>

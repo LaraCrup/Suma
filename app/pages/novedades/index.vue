@@ -31,37 +31,37 @@
                 :to="`/novedades/${item.id}`"
                 class="block w-full rounded-lg overflow-hidden"
             >
-                <div class="relative h-28 bg-midlight flex items-end p-3">
+                <div class="relative h-32 bg-midlight flex items-end p-3">
                     <NuxtImg
                         v-if="item.image_url"
                         :src="item.image_url"
                         :alt="item.title"
-                        class="absolute inset-0 w-full h-28 object-cover rounded-lg"
+                        class="absolute inset-0 w-full h-32 object-cover rounded-lg"
                     />
-                    <span class="relative z-10 text-[0.625rem] bg-accent text-green-dark px-2 py-1 rounded-full">
+                    <span class="relative z-10 text-xs bg-accent text-green-dark px-2 py-1 rounded-full">
                         {{ item.category?.name }}
                     </span>
                 </div>
 
                 <div class="bg-midlight p-3 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-1.5">
+                        <div class="flex items-center gap-2">
                             <NuxtImg
                                 :src="item.brand.image_url"
                                 :alt="item.brand?.name"
-                                class="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                                class="w-6 h-6 rounded-full object-cover flex-shrink-0"
                             />
-                            <span class="text-[0.625rem] text-dark">Por {{ item.brand?.name }}</span>
+                            <span class="text-xs text-dark">Por {{ item.brand?.name }}</span>
                         </div>
-                        <span class="text-[0.625rem] text-gray">{{ formatDate(item.publication_date) }}</span>
+                        <span class="text-xs text-gray">{{ formatDate(item.publication_date) }}</span>
                     </div>
                     <div class="w-full flex flex-col gap-2">
-                        <p class="text-xs font-bold text-dark leading-tight">{{ item.title }}</p>
+                        <p class="text-sm font-bold text-dark leading-tight">{{ item.title }}</p>
     
-                        <p class="text-[0.625rem] text-dark line-clamp-3">{{ item.content }}</p>
+                        <p class="text-xs text-dark line-clamp-3">{{ item.content }}</p>
                     </div>
                     <div class="flex justify-end">
-                        <span class="bg-green-light text-[0.625rem] text-light rounded-full px-4 py-1">
+                        <span class="bg-green-light text-xs text-light rounded-full px-4 py-1">
                             Ver más
                         </span>
                     </div>

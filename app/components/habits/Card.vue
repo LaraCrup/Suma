@@ -6,13 +6,13 @@
         @touchend="handleTouchEnd"
         :style="swipeStyle"
         :class="['w-full flex justify-between rounded-lg p-3 transition-colors', isCompleted ? 'bg-accent' : 'bg-midlight']">
-        <div class="flex gap-3 items-center">
-            <div class="w-8 h-8 flex items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm leading-3">{{ habit.icon }}</p></div>
-            <div>
-                <p class="text-xs text-start">{{ habit.name }}</p>
+        <div class="flex gap-3 items-center min-w-0 flex-1">
+            <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm leading-3">{{ habit.icon }}</p></div>
+            <div class="min-w-0">
+                <p class="text-xs text-start truncate">{{ habit.name }}</p>
                 <div class="flex gap-2 items-center">
-                    <p class="text-[0.625rem] text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
-                    <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
+                    <p class="text-xs text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
+                    <div v-if="hasSpecificFrequency" class="flex flex-shrink-0 gap-[2px]">
                         <NuxtImg
                             v-for="i in brilloCount"
                             :key="i"
@@ -24,10 +24,10 @@
                 </div>
             </div>
         </div>
-        <div class="flex items-center gap-2">
-            <div v-if="habit.streak > 0" class="flex items-center gap-1">
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <div v-if="habit.streak > 0" class="flex flex-shrink-0 items-center gap-1">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                <p class="text-[0.625rem]">{{ habit.streak }}</p>
+                <p class="text-xs">{{ habit.streak }}</p>
             </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', isCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">
                 <NuxtImg :src="isCompleted ? '/images/icons/brillo-light-green.svg' : '/images/brillo.svg'" :alt="isCompleted ? 'Completado' : 'Brillo'" class="w-3" />

@@ -11,7 +11,7 @@
                 <span class="text-light text-sm font-regular">×</span>
             </button>
         </div>
-        <p class="text-[0.625rem] text-dark">{{ member?.display_name }}</p>
+        <p class="text-xs text-dark">{{ member?.display_name }}</p>
     </div>
 </template>
 

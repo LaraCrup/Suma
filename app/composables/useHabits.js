@@ -63,14 +63,24 @@ export const useHabits = () => {
     }
 
     const getHabitsForDate = async (dateStr) => {
-        const today = getArgentineDate()
-        if (dateStr === today) return getHabits()
-
         const allHabits = await getHabits()
-        return Promise.all(allHabits.map(async (habit) => {
-            const log = await getHabitLogByDate(habit.id, dateStr)
-            return { ...habit, progress_count: log?.value || 0 }
-        }))
+
+        // Fetch all logs for this date in one batch query
+        const habitIds = allHabits.map(h => h.id)
+        const { data: dateLogs } = await client
+            .from('habit_logs')
+            .select('habit_id, value')
+            .in('habit_id', habitIds)
+            .eq('date', dateStr)
+
+        const logsByHabitId = {}
+        dateLogs?.forEach(log => { logsByHabitId[log.habit_id] = log })
+
+        return allHabits.map(habit => {
+            const log = logsByHabitId[habit.id]
+            // habit_logs.value is the source of truth: it's never wiped by a daily reset
+            return log ? { ...habit, progress_count: log.value } : { ...habit, progress_count: 0 }
+        })
     }
 
     const getHabitById = async (habitId) => {
@@ -85,6 +95,17 @@ export const useHabits = () => {
         }
 
         if (!data) return null
+
+        // Override progress_count with today's actual log value (habit_logs is source of truth)
+        const today = getArgentineDate()
+        const { data: todayLog } = await client
+            .from('habit_logs')
+            .select('value')
+            .eq('habit_id', habitId)
+            .eq('date', today)
+            .maybeSingle()
+
+        data.progress_count = todayLog?.value ?? 0
 
         const enriched = await enrichHabitsWithCompletedDays([data])
         return enriched[0]
@@ -144,7 +165,7 @@ export const useHabits = () => {
             throw searchError
         }
 
-        const baseProgress = isPastDate ? (existingLog?.value || 0) : (habit.progress_count || 0)
+        const baseProgress = existingLog?.value || 0
         let newProgressCount = baseProgress + amount
         newProgressCount = Math.max(0, newProgressCount)
         newProgressCount = Math.min(newProgressCount, habit.goal_value || 1)
@@ -155,7 +176,7 @@ export const useHabits = () => {
             const { error: updateLogError } = await client
                 .from('habit_logs')
                 .update({
-                    value: existingLog.value + amount,
+                    value: newProgressCount,
                     completed: isCompleted
                 })
                 .eq('id', existingLog.id)
@@ -170,7 +191,7 @@ export const useHabits = () => {
                 .insert([{
                     habit_id: habitId,
                     date: targetDate,
-                    value: amount,
+                    value: newProgressCount,
                     completed: isCompleted
                 }])
 
@@ -181,6 +202,8 @@ export const useHabits = () => {
         }
 
         let streakUpdate = {}
+        let shouldGrantXP = false
+        let streakForMilestone = 0
         const isWeeklyPeriod = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
         const isMonthlyPeriod = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
 
@@ -209,12 +232,9 @@ export const useHabits = () => {
                 if (completedCount === requiredCount) {
                     const newStreak = (habit.streak || 0) + 1
                     const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
-                    streakUpdate = {
-                        streak: newStreak,
-                        longest_streak: longestStreak
-                    }
-                    await grantXP('habit_completed')
-                    await checkStreakMilestone(newStreak)
+                    streakUpdate = { streak: newStreak, longest_streak: longestStreak }
+                    shouldGrantXP = true
+                    streakForMilestone = newStreak
                 }
             } else if (!isCompleted && existingLog?.completed) {
                 const [y, m, d] = targetDate.split('-').map(Number)
@@ -238,9 +258,7 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
-                    streakUpdate = {
-                        streak: Math.max(0, (habit.streak || 0) - 1)
-                    }
+                    streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
                 }
             }
         } else if (isMonthlyPeriod) {
@@ -268,12 +286,9 @@ export const useHabits = () => {
                 if (completedCount === requiredCount) {
                     const newStreak = (habit.streak || 0) + 1
                     const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
-                    streakUpdate = {
-                        streak: newStreak,
-                        longest_streak: longestStreak
-                    }
-                    await grantXP('habit_completed')
-                    await checkStreakMilestone(newStreak)
+                    streakUpdate = { streak: newStreak, longest_streak: longestStreak }
+                    shouldGrantXP = true
+                    streakForMilestone = newStreak
                 }
             } else if (!isCompleted && existingLog?.completed) {
                 const [y, m] = targetDate.split('-').map(Number)
@@ -297,9 +312,7 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
-                    streakUpdate = {
-                        streak: Math.max(0, (habit.streak || 0) - 1)
-                    }
+                    streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
                 }
             }
         } else {
@@ -307,16 +320,11 @@ export const useHabits = () => {
             if (isCompleted && !existingLog?.completed) {
                 const newStreak = (habit.streak || 0) + 1
                 const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
-                streakUpdate = {
-                    streak: newStreak,
-                    longest_streak: longestStreak
-                }
-                await grantXP('habit_completed')
-                await checkStreakMilestone(newStreak)
+                streakUpdate = { streak: newStreak, longest_streak: longestStreak }
+                shouldGrantXP = true
+                streakForMilestone = newStreak
             } else if (!isCompleted && existingLog?.completed) {
-                streakUpdate = {
-                    streak: Math.max(0, (habit.streak || 0) - 1)
-                }
+                streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
             }
         }
 
@@ -338,6 +346,16 @@ export const useHabits = () => {
         if (!updatedHabit?.[0]) return null
 
         const enriched = await enrichHabitsWithCompletedDays([updatedHabit[0]])
+
+        // Otorgar XP y verificar milestones DESPUÉS de guardar la racha
+        if (shouldGrantXP) {
+            try {
+                await grantXP('habit_completed')
+                await checkStreakMilestone(streakForMilestone)
+            } catch (xpError) {
+                console.error('Error otorgando XP:', xpError)
+            }
+        }
 
         // Verificar si se completaron todos los hábitos del día (solo para hoy)
         if (!isPastDate && isCompleted && !existingLog?.completed) {
@@ -622,26 +640,52 @@ export const useHabits = () => {
         }
     }
 
-    const shouldResetToday = () => {
+    const shouldResetToday = async () => {
         if (typeof window === 'undefined') return false
 
-        const lastResetDate = localStorage.getItem('lastHabitResetDate')
         const today = getArgentineDate()
+        const lastResetDate = localStorage.getItem('lastHabitResetDate')
 
-        console.log('[RESET DIARIO] lastResetDate:', lastResetDate)
-        console.log('[RESET DIARIO] today:', today)
-        console.log('[RESET DIARIO] Should reset?', !lastResetDate || lastResetDate !== today)
+        // Esta sesión/dispositivo ya verificó hoy → no resetear
+        if (lastResetDate === today) return false
 
-        if (!lastResetDate || lastResetDate !== today) {
-            localStorage.setItem('lastHabitResetDate', today)
-            return true
+        // Marcar inmediatamente (sincrónico) para evitar doble reset en llamadas concurrentes
+        localStorage.setItem('lastHabitResetDate', today)
+
+        // Si ya hay habit_logs para hoy, significa que otra sesión/dispositivo ya hizo el reset
+        // y el usuario completó hábitos → no pisar ese progreso
+        try {
+            const userId = await getUserId()
+            const { data: userHabits } = await client
+                .from('habits')
+                .select('id')
+                .eq('user_id', userId)
+
+            const habitIds = (userHabits || []).map(h => h.id)
+
+            if (habitIds.length > 0) {
+                const { data: todayLogs } = await client
+                    .from('habit_logs')
+                    .select('id')
+                    .in('habit_id', habitIds)
+                    .eq('date', today)
+                    .limit(1)
+
+                if (todayLogs && todayLogs.length > 0) {
+                    console.log('[RESET DIARIO] Ya existen logs para hoy, omitiendo reset')
+                    return false
+                }
+            }
+        } catch (e) {
+            console.error('[RESET DIARIO] Error verificando logs de hoy:', e)
         }
 
-        return false
+        console.log('[RESET DIARIO] Realizando reset del día')
+        return true
     }
 
     const syncHabitsWithNewDay = async () => {
-        if (shouldResetToday()) {
+        if (await shouldResetToday()) {
             await resetHabitsForNewDay()
         }
     }

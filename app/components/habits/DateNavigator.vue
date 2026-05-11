@@ -11,7 +11,7 @@
                 @click="selectDay(day.dateStr)"
                 class="flex flex-col items-center gap-1 flex-1"
             >
-                <p class="text-[0.6rem] text-gray">{{ day.label }}</p>
+                <p class="text-xs text-gray">{{ day.label }}</p>
                 <div class="relative w-9 h-9 flex items-center justify-center">
                     <svg
                         class="absolute inset-0 w-full h-full text-primary -rotate-90"

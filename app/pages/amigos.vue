@@ -33,7 +33,7 @@
                 @request-cancelled="onRequestCancelled"
             />
         </div>
-        <p v-else-if="query.length > 0 && !loading" class="text-[0.625rem] text-gray text-center">
+        <p v-else-if="query.length > 0 && !loading" class="text-xs text-gray text-center">
             No se encontraron usuarios.
         </p>
     </DefaultSection>

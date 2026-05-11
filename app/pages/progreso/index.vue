@@ -65,11 +65,11 @@
                     bar-color="bg-gradient-secondary"
                 />
                 <div class="w-full flex items-center justify-between">
-                    <p class="text-[10px] text-gray">{{ userXP.experience_points }} XP</p>
-                    <p class="text-[10px] text-gray" v-if="!levelInfo.isMaxLevel">
+                    <p class="text-xs text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-xs text-gray" v-if="!levelInfo.isMaxLevel">
                         {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
                     </p>
-                    <p class="text-[10px] text-gray" v-else>¡Nivel máximo!</p>
+                    <p class="text-xs text-gray" v-else>¡Nivel máximo!</p>
                 </div>
             </div>
             <div class="w-full flex flex-col gap-2">

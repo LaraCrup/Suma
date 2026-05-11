@@ -11,7 +11,7 @@
                 <div class="h-4 flex items-center gap-3 mt-2">
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
                         <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                        <p class="text-[0.625rem]">{{ habit.streak }}</p>
+                        <p class="text-xs">{{ habit.streak }}</p>
                     </div>
                 </div>
                 <!-- Fila de círculos de miembros -->
@@ -42,16 +42,16 @@
                     :goal-value="habit?.goal_value"
                 />
                 <div class="w-full flex justify-center items-center gap-3 mt-3">
-                    <button @click="decreaseProgress" class="h-4 w-4 flex justify-center items-center bg-accent rounded-full text-xs">-</button>
-                    <div class="flex items-end gap-2">
+                    <button @click="decreaseProgress" class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg">-</button>
+                    <div class="flex items-end gap-1">
                         <p class="text-xl">{{ myLog?.progress_count || 0 }}</p>
-                        <p class="text-[0.625rem]/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
+                        <p class="text-xs/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
                     </div>
                     <button
                         @click="increaseProgress"
                         :disabled="(myLog?.progress_count || 0) >= (habit?.goal_value || 1)"
                         :class="{ 'opacity-50 cursor-not-allowed': (myLog?.progress_count || 0) >= (habit?.goal_value || 1) }"
-                        class="h-4 w-4 flex justify-center items-center bg-accent rounded-full text-xs">+</button>
+                        class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg">+</button>
                 </div>
             </div>
         </div>

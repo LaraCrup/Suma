@@ -19,7 +19,7 @@
                     {{ benefit.description }}
                 </h1>
                 <div v-if="benefit.discount_code" class="w-full flex flex-col gap-1">
-                    <p class="text-[0.625rem] text-center text-dark">Tu código de descuento:</p>
+                    <p class="text-xs text-center text-dark">Tu código de descuento:</p>
                     <div class="w-full flex justify-center bg-midlight rounded-lg p-3">
                         <span class="font-montserrat font-bold text-primary tracking-wide">
                             {{ benefit.discount_code }}
@@ -28,7 +28,7 @@
                 </div>
                 <div v-if="benefit.terms_conditions" class="w-full">
                     <button
-                        class="w-full flex items-center justify-between text-[0.625rem]"
+                        class="w-full flex items-center justify-between text-xs"
                         @click="showTerms = !showTerms"
                     >
                         <span>*Términos y Condiciones</span>

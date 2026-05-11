@@ -28,7 +28,7 @@
                 :key="c.id"
                 :community="c"
             />
-            <p v-if="communities.length === 0" class="text-[0.625rem] text-gray">
+            <p v-if="communities.length === 0" class="text-xs text-gray">
                 Aún no pertenecés a ninguna comunidad. ¡Creá una con el +!
             </p>
         </div>
@@ -42,7 +42,7 @@
             >+</button>
         </div>
         <div v-if="pendingRequests.length > 0" class="w-full flex flex-col gap-2">
-            <p class="text-[0.625rem] text-dark font-bold">Pendientes</p>
+            <p class="text-xs text-dark font-bold">Pendientes</p>
             <CommunityFriendsRequest
                 v-for="req in pendingRequests"
                 :key="req.id"
@@ -57,7 +57,7 @@
                 :key="friend.id"
                 :friend="friend"
             />
-            <p v-if="friends.length === 0 && pendingRequests.length === 0" class="text-[0.625rem] text-gray">
+            <p v-if="friends.length === 0 && pendingRequests.length === 0" class="text-xs text-gray">
                 Aún no tenés amigos. ¡Buscá usuarios con el +!
             </p>
         </div>

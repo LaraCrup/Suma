@@ -68,8 +68,8 @@
         <div v-if="currentTip" class="w-full flex flex-col">
             <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-48 rounded-t-lg object-cover" />
             <div class="w-full bg-midlight rounded-b-lg p-3">
-                <p class="text-primary text-sm">{{ currentTip.title }}</p>
-                <p class="text-[0.625rem] mt-1">{{ currentTip.description }}</p>
+                <p class="text-primary text-sm font-semibold">{{ currentTip.title }}</p>
+                <p class="text-xs mt-1">{{ currentTip.description }}</p>
             </div>
         </div>
     </DefaultSection>
@@ -155,6 +155,7 @@ watch(selectedDate, async (newDate) => {
 })
 
 let dateCheckInterval = null
+let visibilityChangeHandler = null
 
 onMounted(async () => {
     try {
@@ -207,6 +208,20 @@ onMounted(async () => {
     }
 
     if (typeof window !== 'undefined') {
+        visibilityChangeHandler = async () => {
+            if (document.visibilityState === 'visible') {
+                try {
+                    habits.value = await getHabitsForDate(selectedDate.value)
+                    await filterHabitsByVisibility()
+                } catch (error) {
+                    console.error('[PAGE INDEX] Error refreshing habits on visibility:', error)
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', visibilityChangeHandler)
+    }
+
+    if (typeof window !== 'undefined') {
         const savedTip = sessionStorage.getItem('sessionTip')
 
         if (savedTip) {
@@ -223,6 +238,9 @@ onMounted(async () => {
 onUnmounted(() => {
     if (dateCheckInterval) {
         clearInterval(dateCheckInterval)
+    }
+    if (visibilityChangeHandler && typeof window !== 'undefined') {
+        document.removeEventListener('visibilitychange', visibilityChangeHandler)
     }
 })
 

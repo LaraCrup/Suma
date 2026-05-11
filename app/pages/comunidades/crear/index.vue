@@ -45,7 +45,7 @@
                 :selected="selectedIds.includes(friend.id)"
                 @toggle="toggleFriend"
             />
-            <p v-if="friends.length === 0" class="text-[0.625rem] text-gray text-center">
+            <p v-if="friends.length === 0" class="text-xs text-gray text-center">
                 Aún no tenés amigos para agregar.
             </p>
         </div>

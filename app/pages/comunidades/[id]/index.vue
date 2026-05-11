@@ -15,7 +15,7 @@
                 <CommunityChatOutputMessage v-if="msg.user_id === currentUserId" :message="msg" />
                 <CommunityChatInputMessage v-else :message="msg" />
             </template>
-            <p v-if="messages.length === 0" class="text-[0.625rem] text-gray text-center pb-2">
+            <p v-if="messages.length === 0" class="text-xs text-gray text-center pb-2">
                 No hay mensajes aún. ¡Escribí el primero!
             </p>
             <div class="absolute top-0 left-0 h-[50dvh] w-full bg-[linear-gradient(180deg,_rgba(243,252,247,1)_0%,rgba(243,252,247,0)_12%)] pointer-events-none"></div>

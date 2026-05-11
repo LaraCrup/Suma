@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <p v-if="hint" class="text-[0.625rem] text-green-dark">{{ hint }}</p>
+        <p v-if="hint" class="text-xs text-green-dark">{{ hint }}</p>
         <div class="w-full flex flex-col gap-1">
             <FormLabelSecondary :id="id" :required="required">{{ label }}</FormLabelSecondary>
 

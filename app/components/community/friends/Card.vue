@@ -11,7 +11,7 @@
             </div>
             <div class="flex items-center gap-1">
                 <p class="text-xs">{{ friend?.display_name }}</p>
-                <span v-if="badge" class="text-[0.6rem] text-primary font-semibold">({{ badge }})</span>
+                <span v-if="badge" class="text-xs text-primary font-semibold">({{ badge }})</span>
             </div>
         </div>
         <button

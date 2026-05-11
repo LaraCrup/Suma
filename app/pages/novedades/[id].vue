@@ -7,31 +7,30 @@
         </div>
 
         <template v-else-if="item">
-            <div class="relative w-full h-28 rounded-lg overflow-hidden flex items-end p-3">
+            <div class="relative w-full h-32 rounded-lg overflow-hidden flex items-end p-3">
                 <NuxtImg
                     v-if="item.image_url"
                     :src="item.image_url"
                     :alt="item.title"
                     class="absolute inset-0 w-full h-full object-cover"
                 />
-                <span class="relative z-10 text-[0.625rem] bg-accent text-green-dark px-2 py-1 rounded-full">
+                <span class="relative z-10 text-xs bg-accent text-green-dark px-2 py-1 rounded-full">
                     {{ item.category?.name }}
                 </span>
             </div>
 
             <div class="w-full flex flex-col gap-3 px-3">
                 <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-1.5">
+                    <div class="flex items-center gap-2">
                         <NuxtImg
                             v-if="item.brand?.image_url"
                             :src="item.brand.image_url"
                             :alt="item.brand?.name"
-                            class="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                            class="w-6 h-6 rounded-full object-cover flex-shrink-0"
                         />
-                        <span v-else class="w-5 h-5 rounded-full bg-green-light flex-shrink-0" />
-                        <span class="text-[0.625rem] text-dark">Por {{ item.brand?.name }}</span>
+                        <span class="text-xs text-dark">Por {{ item.brand?.name }}</span>
                     </div>
-                    <span class="text-[0.625rem] text-gray">{{ formatDate(item.publication_date) }}</span>
+                    <span class="text-xs text-gray">{{ formatDate(item.publication_date) }}</span>
                 </div>
                 <div class="w-full flex flex-col gap-2">
                     <HeadingH1 class="!text-base !leading-tight">{{ item.title }}</HeadingH1>

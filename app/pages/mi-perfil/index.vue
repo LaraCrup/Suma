@@ -5,46 +5,41 @@
         <Loader v-if="authStore.loading" />
 
         <div v-else class="w-full flex items-center gap-3">
-            <div class="w-full flex items-center gap-3">
+            <div class="w-full flex gap-3">
                 <Avatar :name="authStore.profile?.display_name"
                     :initial="authStore.profile?.name?.charAt(0).toUpperCase()"
                     :image="authStore.profile?.avatar_url" />
                 <div class="w-fit flex flex-col gap-1">
-                    <p class="text-xs font-bold">{{ authStore.profile?.name }}</p>
-                    <p class="text-xs font-bold">{{ authStore.profile?.display_name }}</p>
-                    <p class="text-[0.625rem]">{{ authStore.user?.email }}</p>
-                    <p class="text-[0.625rem] text-gray font-bold">
-                        Desde el {{ formattedCreatedAt }}
-                    </p>
+                    <p class="text-sm font-bold">{{ authStore.profile?.name }}</p>
+                    <p class="text-sm font-bold">{{ authStore.profile?.display_name }}</p>
+                    <p class="text-xs">{{ authStore.user?.email }}</p>
                 </div>
             </div>
             <NuxtLink :to="ROUTE_NAMES.PROFILE_EDIT" class="self-start">
                 <NuxtImg src="images/icons/edit.svg" alt="Editar perfil" class="h-5" />
             </NuxtLink>
         </div>
+        <p class="w-full text-xs text-gray font-bold">
+            Desde el {{ formattedCreatedAt }}
+        </p>
         <div class="w-full flex flex-col gap-3">
             <div class="w-full flex flex-col items-center gap-1">
                 <div class="w-full flex justify-between">
                     <div
                         class="w-6 h-6 flex justify-center items-center bg-primary text-light font-bold text-xs rounded-full">
                         {{ levelInfo.currentLevel }}</div>
-                    <div
-                        :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
+                    <div :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
                         class="w-6 h-6 flex justify-center items-center text-light font-bold text-xs rounded-full">
                         {{ levelInfo.isMaxLevel ? '👑' : levelInfo.nextLevel }}</div>
                 </div>
-                <ProgressBar
-                    :progress-count="levelInfo.xpInCurrentLevel"
-                    :goal-value="levelInfo.xpNeededForNextLevel"
-                    bar-color="bg-gradient-secondary"
-                    background-color="bg-green-dark"
-                />
+                <ProgressBar :progress-count="levelInfo.xpInCurrentLevel" :goal-value="levelInfo.xpNeededForNextLevel"
+                    bar-color="bg-gradient-secondary" background-color="bg-green-dark" />
                 <div class="w-full flex justify-between">
-                    <p class="text-[10px] text-gray">{{ userXP.experience_points }} XP</p>
-                    <p class="text-[10px] text-gray" v-if="!levelInfo.isMaxLevel">
+                    <p class="text-xs text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-xs text-gray" v-if="!levelInfo.isMaxLevel">
                         {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
                     </p>
-                    <p class="text-[10px] text-gray" v-else>¡Nivel máximo!</p>
+                    <p class="text-xs text-gray" v-else>¡Nivel máximo!</p>
                 </div>
             </div>
             <div>
@@ -74,7 +69,8 @@
         </div>
     </DefaultSection>
 
-    <div v-if="showConfirmation" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showConfirmation = false"></div>
+    <div v-if="showConfirmation" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showConfirmation = false">
+    </div>
     <div v-if="showConfirmation" class="fixed inset-0 z-50 flex items-end">
         <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
             <button @click="showConfirmation = false" class="absolute top-4 right-4 text-gray">
