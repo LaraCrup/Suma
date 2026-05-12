@@ -33,7 +33,7 @@
             </div>
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
-            <div v-if="habit.streak > 0" class="flex flex-shrink-0 items-center gap-1">
+            <div v-if="habit.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
                 <p class="text-xs">{{ habit.streak }}</p>
             </div>
@@ -90,6 +90,8 @@ watch(() => props.habit.progress_count, () => {
 const isCompleted = computed(() => {
     return effectiveProgress.value >= (props.habit.goal_value || 1)
 })
+
+const isUpdating = computed(() => localOverrideProgress.value !== null)
 
 const swipeDirection = computed(() => {
     if (pendingDirection.value) return pendingDirection.value
