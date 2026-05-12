@@ -5,7 +5,7 @@
         </div>
         <div class="w-full flex justify-between bg-light px-6 pb-4 mt-4">
             <div class="flex gap-2 items-center">
-                <NuxtImg src="/images/isotipo.svg" alt="Logo Suma" class="w-4" />
+                <NuxtImg src="/images/isotipo.svg" alt="Logo Suma" class="w-5" />
                 <p class="text-xs">Hola, <span class="font-bold text-primary">{{ userName }}</span></p>
             </div>
             <div class="flex items-center gap-2">

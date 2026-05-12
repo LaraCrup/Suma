@@ -19,7 +19,7 @@
             <div class="min-w-0">
                 <p class="text-xs text-start truncate">{{ habit.name }}</p>
                 <div class="flex gap-2 items-center">
-                    <p class="text-xs text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ habit.progress_count || 0 }}/{{ habit.goal_value || 1 }}</p>
+                    <p class="text-xs text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ effectiveProgress }}/{{ habit.goal_value || 1 }}</p>
                     <div v-if="hasSpecificFrequency" class="flex flex-shrink-0 gap-[2px]">
                         <NuxtImg
                             v-for="i in brilloCount"
@@ -76,8 +76,19 @@ const pendingDirection = ref(null)
 const SWIPE_THRESHOLD = 40
 const FILL_FULL_DISTANCE = 60
 
+const localOverrideProgress = ref(null)
+
+const effectiveProgress = computed(() => {
+    if (localOverrideProgress.value !== null) return localOverrideProgress.value
+    return props.habit.progress_count || 0
+})
+
+watch(() => props.habit.progress_count, () => {
+    localOverrideProgress.value = null
+})
+
 const isCompleted = computed(() => {
-    return (props.habit.progress_count || 0) >= (props.habit.goal_value || 1)
+    return effectiveProgress.value >= (props.habit.goal_value || 1)
 })
 
 const swipeDirection = computed(() => {
@@ -90,7 +101,7 @@ const swipeDirection = computed(() => {
 const isActionable = computed(() => {
     const dir = swipeDirection.value
     if (dir === 'right') return !isCompleted.value
-    if (dir === 'left') return (props.habit.progress_count || 0) > 0
+    if (dir === 'left') return effectiveProgress.value > 0
     return false
 })
 
@@ -147,7 +158,7 @@ const completedBrillos = computed(() => {
         return props.habit.monthCompletedDays || 0
     }
 
-    return Math.min(props.habit.progress_count || 0, brilloCount.value)
+    return Math.min(effectiveProgress.value, brilloCount.value)
 })
 
 const handleTouchMove = (e) => {
@@ -226,30 +237,34 @@ const goToHabit = () => {
 }
 
 const completeHabit = async () => {
-    try {
-        const currentProgress = props.habit.progress_count || 0
-        const goalValue = props.habit.goal_value || 1
-        const progressNeeded = goalValue - currentProgress
+    const currentProgress = props.habit.progress_count || 0
+    const goalValue = props.habit.goal_value || 1
+    const progressNeeded = goalValue - currentProgress
 
-        if (progressNeeded > 0) {
-            const updated = await logHabitProgress(props.habit.id, progressNeeded, props.selectedDate)
-            emit('habitUpdated', updated)
-        }
+    if (progressNeeded <= 0) return
+
+    localOverrideProgress.value = goalValue
+    try {
+        const updated = await logHabitProgress(props.habit.id, progressNeeded, props.selectedDate)
+        emit('habitUpdated', updated)
     } catch (error) {
         console.error('Error completando hábito:', error)
+        localOverrideProgress.value = null
     }
 }
 
 const resetHabit = async () => {
-    try {
-        const currentProgress = props.habit.progress_count || 0
+    const currentProgress = props.habit.progress_count || 0
 
-        if (currentProgress > 0) {
-            const updated = await logHabitProgress(props.habit.id, -currentProgress, props.selectedDate)
-            emit('habitUpdated', updated)
-        }
+    if (currentProgress <= 0) return
+
+    localOverrideProgress.value = 0
+    try {
+        const updated = await logHabitProgress(props.habit.id, -currentProgress, props.selectedDate)
+        emit('habitUpdated', updated)
     } catch (error) {
         console.error('Error reiniciando hábito:', error)
+        localOverrideProgress.value = null
     }
 }
 </script>
