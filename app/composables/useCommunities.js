@@ -1,6 +1,18 @@
 export const useCommunities = () => {
     const client = useSupabaseClient()
 
+    const getArgentineDate = () => {
+        const formatter = new Intl.DateTimeFormat('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        })
+        const parts = formatter.formatToParts(new Date())
+        const y = parts.find(p => p.type === 'year').value
+        const m = parts.find(p => p.type === 'month').value
+        const d = parts.find(p => p.type === 'day').value
+        return `${y}-${m}-${d}`
+    }
+
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
         if (error || !session?.user?.id) {
@@ -127,7 +139,7 @@ export const useCommunities = () => {
 
                 const { data: habit } = await client
                     .from('community_habits')
-                    .select('id, name, icon')
+                    .select('id, name, icon, streak, longest_streak')
                     .eq('community_id', community.id)
                     .maybeSingle()
 
@@ -135,7 +147,7 @@ export const useCommunities = () => {
                     ...community,
                     member_count: count || 0,
                     habit: habit || null,
-                    streak: 0,
+                    streak: habit?.streak || 0,
                 }
             })
         )
@@ -260,7 +272,7 @@ export const useCommunities = () => {
      * Retorna array de { id, display_name, avatar_url, progress_count, completed }
      */
     const getCommunityHabitCompletions = async (habitId) => {
-        const today = new Date().toISOString().split('T')[0]
+        const today = getArgentineDate()
 
         const { data: habit } = await client
             .from('community_habits')
@@ -276,7 +288,7 @@ export const useCommunities = () => {
 
         const { data: logs } = await client
             .from('community_habit_logs')
-            .select('user_id, progress_count, completed')
+            .select('user_id, progress_count, completed, streak, longest_streak')
             .eq('community_habit_id', habitId)
             .eq('date', today)
 
@@ -286,20 +298,23 @@ export const useCommunities = () => {
             ...m.profile,
             progress_count: logsMap[m.profile.id]?.progress_count || 0,
             completed: logsMap[m.profile.id]?.completed || false,
+            streak: logsMap[m.profile.id]?.streak || 0,
+            longest_streak: logsMap[m.profile.id]?.longest_streak || 0,
         }))
     }
 
     /**
      * Registra progreso del usuario actual en el hábito de comunidad para hoy.
+     * Cuando todos los miembros completan, actualiza la racha comunitaria en community_habits.
      * Retorna el log actualizado.
      */
     const logCommunityHabitProgress = async (habitId, amount, goalValue = 1) => {
         const userId = await getUserId()
-        const today = new Date().toISOString().split('T')[0]
+        const today = getArgentineDate()
 
         const { data: existing } = await client
             .from('community_habit_logs')
-            .select('progress_count')
+            .select('progress_count, completed')
             .eq('community_habit_id', habitId)
             .eq('user_id', userId)
             .eq('date', today)
@@ -308,7 +323,7 @@ export const useCommunities = () => {
         const newCount = Math.max(0, Math.min((existing?.progress_count || 0) + amount, goalValue))
         const isCompleted = newCount >= goalValue
 
-        const { data, error } = await client
+        const { data: log, error } = await client
             .from('community_habit_logs')
             .upsert({
                 community_habit_id: habitId,
@@ -321,7 +336,80 @@ export const useCommunities = () => {
             .single()
 
         if (error) throw error
-        return data
+
+        // Actualizar racha comunitaria solo si el estado de completado cambió
+        const completedChanged = isCompleted !== (existing?.completed ?? false)
+        if (completedChanged) {
+            await updateCommunityStreak(habitId, today, isCompleted)
+        }
+
+        return log
+    }
+
+    /**
+     * Recalcula y persiste la racha comunitaria del hábito.
+     * La racha sube cuando TODOS los miembros completan en días consecutivos,
+     * y baja cuando una descompletación rompe el estado de "todos completos hoy".
+     */
+    const updateCommunityStreak = async (habitId, today, justCompleted) => {
+        const { data: habit } = await client
+            .from('community_habits')
+            .select('id, community_id, streak, longest_streak')
+            .eq('id', habitId)
+            .single()
+
+        if (!habit) return
+
+        const { data: allMembers } = await client
+            .from('community_members')
+            .select('user_id')
+            .eq('community_id', habit.community_id)
+
+        const memberIds = (allMembers || []).map(m => m.user_id)
+        if (memberIds.length === 0) return
+
+        const { data: todayLogs } = await client
+            .from('community_habit_logs')
+            .select('user_id, completed')
+            .eq('community_habit_id', habitId)
+            .eq('date', today)
+            .in('user_id', memberIds)
+
+        const allCompletedToday = todayLogs?.length === memberIds.length &&
+            todayLogs.every(l => l.completed)
+
+        const [y, m, d] = today.split('-').map(Number)
+        const prevDate = new Date(y, m - 1, d - 1)
+        const yesterday = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`
+
+        let newStreak = habit.streak
+        let newLongest = habit.longest_streak
+
+        if (justCompleted && allCompletedToday) {
+            // Todos completos hoy: ver si ayer también lo eran para continuar la racha
+            const { data: yesterdayLogs } = await client
+                .from('community_habit_logs')
+                .select('user_id, completed')
+                .eq('community_habit_id', habitId)
+                .eq('date', yesterday)
+                .in('user_id', memberIds)
+
+            const allCompletedYesterday = yesterdayLogs?.length === memberIds.length &&
+                yesterdayLogs.every(l => l.completed)
+
+            newStreak = allCompletedYesterday ? (habit.streak || 0) + 1 : 1
+            newLongest = Math.max(newStreak, habit.longest_streak || 0)
+        } else if (!justCompleted && !allCompletedToday) {
+            // Alguien descompletó y ya no están todos: bajar la racha del día actual
+            newStreak = Math.max(0, (habit.streak || 1) - 1)
+        }
+
+        if (newStreak !== habit.streak || newLongest !== habit.longest_streak) {
+            await client
+                .from('community_habits')
+                .update({ streak: newStreak, longest_streak: newLongest })
+                .eq('id', habitId)
+        }
     }
 
     /**
@@ -329,7 +417,7 @@ export const useCommunities = () => {
      */
     const getCommunityHabitMyLog = async (habitId) => {
         const userId = await getUserId()
-        const today = new Date().toISOString().split('T')[0]
+        const today = getArgentineDate()
 
         const { data } = await client
             .from('community_habit_logs')

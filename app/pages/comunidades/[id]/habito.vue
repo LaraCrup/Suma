@@ -70,15 +70,22 @@
 
 <script setup>
 const route = useRoute()
+const client = useSupabaseClient()
 const { getCommunityById, getCommunityHabit, getCommunityHabitMyLog, getCommunityHabitCompletions, logCommunityHabitProgress } = useCommunities()
 
 const community = ref(null)
 const habit = ref(null)
 const myLog = ref(null)
 const completions = ref([])
+const currentUserId = ref(null)
+
+let realtimeChannel = null
 
 const loadData = async () => {
     const communityId = route.params.id
+    const { data: { session } } = await client.auth.getSession()
+    currentUserId.value = session?.user?.id ?? null
+
     const [communityData, habitData] = await Promise.all([
         getCommunityById(communityId),
         getCommunityHabit(communityId),
@@ -93,12 +100,55 @@ const loadData = async () => {
     ])
     myLog.value = logData
     completions.value = completionsData
+
+    setupRealtime(habitData.id)
+}
+
+const setupRealtime = (habitId) => {
+    realtimeChannel = client.channel(`community-habit:${habitId}`)
+
+    // Completions: cuando cualquier miembro actualiza su progreso
+    realtimeChannel.on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'community_habit_logs',
+        filter: `community_habit_id=eq.${habitId}`,
+    }, async (payload) => {
+        completions.value = await getCommunityHabitCompletions(habitId)
+        // Actualizar myLog solo si el cambio es de otro usuario
+        if (payload.new?.user_id && payload.new.user_id !== currentUserId.value) {
+            myLog.value = await getCommunityHabitMyLog(habitId)
+        }
+    })
+
+    // Racha: actualizarla directo del payload sin re-fetch
+    realtimeChannel.on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'community_habits',
+        filter: `id=eq.${habitId}`,
+    }, (payload) => {
+        if (habit.value) {
+            habit.value = { ...habit.value, streak: payload.new.streak, longest_streak: payload.new.longest_streak }
+        }
+    })
+
+    realtimeChannel.subscribe()
+}
+
+const refreshHabitStreak = async () => {
+    const fresh = await getCommunityHabit(route.params.id)
+    if (fresh) habit.value = fresh
 }
 
 const increaseProgress = async () => {
     try {
         myLog.value = await logCommunityHabitProgress(habit.value.id, 1, habit.value.goal_value)
-        completions.value = await getCommunityHabitCompletions(habit.value.id)
+        const [completionsData] = await Promise.all([
+            getCommunityHabitCompletions(habit.value.id),
+            refreshHabitStreak(),
+        ])
+        completions.value = completionsData
     } catch (error) {
         console.error('Error actualizando progreso:', error)
     }
@@ -107,7 +157,11 @@ const increaseProgress = async () => {
 const decreaseProgress = async () => {
     try {
         myLog.value = await logCommunityHabitProgress(habit.value.id, -1, habit.value.goal_value)
-        completions.value = await getCommunityHabitCompletions(habit.value.id)
+        const [completionsData] = await Promise.all([
+            getCommunityHabitCompletions(habit.value.id),
+            refreshHabitStreak(),
+        ])
+        completions.value = completionsData
     } catch (error) {
         console.error('Error actualizando progreso:', error)
     }
@@ -118,7 +172,11 @@ const resetProgress = async () => {
         const current = myLog.value?.progress_count || 0
         if (current > 0) {
             myLog.value = await logCommunityHabitProgress(habit.value.id, -current, habit.value.goal_value)
-            completions.value = await getCommunityHabitCompletions(habit.value.id)
+            const [completionsData] = await Promise.all([
+                getCommunityHabitCompletions(habit.value.id),
+                refreshHabitStreak(),
+            ])
+            completions.value = completionsData
         }
     } catch (error) {
         console.error('Error reiniciando progreso:', error)
@@ -132,7 +190,11 @@ const completeHabit = async () => {
         const needed = goal - current
         if (needed > 0) {
             myLog.value = await logCommunityHabitProgress(habit.value.id, needed, goal)
-            completions.value = await getCommunityHabitCompletions(habit.value.id)
+            const [completionsData] = await Promise.all([
+                getCommunityHabitCompletions(habit.value.id),
+                refreshHabitStreak(),
+            ])
+            completions.value = completionsData
         }
     } catch (error) {
         console.error('Error completando hábito:', error)
@@ -140,4 +202,8 @@ const completeHabit = async () => {
 }
 
 onMounted(loadData)
+
+onUnmounted(() => {
+    if (realtimeChannel) client.removeChannel(realtimeChannel)
+})
 </script>

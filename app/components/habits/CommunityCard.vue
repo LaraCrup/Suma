@@ -46,7 +46,11 @@
                 </div>
             </div>
         </div>
-        <div class="relative flex items-center flex-shrink-0">
+        <div class="relative flex items-center gap-2 flex-shrink-0">
+            <div v-if="habit?.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
+                <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
+                <p class="text-xs">{{ habit.streak }}</p>
+            </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', effectiveCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">
                 <NuxtImg
                     :src="effectiveCompleted ? '/images/icons/brillo-light-green.svg' : '/images/brillo.svg'"
@@ -62,7 +66,6 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const { logCommunityHabitProgress } = useCommunities()
 
 const props = defineProps({
@@ -79,10 +82,11 @@ const props = defineProps({
 const emit = defineEmits(['habitUpdated'])
 
 const MAX_VISIBLE = 5
+const currentUserId = ref(null)
 
 const visibleMembers = computed(() => props.members.slice(0, MAX_VISIBLE))
 const extraCount = computed(() => Math.max(0, props.members.length - MAX_VISIBLE))
-const myMember = computed(() => props.members.find(m => m.id === authStore.user?.id))
+const myMember = computed(() => props.members.find(m => m.id === currentUserId.value))
 
 const cardRef = ref(null)
 const touchStartX = ref(0)
@@ -102,6 +106,8 @@ const effectiveCompleted = computed(() => {
     if (localOverrideCompleted.value !== null) return localOverrideCompleted.value
     return myMember.value?.completed ?? false
 })
+
+const isUpdating = computed(() => localOverrideCompleted.value !== null)
 
 watch(() => myMember.value?.completed, () => {
     localOverrideCompleted.value = null
@@ -145,8 +151,10 @@ const handleTouchMove = (e) => {
     }
 }
 
-onMounted(() => {
+onMounted(async () => {
     cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
+    const { data: { session } } = await useSupabaseClient().auth.getSession()
+    currentUserId.value = session?.user?.id ?? null
 })
 
 onUnmounted(() => {

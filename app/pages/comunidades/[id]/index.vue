@@ -41,6 +41,7 @@
 
 <script setup>
 const route = useRoute()
+const client = useSupabaseClient()
 const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions } = useCommunities()
 
 const community = ref(null)
@@ -53,6 +54,8 @@ const messagesContainer = ref(null)
 const currentUserId = ref(null)
 const isLoading = ref(true)
 
+let realtimeChannel = null
+
 const scrollToBottom = () => {
     nextTick(() => {
         if (messagesContainer.value) {
@@ -64,7 +67,7 @@ const scrollToBottom = () => {
 const loadCommunity = async () => {
     try {
         const id = route.params.id
-        const { data: { session } } = await useSupabaseClient().auth.getSession()
+        const { data: { session } } = await client.auth.getSession()
         currentUserId.value = session?.user?.id ?? null
 
         const [communityData, habitData, messagesData] = await Promise.all([
@@ -79,9 +82,59 @@ const loadCommunity = async () => {
             completions.value = await getCommunityHabitCompletions(habitData.id)
         }
         scrollToBottom()
+        setupRealtime(id, habitData?.id ?? null)
     } finally {
         isLoading.value = false
     }
+}
+
+const setupRealtime = (communityId, habitId) => {
+    realtimeChannel = client.channel(`community:${communityId}`)
+
+    if (habitId) {
+        // Completions: cuando cualquier miembro loguea progreso
+        realtimeChannel.on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'community_habit_logs',
+            filter: `community_habit_id=eq.${habitId}`,
+        }, async () => {
+            completions.value = await getCommunityHabitCompletions(habitId)
+        })
+
+        // Racha: cuando la racha comunitaria se actualiza
+        realtimeChannel.on('postgres_changes', {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'community_habits',
+            filter: `id=eq.${habitId}`,
+        }, (payload) => {
+            if (habit.value) {
+                habit.value = { ...habit.value, streak: payload.new.streak, longest_streak: payload.new.longest_streak }
+            }
+        })
+    }
+
+    // Chat: nuevos mensajes en tiempo real
+    realtimeChannel.on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'community_messages',
+        filter: `community_id=eq.${communityId}`,
+    }, async (payload) => {
+        if (messages.value.some(m => m.id === payload.new.id)) return
+        const { data: fullMsg } = await client
+            .from('community_messages')
+            .select('id, content, created_at, user_id, sender:user_id(id, display_name, avatar_url)')
+            .eq('id', payload.new.id)
+            .single()
+        if (fullMsg) {
+            messages.value.push(fullMsg)
+            scrollToBottom()
+        }
+    })
+
+    realtimeChannel.subscribe()
 }
 
 const handleSend = async () => {
@@ -89,7 +142,10 @@ const handleSend = async () => {
     isSending.value = true
     try {
         const msg = await sendMessage(route.params.id, newMessage.value)
-        messages.value.push(msg)
+        // Agregar localmente para respuesta inmediata; realtime deduplicará
+        if (!messages.value.some(m => m.id === msg.id)) {
+            messages.value.push(msg)
+        }
         newMessage.value = ''
         scrollToBottom()
     } catch (e) {
@@ -100,4 +156,8 @@ const handleSend = async () => {
 }
 
 onMounted(loadCommunity)
+
+onUnmounted(() => {
+    if (realtimeChannel) client.removeChannel(realtimeChannel)
+})
 </script>
