@@ -1,13 +1,17 @@
 <template>
     <template v-if="isLoading">
         <DefaultSection class="!gap-3">
-            <HeadingH1>Mis Comunidades</HeadingH1>
+            <div class="w-full">
+                <HeadingH1>Mis Comunidades</HeadingH1>
+            </div>
             <div class="w-full flex flex-col gap-2">
                 <SkeletonCommunityCard v-for="i in 2" :key="i" />
             </div>
         </DefaultSection>
         <DefaultSection class="!gap-3">
-            <HeadingH1>Mis amigos</HeadingH1>
+            <div class="w-full">
+                <HeadingH1>Mis amigos</HeadingH1>
+            </div>
             <div class="w-full flex flex-col gap-2">
                 <SkeletonFriendCard v-for="i in 3" :key="i" />
             </div>

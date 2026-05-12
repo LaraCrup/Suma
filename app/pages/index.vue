@@ -54,18 +54,24 @@
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos comunitarios</HeadingH1>
         <div class="w-full flex flex-col gap-1">
-            <HabitsCommunityCard
-                v-for="item in communityHabits"
-                :key="item.habit.id"
-                :habit="item.habit"
-                :members="item.members"
-            />
-            <p v-if="communityHabits.length === 0" class="text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
+            <template v-if="isCommunityLoading">
+                <SkeletonCommunityHabitCard v-for="i in 2" :key="i" />
+            </template>
+            <template v-else>
+                <HabitsCommunityCard
+                    v-for="item in communityHabits"
+                    :key="item.habit.id"
+                    :habit="item.habit"
+                    :members="item.members"
+                />
+                <p v-if="communityHabits.length === 0" class="text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
+            </template>
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Tip de hoy</HeadingH1>
-        <div v-if="currentTip" class="w-full flex flex-col">
+        <SkeletonTipCard v-if="isTipLoading" />
+        <div v-else-if="currentTip" class="w-full flex flex-col">
             <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-48 rounded-t-lg object-cover" />
             <div class="w-full bg-midlight rounded-b-lg p-3">
                 <p class="text-primary text-sm font-semibold">{{ currentTip.title }}</p>
@@ -89,6 +95,8 @@ const communityHabits = ref([])
 const selectedDate = ref(getArgentineDate())
 
 const isLoading = ref(true)
+const isCommunityLoading = ref(true)
+const isTipLoading = ref(true)
 const dateNavigatorRef = ref(null)
 
 const tips = [
@@ -183,9 +191,11 @@ onMounted(async () => {
             items.push({ habit, members })
         }
         communityHabits.value = items
+        isCommunityLoading.value = false
     } catch (error) {
         console.error('Error cargando hábitos:', error)
         isLoading.value = false
+        isCommunityLoading.value = false
     }
 
     if (typeof window !== 'undefined') {
@@ -234,6 +244,7 @@ onMounted(async () => {
             sessionStorage.setItem('sessionTip', JSON.stringify(selectedTip))
             currentTip.value = selectedTip
         }
+        isTipLoading.value = false
     }
 })
 

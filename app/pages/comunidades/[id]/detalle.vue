@@ -51,9 +51,14 @@
             </div>
         </div>
 
+        <!-- Salir de la comunidad (todos los miembros) -->
+        <ButtonSecondary @click="showLeaveCommunity = true" class="mt-2">
+            Salir de la comunidad
+        </ButtonSecondary>
+
         <!-- Eliminar comunidad (solo admin) -->
         <button v-if="isAdmin" @click="showDeleteCommunity = true"
-            class="flex items-center gap-2 text-sm text-red-500 mt-2">
+            class="flex items-center gap-2 text-sm text-red-500">
             <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="w-4" />
             Eliminar comunidad
         </button>
@@ -185,7 +190,33 @@
             </div>
         </div>
 
-        <!-- 4. Confirmar eliminar comunidad -->
+        <!-- 4. Confirmar salir de la comunidad -->
+        <Transition name="fade">
+            <div v-if="showLeaveCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
+                @click="showLeaveCommunity = false"></div>
+        </Transition>
+        <Transition name="slide-up">
+            <div v-if="showLeaveCommunity" class="fixed inset-0 z-50 flex items-end">
+                <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+                    <button @click="showLeaveCommunity = false" class="absolute top-4 right-4 text-gray">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div class="w-full flex flex-col items-center gap-3">
+                        <p class="text-center text-sm">¿Estás seguro que querés salir de esta comunidad?</p>
+                    </div>
+                    <p v-if="leaveCommunityError" class="text-xs text-red-500 text-center">{{ leaveCommunityError }}</p>
+                    <div class="w-full flex flex-col items-center gap-2">
+                        <ButtonPrimary :disabled="isSaving" @click="confirmLeaveCommunity">Sí, salir</ButtonPrimary>
+                        <ButtonTerciary @click="showLeaveCommunity = false">Cancelar</ButtonTerciary>
+                    </div>
+                </div>
+            </div>
+        </Transition>
+
+        <!-- 5. Confirmar eliminar comunidad -->
         <Transition name="fade">
             <div v-if="showDeleteCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showDeleteCommunity = false"></div>
@@ -269,9 +300,11 @@ const saveName = async () => {
 const showEditMembers = ref(false)
 const showAddMembers = ref(false)
 const showDeleteCommunity = ref(false)
+const showLeaveCommunity = ref(false)
 const memberToRemove = ref(null)
 const removeError = ref('')
 const deleteCommunityError = ref('')
+const leaveCommunityError = ref('')
 
 // Add members state
 const searchQuery = ref('')
@@ -367,6 +400,20 @@ const confirmRemoveMember = async () => {
         memberToRemove.value = null
     } catch (e) {
         removeError.value = e.message || 'Error al eliminar el miembro.'
+    } finally {
+        isSaving.value = false
+    }
+}
+
+const confirmLeaveCommunity = async () => {
+    isSaving.value = true
+    leaveCommunityError.value = ''
+    try {
+        await removeMemberFromCommunity(route.params.id, currentUserId.value)
+        showLeaveCommunity.value = false
+        await navigateTo('/comunidades')
+    } catch (e) {
+        leaveCommunityError.value = e.message || 'Error al salir de la comunidad.'
     } finally {
         isSaving.value = false
     }
