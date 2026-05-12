@@ -63,6 +63,7 @@
                     :key="item.habit.id"
                     :habit="item.habit"
                     :members="item.members"
+                    @habitUpdated="handleCommunityHabitUpdated"
                 />
                 <p v-if="communityHabits.length === 0" class="text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
             </template>
@@ -152,6 +153,17 @@ const handleHabitUpdated = async (updatedHabit) => {
 
         await filterHabitsByVisibility()
         await dateNavigatorRef.value?.refreshCompletions()
+    }
+}
+
+const handleCommunityHabitUpdated = async (habitId) => {
+    const index = communityHabits.value.findIndex(item => item.habit.id === habitId)
+    if (index === -1) return
+    try {
+        const freshMembers = await getCommunityHabitCompletions(habitId)
+        communityHabits.value[index] = { ...communityHabits.value[index], members: freshMembers }
+    } catch (error) {
+        console.error('Error refrescando miembros del hábito comunitario:', error)
     }
 }
 
