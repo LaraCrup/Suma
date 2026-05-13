@@ -158,10 +158,17 @@ const calculateConsistencyPercentage = async () => {
         return
     }
 
-    // Obtener todos los logs completados
+    const { data: { session } } = await client.auth.getSession()
+    if (!session?.user?.id) {
+        consistencyPercentage.value = 0
+        return
+    }
+
+    const habitIds = habits.value.map(h => h.id)
     const { data: completedLogs, error } = await client
         .from('habit_logs')
-        .select('id, habit_id, date')
+        .select('habit_id')
+        .in('habit_id', habitIds)
         .eq('completed', true)
 
     if (error) {
@@ -170,30 +177,71 @@ const calculateConsistencyPercentage = async () => {
         return
     }
 
-    const totalCompleted = completedLogs?.length || 0
-
-    // Calcular días esperados: por ahora usamos un estimado simple
-    // Esto se puede mejorar calculando exactamente qué días cada hábito debería estar activo
-    const oldestHabit = habits.value.reduce((oldest, habit) => {
-        const habitDate = new Date(habit.created_at)
-        const oldestDate = new Date(oldest.created_at)
-        return habitDate < oldestDate ? habit : oldest
-    })
-
     const today = getArgentineDate()
-    const [year, month, day] = today.split('-').map(Number)
-    const todayDate = new Date(year, month - 1, day)
-    const oldestDate = new Date(oldestHabit.created_at)
+    const [ty, tm, td] = today.split('-').map(Number)
+    const todayDate = new Date(ty, tm - 1, td)
 
-    const daysSinceStart = Math.max(1, Math.floor((todayDate - oldestDate) / (1000 * 60 * 60 * 24)))
-    const expectedTotal = daysSinceStart * habits.value.length
+    // Mapeo de letra a número de día JS (0=domingo)
+    const DAY_LETTERS = { L: 1, M: 2, X: 3, J: 4, V: 5, S: 6, D: 0 }
+
+    const countExpectedDays = (habit) => {
+        const created = new Date(habit.created_at)
+        const startDate = new Date(created.getFullYear(), created.getMonth(), created.getDate())
+        const totalDays = Math.max(1, Math.floor((todayDate - startDate) / (1000 * 60 * 60 * 24)) + 1)
+
+        // diario siempre aplica todos los días
+        if (habit.frequency_type === 'diario' || !habit.frequency_type) return totalDays
+        // todos = aplica cada día del período
+        if (habit.frequency_option === 'todos') return totalDays
+
+        if (habit.frequency_option === 'dias_especificos_semana') {
+            const selectedNums = (habit.frequency_detail?.weekDays || [])
+                .map(l => DAY_LETTERS[l])
+                .filter(n => n !== undefined)
+            let count = 0
+            const cursor = new Date(startDate)
+            while (cursor <= todayDate) {
+                if (selectedNums.includes(cursor.getDay())) count++
+                cursor.setDate(cursor.getDate() + 1)
+            }
+            return count
+        }
+
+        if (habit.frequency_option === 'cantidad_dias_semana') {
+            const counter = habit.frequency_detail?.counter || 0
+            const totalWeeks = Math.ceil(totalDays / 7)
+            return totalWeeks * counter
+        }
+
+        if (habit.frequency_option === 'dias_especificos_mes') {
+            const selectedDays = habit.frequency_detail?.monthDays || []
+            let count = 0
+            const cursor = new Date(startDate)
+            while (cursor <= todayDate) {
+                if (selectedDays.includes(cursor.getDate())) count++
+                cursor.setDate(cursor.getDate() + 1)
+            }
+            return count
+        }
+
+        if (habit.frequency_option === 'cantidad_dias_mes') {
+            const counter = habit.frequency_detail?.counter || 0
+            const months = (todayDate.getFullYear() - startDate.getFullYear()) * 12
+                + (todayDate.getMonth() - startDate.getMonth()) + 1
+            return Math.max(1, months) * counter
+        }
+
+        return totalDays
+    }
+
+    const expectedTotal = habits.value.reduce((sum, habit) => sum + countExpectedDays(habit), 0)
 
     if (expectedTotal === 0) {
         consistencyPercentage.value = 0
         return
     }
 
-    consistencyPercentage.value = Math.min(100, Math.round((totalCompleted / expectedTotal) * 100))
+    consistencyPercentage.value = Math.min(100, Math.round(((completedLogs?.length || 0) / expectedTotal) * 100))
 }
 
 const loadData = async () => {
