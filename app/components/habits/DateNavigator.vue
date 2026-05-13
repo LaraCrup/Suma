@@ -1,9 +1,5 @@
 <template>
-    <div
-        class="w-full"
-        @touchstart="handleTouchStart"
-        @touchend="handleTouchEnd"
-    >
+    <div class="w-full">
         <div class="flex justify-between items-start w-full">
             <button
                 v-for="day in days"
@@ -73,8 +69,6 @@ const emit = defineEmits(['update:modelValue'])
 
 const client = useSupabaseClient()
 
-const weekOffset = ref(0)
-const touchStartX = ref(0)
 const dayCompletions = ref({})
 
 const CIRCUMFERENCE = 2 * Math.PI * 15
@@ -105,9 +99,8 @@ const addDays = (dateStr, n) => {
 }
 
 const days = computed(() => {
-    const baseDate = addDays(TODAY, weekOffset.value * 7)
     return Array.from({ length: 7 }, (_, i) => {
-        const dateStr = addDays(baseDate, i - 6)
+        const dateStr = addDays(TODAY, i - 6)
         const [, , dayNum] = dateStr.split('-').map(Number)
         const [year, month, day] = dateStr.split('-').map(Number)
         const dayOfWeek = new Date(year, month - 1, day).getDay()
@@ -173,7 +166,6 @@ const getStrokeDashOffset = (dateStr) => {
 }
 
 onMounted(fetchWeekCompletions)
-watch(weekOffset, fetchWeekCompletions)
 
 defineExpose({ refreshCompletions: fetchWeekCompletions })
 
@@ -184,41 +176,4 @@ const selectDay = (dateStr) => {
     emit('update:modelValue', dateStr)
 }
 
-const handleTouchStart = (e) => {
-    touchStartX.value = e.touches[0].clientX
-}
-
-const handleTouchEnd = (e) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.value
-    if (Math.abs(dx) < 40) return
-
-    if (dx < 0) {
-        weekOffset.value--
-        const lastDay = days.value[6].dateStr
-        if (props.modelValue > lastDay || props.modelValue < days.value[0].dateStr) {
-            emit('update:modelValue', lastDay)
-        }
-    } else {
-        if (weekOffset.value < 0) {
-            weekOffset.value++
-            const lastDay = days.value[6].dateStr
-            if (props.modelValue > lastDay || props.modelValue < days.value[0].dateStr) {
-                emit('update:modelValue', lastDay)
-            }
-        }
-    }
-}
-
-watch(() => props.modelValue, (newDate) => {
-    const firstDay = days.value[0].dateStr
-    const lastDay = days.value[6].dateStr
-    if (newDate < firstDay || newDate > lastDay) {
-        const [ty, tm, td] = TODAY.split('-').map(Number)
-        const [ny, nm, nd] = newDate.split('-').map(Number)
-        const todayMs = new Date(ty, tm - 1, td).getTime()
-        const targetMs = new Date(ny, nm - 1, nd).getTime()
-        const diffDays = Math.floor((targetMs - todayMs) / (1000 * 60 * 60 * 24))
-        weekOffset.value = Math.min(0, Math.floor(diffDays / 7))
-    }
-})
 </script>

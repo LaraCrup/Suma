@@ -271,8 +271,8 @@ export const useCommunities = () => {
      * Obtiene el estado de completación del hábito de comunidad para todos los miembros hoy.
      * Retorna array de { id, display_name, avatar_url, progress_count, completed }
      */
-    const getCommunityHabitCompletions = async (habitId) => {
-        const today = getArgentineDate()
+    const getCommunityHabitCompletions = async (habitId, date = null) => {
+        const today = date || getArgentineDate()
 
         const { data: habit } = await client
             .from('community_habits')

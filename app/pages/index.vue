@@ -160,7 +160,7 @@ const handleCommunityHabitUpdated = async (habitId) => {
     const index = communityHabits.value.findIndex(item => item.habit.id === habitId)
     if (index === -1) return
     try {
-        const freshMembers = await getCommunityHabitCompletions(habitId)
+        const freshMembers = await getCommunityHabitCompletions(habitId, selectedDate.value)
         communityHabits.value[index] = { ...communityHabits.value[index], members: freshMembers }
     } catch (error) {
         console.error('Error refrescando miembros del hábito comunitario:', error)
@@ -171,6 +171,13 @@ watch(selectedDate, async (newDate) => {
     try {
         habits.value = await getHabitsForDate(newDate)
         await filterHabitsByVisibility()
+
+        const updatedItems = []
+        for (const item of communityHabits.value) {
+            const members = await getCommunityHabitCompletions(item.habit.id, newDate)
+            updatedItems.push({ ...item, members })
+        }
+        communityHabits.value = updatedItems
     } catch (error) {
         console.error('Error cargando hábitos para fecha:', error)
     }

@@ -33,7 +33,7 @@
             </div>
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
-            <div v-if="habit.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
+            <div v-if="habit.streak > 0 && isCompleted" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
                 <p class="text-xs">{{ habit.streak }}</p>
             </div>
