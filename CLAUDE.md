@@ -74,6 +74,7 @@ Importar siempre desde [app/constants/ROUTE_NAMES.js](app/constants/ROUTE_NAMES.
 - `/iniciar-sesion`, `/registrarse`
 - `/restablecer-contrasena`, `/restablecer-contrasena-confirmacion`
 - `/confirmar-cuenta`, `/nueva-contrasena`
+- `/contrasena-actualizada` — confirmación post-reset de contraseña
 
 **Rutas autenticadas principales**:
 
@@ -101,18 +102,22 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 | `communities` | `id`, `name`, `icon`, `created_by` |
 | `community_members` | `community_id`, `user_id`, `role` (`admin`/`member`) |
 | `community_habits` | `community_id`, mismos campos que `habits` (sin `user_id`) |
+| `community_habit_logs` | logs de completions de hábitos comunitarios por miembro |
+| `community_messages` | mensajes del chat interno de cada comunidad |
 | `friend_requests` | `sender_id`, `receiver_id`, `status` |
 | `news` | `title`, `content`, `image_url`, `publication_date`, `brand_id`, `category_id`, `status` |
 | `news_categories` | `id`, `name` |
 | `levels` | `level_number`, `xp_required` |
+| `benefits` | beneficios desbloqueables mostrados en `/progreso` |
+| `xp_actions` | registro de acciones que otorgan XP (usada por `useExperience`) |
 
 **Errores de Supabase**: pasarlos siempre por [`handleSupabaseError()`](app/utils/handleSupabaseError.js) — traduce los mensajes a español.
 
 ## 8. Composables (lógica de dominio)
 
 - [useHabits.js](app/composables/useHabits.js) — CRUD de hábitos, logs por fecha, rachas (diaria/semanal/mensual), `syncHabitsWithNewDay`, `shouldShowHabitForDate`, `getArgentineDate`. Es el composable más grande (~800 líneas) y concentra toda la lógica de fechas y streaks.
-- [useExperience.js](app/composables/useExperience.js) — XP, niveles, milestones. Funciones: `grantXP`, `checkStreakMilestone`, `checkAllHabitsDaily`, `checkFirstHabitCreated`, `checkWeeklyGoalMet`, `checkComeback`.
-- [useCommunities.js](app/composables/useCommunities.js) — comunidades, hábitos compartidos y completions por miembro.
+- [useExperience.js](app/composables/useExperience.js) — XP, niveles, milestones (~390 líneas). Funciones: `grantXP`, `checkStreakMilestone`, `checkAllHabitsDaily`, `checkFirstHabitCreated`, `checkWeeklyGoalMet`, `checkComeback`. Registra acciones en `xp_actions`.
+- [useCommunities.js](app/composables/useCommunities.js) — comunidades, hábitos compartidos, logs comunitarios, chat (`community_messages`) y completions por miembro (~530 líneas).
 - [useFriends.js](app/composables/useFriends.js) — búsqueda de usuarios, solicitudes y lista de amigos.
 - [useNovedades.js](app/composables/useNovedades.js) — feed de novedades (`status = 'approved'`) y categorías.
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
@@ -137,11 +142,43 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 | Archivo | Uso en template |
 |---|---|
 | `components/heading/H1.vue` | `<HeadingH1>` |
+| `components/heading/H2.vue` | `<HeadingH2>` |
 | `components/form/TextField.vue` | `<FormTextField>` |
+| `components/form/TextFieldSecondary.vue` | `<FormTextFieldSecondary>` |
+| `components/form/PasswordField.vue` | `<FormPasswordField>` |
+| `components/form/Select.vue` | `<FormSelect>` |
+| `components/form/Switch.vue` | `<FormSwitch>` |
+| `components/form/Counter.vue` | `<FormCounter>` |
+| `components/form/Options.vue` | `<FormOptions>` |
+| `components/form/OptionInput.vue` | `<FormOptionInput>` |
+| `components/form/Label.vue` | `<FormLabel>` |
+| `components/form/LabelSecondary.vue` | `<FormLabelSecondary>` |
+| `components/form/Layout.vue` | `<FormLayout>` |
+| `components/form/FieldsContainer.vue` | `<FormFieldsContainer>` |
+| `components/form/Error.vue` | `<FormError>` |
+| `components/form/Delete.vue` | `<FormDelete>` |
 | `components/habits/Card.vue` | `<HabitsCard>` |
+| `components/habits/CommunityCard.vue` | `<HabitsCommunityCard>` |
+| `components/habits/DateNavigator.vue` | `<HabitsDateNavigator>` |
+| `components/habits/Default.vue` | `<HabitsDefault>` |
+| `components/habits/Details.vue` | `<HabitsDetails>` |
+| `components/habits/Form.vue` | `<HabitsForm>` |
+| `components/habits/NewDefault.vue` | `<HabitsNewDefault>` |
 | `components/default/Section.vue` | `<DefaultSection>` |
-| `components/skeleton/HabitCard.vue` | `<SkeletonHabitCard>` |
+| `components/community/Card.vue` | `<CommunityCard>` |
+| `components/community/Header.vue` | `<CommunityHeader>` |
 | `components/community/friends/Card.vue` | `<CommunityFriendsCard>` |
+| `components/community/friends/CardAdd.vue` | `<CommunityFriendsCardAdd>` |
+| `components/community/friends/Member.vue` | `<CommunityFriendsMember>` |
+| `components/community/friends/Request.vue` | `<CommunityFriendsRequest>` |
+| `components/navigation/backArrow.vue` | `<NavigationBackArrow>` |
+| `components/skeleton/HabitCard.vue` | `<SkeletonHabitCard>` |
+| `components/skeleton/CommunityCard.vue` | `<SkeletonCommunityCard>` |
+| `components/skeleton/CommunityHabitCard.vue` | `<SkeletonCommunityHabitCard>` |
+| `components/skeleton/FriendCard.vue` | `<SkeletonFriendCard>` |
+| `components/skeleton/NewsCard.vue` | `<SkeletonNewsCard>` |
+| `components/skeleton/ProgresoDashboard.vue` | `<SkeletonProgresoDashboard>` |
+| `components/skeleton/TipCard.vue` | `<SkeletonTipCard>` |
 
 **Carpetas existentes**: `auth/`, `benefits/`, `button/` (Primary/Secondary/Terciary), `community/` (+ `chat/`, `friends/`), `default/` (Header/Main/Nav/Section), `form/`, `habits/`, `heading/`, `navigation/`, `progress/`, `skeleton/`.
 
@@ -182,12 +219,15 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 ## 14. Notas no obvias
 
 - **Login por username, no por email**: el formulario de [iniciar-sesion.vue](app/pages/iniciar-sesion.vue) pide `username`, busca el `email` correspondiente en `profiles.display_name` y luego hace `signInWithPassword` con ese email. Cuando agregues flujos de auth recordá este indirect.
-- **Re-sync de hábitos**: la home corre `syncHabitsWithNewDay()` al montarse, en cada `visibilitychange` y en un `setInterval` de 5 min que detecta cambio de día — ver [pages/index.vue:189-222](app/pages/index.vue). No remover sin entender por qué está.
+- **Re-sync de hábitos**: la home corre `syncHabitsWithNewDay()` al montarse, en cada `visibilitychange` y en un `setInterval` que detecta cambio de día — ver [pages/index.vue:195-252](app/pages/index.vue). No remover sin entender por qué está.
 - **Sin tipos de Supabase**: `supabase.types: false` en [nuxt.config.ts](nuxt.config.ts). El proyecto es JS puro; no asumir tipos generados del esquema.
 - **PWA-ready**: el viewport está bloqueado a `user-scalable=no` y la app declara `apple-mobile-web-app-capable`. Pensada para instalarse en mobile.
-- **Plugin desactivado**: en [nuxt.config.ts:70-72](nuxt.config.ts) hay un `preload-data.js` comentado. No está activo.
+- **Plugin desactivado**: en [nuxt.config.ts](nuxt.config.ts) hay un `preload-data.js` comentado. No está activo.
 - **Frases y tips diarios**: se eligen al azar al iniciar la sesión y se cachean en `sessionStorage` (`sessionPhrase`, `sessionTip`). Se limpian al cerrar sesión.
 - **RLS de comunidades**: al crear una comunidad, [useCommunities.createCommunity](app/composables/useCommunities.js) hace el `insert` sin `.select()` y luego una `select` separada — workaround para evitar el RLS de `SELECT` antes de ser miembro.
+- **Swipe en cards de hábitos**: `HabitsCard` y `HabitsCommunityCard` implementan swipe táctil para completar/descompletar hábitos. Lógica de `touchstart`/`touchend` con animación de fill. No romper la dirección del swipe al modificar el layout de las cards.
+- **DateNavigator bloqueado a la semana actual**: `HabitsDateNavigator` solo muestra los últimos 7 días hasta hoy. No navega hacia semanas anteriores ni permite seleccionar fechas futuras. Cada día tiene un arco de progreso circular calculado contra los hábitos del día.
+- **Realtime en comunidades**: la página [`/comunidades/[id]/`](app/pages/comunidades/[id]/index.vue) usa Supabase Realtime (`client.channel()`) para escuchar cambios en `community_messages` y `community_habit_logs` en tiempo real. El canal se limpia en `onUnmounted`.
 
 ## 15. Cómo verificar cambios
 

@@ -230,7 +230,9 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount) {
-                    const newStreak = (habit.streak || 0) + 1
+                    const newStreak = isPastDate
+                        ? await calculateStreakUpTo(habit, targetDate)
+                        : (habit.streak || 0) + 1
                     const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
                     streakUpdate = { streak: newStreak, longest_streak: longestStreak }
                     shouldGrantXP = true
@@ -258,7 +260,15 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
-                    streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                    if (isPastDate) {
+                        const [wsy, wsm, wsd] = weekStart.split('-').map(Number)
+                        const dayBefore = new Date(wsy, wsm - 1, wsd - 1)
+                        const prevEnd = `${dayBefore.getFullYear()}-${String(dayBefore.getMonth() + 1).padStart(2, '0')}-${String(dayBefore.getDate()).padStart(2, '0')}`
+                        const newStreak = await calculateStreakUpTo(habit, prevEnd)
+                        streakUpdate = { streak: Math.max(0, newStreak) }
+                    } else {
+                        streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                    }
                 }
             }
         } else if (isMonthlyPeriod) {
@@ -284,7 +294,9 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount) {
-                    const newStreak = (habit.streak || 0) + 1
+                    const newStreak = isPastDate
+                        ? await calculateStreakUpTo(habit, targetDate)
+                        : (habit.streak || 0) + 1
                     const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
                     streakUpdate = { streak: newStreak, longest_streak: longestStreak }
                     shouldGrantXP = true
@@ -312,19 +324,36 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
-                    streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                    if (isPastDate) {
+                        const lastDayPrevMonth = new Date(y, m - 1, 0)
+                        const prevEnd = `${lastDayPrevMonth.getFullYear()}-${String(lastDayPrevMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayPrevMonth.getDate()).padStart(2, '0')}`
+                        const newStreak = await calculateStreakUpTo(habit, prevEnd)
+                        streakUpdate = { streak: Math.max(0, newStreak) }
+                    } else {
+                        streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                    }
                 }
             }
         } else {
             // Racha diaria simple (frequency_option === 'todos' o default)
             if (isCompleted && !existingLog?.completed) {
-                const newStreak = (habit.streak || 0) + 1
+                const newStreak = isPastDate
+                    ? await calculateStreakUpTo(habit, targetDate)
+                    : (habit.streak || 0) + 1
                 const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
                 streakUpdate = { streak: newStreak, longest_streak: longestStreak }
                 shouldGrantXP = true
                 streakForMilestone = newStreak
             } else if (!isCompleted && existingLog?.completed) {
-                streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                if (isPastDate) {
+                    const [y, m, d] = targetDate.split('-').map(Number)
+                    const prev = new Date(y, m - 1, d - 1)
+                    const prevEnd = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+                    const newStreak = await calculateStreakUpTo(habit, prevEnd)
+                    streakUpdate = { streak: Math.max(0, newStreak) }
+                } else {
+                    streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
+                }
             }
         }
 
@@ -545,6 +574,64 @@ export const useHabits = () => {
             default:
                 return false
         }
+    }
+
+    const calculateStreakUpTo = async (habit, dateStr) => {
+        const isWeekly = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
+        const isMonthly = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
+
+        if (isWeekly) {
+            const [y, m, d] = dateStr.split('-').map(Number)
+            let cursor = new Date(y, m - 1, d)
+            let streak = 0
+            while (streak < 500) {
+                const wStart = getWeekStart(cursor)
+                const wEnd = getWeekEnd(cursor)
+                if (!await isPeriodComplete(habit, wStart, wEnd)) break
+                streak++
+                const [wy, wm, wd] = wStart.split('-').map(Number)
+                cursor = new Date(wy, wm - 1, wd - 1)
+            }
+            return streak
+        }
+
+        if (isMonthly) {
+            const [y, m] = dateStr.split('-').map(Number)
+            let yr = y, mo = m
+            let streak = 0
+            while (streak < 500) {
+                const mStart = `${yr}-${String(mo).padStart(2, '0')}-01`
+                const lastDay = new Date(yr, mo, 0).getDate()
+                const mEnd = `${yr}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+                if (!await isPeriodComplete(habit, mStart, mEnd)) break
+                streak++
+                mo--
+                if (mo === 0) { mo = 12; yr-- }
+            }
+            return streak
+        }
+
+        // Diario: obtener todos los logs completados ≤ dateStr y contar días consecutivos
+        const { data: logs } = await client
+            .from('habit_logs')
+            .select('date')
+            .eq('habit_id', habit.id)
+            .eq('completed', true)
+            .lte('date', dateStr)
+            .order('date', { ascending: false })
+
+        if (!logs || logs.length === 0) return 0
+
+        const completedDates = new Set(logs.map(l => l.date))
+        let streak = 0
+        let cur = dateStr
+        while (completedDates.has(cur)) {
+            streak++
+            const [cy, cm, cd] = cur.split('-').map(Number)
+            const prev = new Date(cy, cm - 1, cd - 1)
+            cur = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+        }
+        return streak
     }
 
     const updateStreakForNewDay = async (habit) => {

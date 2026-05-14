@@ -112,8 +112,32 @@ const days = computed(() => {
     })
 })
 
+const DAY_LETTER_TO_NUM = { D: 0, L: 1, M: 2, X: 3, J: 4, V: 5, S: 6 }
+
+const isHabitApplicableForDate = (habit, dateStr) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const dateObj = new Date(year, month - 1, day)
+    const dayOfWeek = dateObj.getDay()
+    const dayOfMonth = dateObj.getDate()
+    const fo = habit.frequency_option
+    const ft = habit.frequency_type
+
+    if (!ft || ft === 'diario' || ft === 'flexible') return true
+    if (fo === 'todos') return true
+
+    if (fo === 'dias_especificos_semana') {
+        const selected = (habit.frequency_detail?.weekDays || []).map(l => DAY_LETTER_TO_NUM[l])
+        return selected.includes(dayOfWeek)
+    }
+    if (fo === 'dias_especificos_mes') {
+        return (habit.frequency_detail?.monthDays || []).includes(dayOfMonth)
+    }
+
+    // cantidad_dias_semana / cantidad_dias_mes: aplica cualquier día del período
+    return true
+}
+
 const fetchWeekCompletions = async () => {
-    // Usar getSession() igual que el resto del app — no depende del ref reactivo
     const { data: { session } } = await client.auth.getSession()
     const userId = session?.user?.id
     if (!userId) return
@@ -126,11 +150,10 @@ const fetchWeekCompletions = async () => {
 
     const { data: habits } = await client
         .from('habits')
-        .select('id')
+        .select('id, frequency_type, frequency_option, frequency_detail')
         .eq('user_id', userId)
 
-    const total = habits?.length || 0
-    if (total === 0) return
+    if (!habits || habits.length === 0) return
 
     const habitIds = habits.map(h => h.id)
 
@@ -148,6 +171,7 @@ const fetchWeekCompletions = async () => {
 
     const result = {}
     pastAndTodayDates.forEach(date => {
+        const total = habits.filter(h => isHabitApplicableForDate(h, date)).length
         result[date] = { completed: countPerDay[date] || 0, total }
     })
     dayCompletions.value = result

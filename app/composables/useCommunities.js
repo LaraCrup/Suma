@@ -337,21 +337,47 @@ export const useCommunities = () => {
 
         if (error) throw error
 
-        // Actualizar racha comunitaria solo si el estado de completado cambió
+        // Recalcular racha comunitaria si cambió el estado de completado
         const completedChanged = isCompleted !== (existing?.completed ?? false)
         if (completedChanged) {
-            await updateCommunityStreak(habitId, today, isCompleted)
+            await updateCommunityStreak(habitId, today)
         }
 
         return log
     }
 
     /**
-     * Recalcula y persiste la racha comunitaria del hábito.
-     * La racha sube cuando TODOS los miembros completan en días consecutivos,
-     * y baja cuando una descompletación rompe el estado de "todos completos hoy".
+     * Cuenta días consecutivos hacia atrás desde dateStr donde TODOS los miembros completaron.
      */
-    const updateCommunityStreak = async (habitId, today, justCompleted) => {
+    const calculateCommunityStreakUpTo = async (habitId, memberIds, dateStr) => {
+        let streak = 0
+        let current = dateStr
+
+        while (streak < 500) {
+            const { data: logs } = await client
+                .from('community_habit_logs')
+                .select('user_id, completed')
+                .eq('community_habit_id', habitId)
+                .eq('date', current)
+                .in('user_id', memberIds)
+
+            const allCompleted = logs?.length === memberIds.length && logs.every(l => l.completed)
+            if (!allCompleted) break
+
+            streak++
+            const [y, m, d] = current.split('-').map(Number)
+            const prev = new Date(y, m - 1, d - 1)
+            current = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+        }
+
+        return streak
+    }
+
+    /**
+     * Recalcula y persiste la racha comunitaria contando desde los logs reales.
+     * Siempre recalcula desde la BD para evitar desincronizaciones.
+     */
+    const updateCommunityStreak = async (habitId, today) => {
         const { data: habit } = await client
             .from('community_habits')
             .select('id, community_id, streak, longest_streak')
@@ -368,41 +394,8 @@ export const useCommunities = () => {
         const memberIds = (allMembers || []).map(m => m.user_id)
         if (memberIds.length === 0) return
 
-        const { data: todayLogs } = await client
-            .from('community_habit_logs')
-            .select('user_id, completed')
-            .eq('community_habit_id', habitId)
-            .eq('date', today)
-            .in('user_id', memberIds)
-
-        const allCompletedToday = todayLogs?.length === memberIds.length &&
-            todayLogs.every(l => l.completed)
-
-        const [y, m, d] = today.split('-').map(Number)
-        const prevDate = new Date(y, m - 1, d - 1)
-        const yesterday = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}-${String(prevDate.getDate()).padStart(2, '0')}`
-
-        let newStreak = habit.streak
-        let newLongest = habit.longest_streak
-
-        if (justCompleted && allCompletedToday) {
-            // Todos completos hoy: ver si ayer también lo eran para continuar la racha
-            const { data: yesterdayLogs } = await client
-                .from('community_habit_logs')
-                .select('user_id, completed')
-                .eq('community_habit_id', habitId)
-                .eq('date', yesterday)
-                .in('user_id', memberIds)
-
-            const allCompletedYesterday = yesterdayLogs?.length === memberIds.length &&
-                yesterdayLogs.every(l => l.completed)
-
-            newStreak = allCompletedYesterday ? (habit.streak || 0) + 1 : 1
-            newLongest = Math.max(newStreak, habit.longest_streak || 0)
-        } else if (!justCompleted && !allCompletedToday) {
-            // Alguien descompletó y ya no están todos: bajar la racha del día actual
-            newStreak = Math.max(0, (habit.streak || 1) - 1)
-        }
+        const newStreak = await calculateCommunityStreakUpTo(habitId, memberIds, today)
+        const newLongest = Math.max(newStreak, habit.longest_streak || 0)
 
         if (newStreak !== habit.streak || newLongest !== habit.longest_streak) {
             await client
