@@ -9,7 +9,8 @@ export default defineNuxtConfig({
     '@nuxt/image',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/supabase',
-    '@pinia/nuxt'
+    '@pinia/nuxt',
+    '@vite-pwa/nuxt',
   ],
   app: {
     head: {
@@ -20,14 +21,12 @@ export default defineNuxtConfig({
       },
       meta: [
         { name: 'format-detection', content: 'telephone=no' },
-        { name: 'theme-color', content: '#ffffff' },
-        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'theme-color', content: '#157A6E' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }
       ],
       link: [
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'icon', type: 'image/png', sizes: '512x512', href: '/apple-touch-icon.png' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
       ]
     }
@@ -43,7 +42,8 @@ export default defineNuxtConfig({
         '/restablecer-contrasena',
         '/restablecer-contrasena-confirmacion',
         '/confirmar-cuenta',
-        '/nueva-contrasena'
+        '/nueva-contrasena',
+        '/offline',
       ]
     },
     cookieOptions: {
@@ -57,6 +57,74 @@ export default defineNuxtConfig({
         autoRefreshToken: true,
         storage: undefined
       }
+    },
+  },
+  pwa: {
+    registerType: 'autoUpdate',
+    manifest: {
+      name: 'Suma — Hábitos que suman',
+      short_name: 'Suma',
+      description: 'Formá hábitos, ganás XP y vivís mejor cada día.',
+      lang: 'es',
+      display: 'standalone',
+      orientation: 'portrait',
+      theme_color: '#157A6E',
+      background_color: '#131815',
+      start_url: '/',
+      scope: '/',
+      icons: [
+        { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      ],
+      shortcuts: [
+        { name: 'Mis hábitos',  short_name: 'Hábitos',    url: '/',            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }] },
+        { name: 'Progreso',     short_name: 'Progreso',    url: '/progreso',    icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }] },
+        { name: 'Comunidades',  short_name: 'Comunidades', url: '/comunidades', icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }] },
+        { name: 'Novedades',    short_name: 'Novedades',   url: '/novedades',   icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }] },
+      ],
+    },
+    workbox: {
+      globPatterns: [
+        '_nuxt/**/*.{js,css}',
+        '_fonts/**/*.{woff,woff2}',
+        'images/**/*.{png,jpg,jpeg,svg,webp}',
+        '*.{ico,png}',
+      ],
+      navigateFallback: '/offline',
+      navigateFallbackDenylist: [/^\/callback/, /^\/api\//],
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) =>
+            url.hostname.includes('supabase.co') && !url.pathname.startsWith('/auth/'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'supabase-data',
+            networkTimeoutSeconds: 10,
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: /^\/_fonts\//,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'fonts',
+            expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: /^\/images\//,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'app-images',
+            expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+      ],
+    },
+    devOptions: {
+      enabled: false,
     },
   },
   fonts: {
