@@ -171,6 +171,7 @@ export const useExperience = () => {
             console.log(`[XP] +${xpToGrant} XP por "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
 
             xpNotificationStore.enqueue(xpToGrant, actionKey)
+            if (leveledUp) xpNotificationStore.enqueueLevelUp(newLevel)
 
             return {
                 xpGranted: xpToGrant,
@@ -406,7 +407,6 @@ export const useExperience = () => {
             }
 
             console.log(`[XP] -${xpToRevoke} XP por revertir "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
-            xpNotificationStore.enqueue(-xpToRevoke, actionKey)
 
             return { xpRevoked: xpToRevoke, totalXP: newXP, currentLevel: newLevel }
         } catch (error) {

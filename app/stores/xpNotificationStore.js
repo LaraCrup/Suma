@@ -8,7 +8,11 @@ export const useXpNotificationStore = defineStore('xpNotification', {
     }),
     actions: {
         enqueue(xpAmount, actionKey) {
-            this.queue.push({ xpAmount, actionKey })
+            this.queue.push({ type: 'xp', xpAmount, actionKey })
+            if (!this.visible) this._processNext()
+        },
+        enqueueLevelUp(level) {
+            this.queue.push({ type: 'level_up', level })
             if (!this.visible) this._processNext()
         },
         _processNext() {

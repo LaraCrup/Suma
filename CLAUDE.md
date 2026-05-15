@@ -109,16 +109,16 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 | `news_categories` | `id`, `name` |
 | `levels` | `level_number`, `xp_required` |
 | `benefits` | beneficios desbloqueables mostrados en `/progreso` |
-| `xp_actions` | registro de acciones que otorgan XP (usada por `useExperience`) |
+| `xp_actions` | `action_key` (PK), `xp_value`, `active` — acciones de XP. Ver §16 para la lista completa. |
 
 **Errores de Supabase**: pasarlos siempre por [`handleSupabaseError()`](app/utils/handleSupabaseError.js) — traduce los mensajes a español.
 
 ## 8. Composables (lógica de dominio)
 
 - [useHabits.js](app/composables/useHabits.js) — CRUD de hábitos, logs por fecha, rachas (diaria/semanal/mensual), `syncHabitsWithNewDay`, `shouldShowHabitForDate`, `getArgentineDate`. Es el composable más grande (~800 líneas) y concentra toda la lógica de fechas y streaks.
-- [useExperience.js](app/composables/useExperience.js) — XP, niveles, milestones (~390 líneas). Funciones: `grantXP`, `checkStreakMilestone`, `checkAllHabitsDaily`, `checkFirstHabitCreated`, `checkWeeklyGoalMet`, `checkComeback`. Registra acciones en `xp_actions`.
-- [useCommunities.js](app/composables/useCommunities.js) — comunidades, hábitos compartidos, logs comunitarios, chat (`community_messages`) y completions por miembro (~530 líneas).
-- [useFriends.js](app/composables/useFriends.js) — búsqueda de usuarios, solicitudes y lista de amigos.
+- [useExperience.js](app/composables/useExperience.js) — XP, niveles, milestones. Funciones de otorgamiento: `grantXP`, `checkStreakMilestone`, `checkAllHabitsDaily`, `checkFirstHabitCreated`, `checkWeeklyGoalMet`, `checkComeback`. Funciones de revocación: `revokeXP`, `revokeAllHabitsDaily`, `revokeWeeklyGoalXP`. Registra y consulta acciones en `xp_actions`.
+- [useCommunities.js](app/composables/useCommunities.js) — comunidades, hábitos compartidos, logs comunitarios, chat (`community_messages`) y completions por miembro. Incluye `recordCommunityJoin(communityId)` para otorgar XP la primera vez que el usuario visita una comunidad (con guard en localStorage).
+- [useFriends.js](app/composables/useFriends.js) — búsqueda de usuarios, solicitudes y lista de amigos. `acceptFriendRequest` otorga XP; `removeFriend` lo revoca.
 - [useNovedades.js](app/composables/useNovedades.js) — feed de novedades (`status = 'approved'`) y categorías.
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
 
@@ -129,6 +129,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [authStore.js](app/stores/authStore.js) — `user`, `profile`, `loading`, `error`, `isLoggedIn`, `fetchUser`, `updateProfile`, `logout`.
 - [habitStore.js](app/stores/habitStore.js) — estado efímero durante el wizard de creación de hábito (`selectedHabit`, `isCustom`).
 - [splashStore.js](app/stores/splashStore.js) — visibilidad del splash inicial.
+- [xpNotificationStore.js](app/stores/xpNotificationStore.js) — cola de notificaciones de XP. Expone `enqueue(xpAmount, actionKey)` (valores negativos para revocaciones) y `dismiss()`. Procesa una notificación por vez; la siguiente se muestra automáticamente al cerrar la anterior.
 
 ## 10. Plugins (client-only)
 
@@ -182,7 +183,9 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 
 **Carpetas existentes**: `auth/`, `benefits/`, `button/` (Primary/Secondary/Terciary), `community/` (+ `chat/`, `friends/`), `default/` (Header/Main/Nav/Section), `form/`, `habits/`, `heading/`, `navigation/`, `progress/`, `skeleton/`.
 
-**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `Splash`.
+**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `Splash`, `XpNotification`.
+
+`XpNotification` se monta en [layouts/default.vue](app/layouts/default.vue) (posición `fixed top-8 right-4 z-[9999]`). Lee del `xpNotificationStore` y se auto-descarta a los 5 segundos. Muestra `+ N XP` en `text-accent` para ganancias y `- N XP` en `text-error` para revocaciones.
 
 ## 12. Estilos y theme
 
@@ -236,4 +239,32 @@ No hay test suite. Para validar:
 1. `npm run dev` y probar el flujo en el navegador con DevTools en viewport mobile (≤ 768 px).
 2. Para cambios de auth, probar login + redirect + logout.
 3. Para cambios en hábitos, probar: crear, loggear progreso, completar, simular cambio de día (visibility change o esperar el interval), borrar.
-4. Revisar la consola del navegador — el código loguea bastante (`[HABIT SYNC]`, `[PAGE INDEX]`, etc.).
+4. Revisar la consola del navegador — el código loguea bastante (`[HABIT SYNC]`, `[PAGE INDEX]`, `[XP]`, etc.).
+
+## 16. Sistema de XP
+
+### Acciones en la BD (`xp_actions`)
+
+| `action_key` | XP | Se otorga cuando… | Se revoca cuando… |
+|---|---|---|---|
+| `habit_completed` | 10 | Hábito pasa a completado (swipe derecho) | Hábito pasa a no completado (swipe izquierdo) |
+| `streak_7` | 30 | Racha de un hábito llega a 7 días | — |
+| `streak_14` | 50 | Racha llega a 14 días | — |
+| `streak_30` | 100 | Racha llega a 30 días | — |
+| `streak_60` | 200 | Racha llega a 60 días | — |
+| `streak_100` | 400 | Racha llega a 100 días | — |
+| `all_habits_daily` | 20 | Se completan TODOS los hábitos del día (una vez/día, guard en localStorage `lastAllHabitsDailyXP`) | Cualquier hábito se descompletea ese día |
+| `weekly_goal_met` | 25 | Todos los hábitos semanales cumplen su meta (una vez/semana, guard en localStorage `lastWeeklyGoalXP`) | Cualquier hábito semanal se descompletea bajo la meta |
+| `first_habit_created` | 15 | El usuario crea su primer hábito | — |
+| `comeback` | 5 | El usuario vuelve tras 3+ días de inactividad (una vez/sesión, guard en localStorage `lastComebackCheck`) | — |
+| `community_habit_completed` | 8 | Usuario completa el hábito de una comunidad | Usuario descompletea el hábito comunitario |
+| `create_community` | 30 | Usuario crea una comunidad | — |
+| `join_community` | 15 | Usuario visita una comunidad por primera vez (guard en localStorage `joined_community_{id}`) | — |
+| `friend_added` | 10 | Usuario acepta una solicitud de amistad | Usuario elimina un amigo |
+
+### Flujo técnico
+
+- `grantXP(actionKey)` y `revokeXP(actionKey)` en [useExperience.js](app/composables/useExperience.js) son el punto de entrada único. Ambos actualizan `profiles.experience_points` y `profiles.current_level`, sincronizan el `authStore`, y encolan una notificación en `xpNotificationStore`.
+- Las notificaciones se muestran en [XpNotification.vue](app/components/XpNotification.vue): `+ N XP` en amarillo para ganancias, `- N XP` en rojo para revocaciones. Se descartan automáticamente a los 5 segundos.
+- Los milestones de racha (`streak_7` … `streak_100`) se verifican con `checkStreakMilestone(streak)` — nunca se revocan aunque se pierda la racha.
+- Los guards de "una vez por día/semana" usan `localStorage`; si se revoca el bono, se limpia el guard para que pueda re-ganarse.
