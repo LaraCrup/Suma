@@ -88,6 +88,7 @@ import { useHabits } from '~/composables/useHabits'
 const route = useRoute()
 const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress } = useHabits()
 const habit = ref(null)
+const selectedDate = ref(null)
 const showMenu = ref(false)
 const showDeleteModal = ref(false)
 const isLoading = ref(true)
@@ -142,7 +143,8 @@ const completedBrillos = computed(() => {
 onMounted(async () => {
     try {
         const habitId = route.params.id
-        habit.value = await getHabitById(habitId)
+        selectedDate.value = route.query.date || null
+        habit.value = await getHabitById(habitId, selectedDate.value)
 
         if (!habit.value) {
             throw new Error('Hábito no encontrado')
@@ -157,7 +159,7 @@ onMounted(async () => {
 
 const increaseProgress = async () => {
     try {
-        const updated = await logHabitProgress(habit.value.id, 1)
+        const updated = await logHabitProgress(habit.value.id, 1, selectedDate.value)
         habit.value = updated
     } catch (error) {
         console.error('Error actualizando progreso:', error)
@@ -166,7 +168,7 @@ const increaseProgress = async () => {
 
 const decreaseProgress = async () => {
     try {
-        const updated = await logHabitProgress(habit.value.id, -1)
+        const updated = await logHabitProgress(habit.value.id, -1, selectedDate.value)
         habit.value = updated
     } catch (error) {
         console.error('Error actualizando progreso:', error)
@@ -176,7 +178,7 @@ const decreaseProgress = async () => {
 const resetProgress = async () => {
     try {
         const currentProgress = habit.value.progress_count || 0
-        const updated = await logHabitProgress(habit.value.id, -currentProgress)
+        const updated = await logHabitProgress(habit.value.id, -currentProgress, selectedDate.value)
         habit.value = updated
     } catch (error) {
         console.error('Error reiniciando progreso:', error)
@@ -188,7 +190,7 @@ const completeHabit = async () => {
         const currentProgress = habit.value.progress_count || 0
         const goalValue = habit.value.goal_value || 1
         const progressNeeded = goalValue - currentProgress
-        const updated = await logHabitProgress(habit.value.id, progressNeeded)
+        const updated = await logHabitProgress(habit.value.id, progressNeeded, selectedDate.value)
         habit.value = updated
     } catch (error) {
         console.error('Error completando hábito:', error)

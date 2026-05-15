@@ -1,6 +1,7 @@
 export const useExperience = () => {
     const client = useSupabaseClient()
     const authStore = useAuthStore()
+    const xpNotificationStore = useXpNotificationStore()
 
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
@@ -169,6 +170,8 @@ export const useExperience = () => {
 
             console.log(`[XP] +${xpToGrant} XP por "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
 
+            xpNotificationStore.enqueue(xpToGrant, actionKey)
+
             return {
                 xpGranted: xpToGrant,
                 totalXP: newXP,
@@ -190,7 +193,9 @@ export const useExperience = () => {
         const milestones = [
             { days: 7, key: 'streak_7' },
             { days: 14, key: 'streak_14' },
-            { days: 30, key: 'streak_30' }
+            { days: 30, key: 'streak_30' },
+            { days: 60, key: 'streak_60' },
+            { days: 100, key: 'streak_100' },
         ]
 
         const milestone = milestones.find(m => m.days === streak)
@@ -375,6 +380,62 @@ export const useExperience = () => {
         }
     }
 
+    const revokeXP = async (actionKey, customAmount = null) => {
+        try {
+            const userId = await getUserId()
+            const xpToRevoke = customAmount !== null ? customAmount : await getXPForAction(actionKey)
+            if (xpToRevoke <= 0) return null
+
+            const currentExp = await getUserExperience()
+            const newXP = Math.max(0, currentExp.experience_points - xpToRevoke)
+            const newLevel = await calculateLevel(newXP)
+
+            const { error } = await client
+                .from('profiles')
+                .update({ experience_points: newXP, current_level: newLevel })
+                .eq('id', userId)
+
+            if (error) {
+                console.error('Error revocando XP:', error)
+                throw error
+            }
+
+            if (authStore.profile) {
+                authStore.profile.experience_points = newXP
+                authStore.profile.current_level = newLevel
+            }
+
+            console.log(`[XP] -${xpToRevoke} XP por revertir "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
+            xpNotificationStore.enqueue(-xpToRevoke, actionKey)
+
+            return { xpRevoked: xpToRevoke, totalXP: newXP, currentLevel: newLevel }
+        } catch (error) {
+            console.error('Error en revokeXP:', error)
+            return null
+        }
+    }
+
+    const revokeAllHabitsDaily = async () => {
+        if (typeof window === 'undefined') return null
+        const parts = new Intl.DateTimeFormat('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        }).formatToParts(new Date())
+        const todayStr = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`
+        if (localStorage.getItem('lastAllHabitsDailyXP') !== todayStr) return null
+        localStorage.removeItem('lastAllHabitsDailyXP')
+        return await revokeXP('all_habits_daily')
+    }
+
+    const revokeWeeklyGoalXP = async () => {
+        if (typeof window === 'undefined') return null
+        const now = new Date()
+        const weekNum = `${now.getFullYear()}-W${Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + 1) / 7)}`
+        if (localStorage.getItem('lastWeeklyGoalXP') !== weekNum) return null
+        localStorage.removeItem('lastWeeklyGoalXP')
+        return await revokeXP('weekly_goal_met')
+    }
+
     return {
         getUserExperience,
         getLevels,
@@ -382,6 +443,9 @@ export const useExperience = () => {
         getLevelInfo,
         getXPForAction,
         grantXP,
+        revokeXP,
+        revokeAllHabitsDaily,
+        revokeWeeklyGoalXP,
         checkStreakMilestone,
         checkComeback,
         checkAllHabitsDaily,

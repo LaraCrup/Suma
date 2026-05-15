@@ -42,7 +42,7 @@
 <script setup>
 const route = useRoute()
 const client = useSupabaseClient()
-const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions } = useCommunities()
+const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions, recordCommunityJoin } = useCommunities()
 
 const community = ref(null)
 const habit = ref(null)
@@ -155,7 +155,10 @@ const handleSend = async () => {
     }
 }
 
-onMounted(loadCommunity)
+onMounted(async () => {
+    await loadCommunity()
+    recordCommunityJoin(route.params.id)
+})
 
 onUnmounted(() => {
     if (realtimeChannel) client.removeChannel(realtimeChannel)

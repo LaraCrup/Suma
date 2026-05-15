@@ -1,6 +1,6 @@
 export const useHabits = () => {
     const client = useSupabaseClient()
-    const { grantXP, checkStreakMilestone, checkAllHabitsDaily, checkFirstHabitCreated, checkWeeklyGoalMet } = useExperience()
+    const { grantXP, revokeXP, revokeAllHabitsDaily, revokeWeeklyGoalXP, checkStreakMilestone, checkAllHabitsDaily, checkFirstHabitCreated, checkWeeklyGoalMet } = useExperience()
 
 
     const getUserId = async () => {
@@ -83,7 +83,7 @@ export const useHabits = () => {
         })
     }
 
-    const getHabitById = async (habitId) => {
+    const getHabitById = async (habitId, date = null) => {
         const { data, error } = await client
             .from('habits')
             .select('*')
@@ -96,16 +96,16 @@ export const useHabits = () => {
 
         if (!data) return null
 
-        // Override progress_count with today's actual log value (habit_logs is source of truth)
-        const today = getArgentineDate()
-        const { data: todayLog } = await client
+        // Override progress_count with the log value for the target date (habit_logs is source of truth)
+        const targetDate = date || getArgentineDate()
+        const { data: targetLog } = await client
             .from('habit_logs')
             .select('value')
             .eq('habit_id', habitId)
-            .eq('date', today)
+            .eq('date', targetDate)
             .maybeSingle()
 
-        data.progress_count = todayLog?.value ?? 0
+        data.progress_count = targetLog?.value ?? 0
 
         const enriched = await enrichHabitsWithCompletedDays([data])
         return enriched[0]
@@ -203,6 +203,7 @@ export const useHabits = () => {
 
         let streakUpdate = {}
         let shouldGrantXP = false
+        let shouldRevokeXP = false
         let streakForMilestone = 0
         const isWeeklyPeriod = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
         const isMonthlyPeriod = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
@@ -260,6 +261,7 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
+                    shouldRevokeXP = true
                     if (isPastDate) {
                         const [wsy, wsm, wsd] = weekStart.split('-').map(Number)
                         const dayBefore = new Date(wsy, wsm - 1, wsd - 1)
@@ -324,6 +326,7 @@ export const useHabits = () => {
                         : (habit.frequency_detail?.counter || 0)
 
                 if (completedCount === requiredCount - 1) {
+                    shouldRevokeXP = true
                     if (isPastDate) {
                         const lastDayPrevMonth = new Date(y, m - 1, 0)
                         const prevEnd = `${lastDayPrevMonth.getFullYear()}-${String(lastDayPrevMonth.getMonth() + 1).padStart(2, '0')}-${String(lastDayPrevMonth.getDate()).padStart(2, '0')}`
@@ -337,14 +340,29 @@ export const useHabits = () => {
         } else {
             // Racha diaria simple (frequency_option === 'todos' o default)
             if (isCompleted && !existingLog?.completed) {
-                const newStreak = isPastDate
-                    ? await calculateStreakUpTo(habit, targetDate)
-                    : (habit.streak || 0) + 1
+                let newStreak
+                if (isPastDate) {
+                    // Completing a past gap: anchor from the most recent completed date
+                    // (may be today or a day after targetDate, bridging the chain forward)
+                    const { data: latestCompleted } = await client
+                        .from('habit_logs')
+                        .select('date')
+                        .eq('habit_id', habitId)
+                        .eq('completed', true)
+                        .order('date', { ascending: false })
+                        .limit(1)
+                        .maybeSingle()
+                    const anchorDate = latestCompleted?.date || targetDate
+                    newStreak = await calculateStreakUpTo(habit, anchorDate)
+                } else {
+                    newStreak = (habit.streak || 0) + 1
+                }
                 const longestStreak = Math.max(newStreak, habit.longest_streak || 0)
                 streakUpdate = { streak: newStreak, longest_streak: longestStreak }
                 shouldGrantXP = true
                 streakForMilestone = newStreak
             } else if (!isCompleted && existingLog?.completed) {
+                shouldRevokeXP = true
                 if (isPastDate) {
                     const [y, m, d] = targetDate.split('-').map(Number)
                     const prev = new Date(y, m - 1, d - 1)
@@ -386,10 +404,25 @@ export const useHabits = () => {
             }
         }
 
+        // Revocar XP si el hábito pasó de completado a no completado
+        if (shouldRevokeXP) {
+            try {
+                await revokeXP('habit_completed')
+            } catch (xpError) {
+                console.error('Error revocando XP:', xpError)
+            }
+        }
+
         // Verificar si se completaron todos los hábitos del día (solo para hoy)
         if (!isPastDate && isCompleted && !existingLog?.completed) {
             await checkAllHabitsDaily(getHabits, shouldShowHabitToday)
             await checkWeeklyGoalMet(getHabits)
+        }
+
+        // Revocar bonos diario/semanal si se descompletó un hábito hoy
+        if (!isPastDate && !isCompleted && existingLog?.completed) {
+            await revokeAllHabitsDaily()
+            await revokeWeeklyGoalXP()
         }
 
         // Para días pasados retornar objeto sintético con progress_count del log

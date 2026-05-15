@@ -4,4 +4,5 @@
         <slot />
     </DefaultMain>
     <DefaultNav />
+    <XpNotification />
 </template>

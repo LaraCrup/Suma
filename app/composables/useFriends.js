@@ -1,5 +1,6 @@
 export const useFriends = () => {
     const client = useSupabaseClient()
+    const { grantXP, revokeXP } = useExperience()
 
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
@@ -128,6 +129,8 @@ export const useFriends = () => {
             console.error('Error aceptando solicitud:', error)
             throw error
         }
+
+        await grantXP('friend_added')
     }
 
     /**
@@ -222,6 +225,8 @@ export const useFriends = () => {
             console.error('Error eliminando amistad:', error)
             throw error
         }
+
+        await revokeXP('friend_added')
     }
 
     return {

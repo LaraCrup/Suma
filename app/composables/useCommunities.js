@@ -1,5 +1,6 @@
 export const useCommunities = () => {
     const client = useSupabaseClient()
+    const { grantXP, revokeXP } = useExperience()
 
     const getArgentineDate = () => {
         const formatter = new Intl.DateTimeFormat('es-AR', {
@@ -96,6 +97,7 @@ export const useCommunities = () => {
             throw habitError
         }
 
+        await grantXP('create_community')
         return community
     }
 
@@ -341,6 +343,11 @@ export const useCommunities = () => {
         const completedChanged = isCompleted !== (existing?.completed ?? false)
         if (completedChanged) {
             await updateCommunityStreak(habitId, today)
+            if (isCompleted) {
+                await grantXP('community_habit_completed')
+            } else {
+                await revokeXP('community_habit_completed')
+            }
         }
 
         return log
@@ -507,6 +514,13 @@ export const useCommunities = () => {
         return true
     }
 
+    const recordCommunityJoin = async (communityId) => {
+        const key = `joined_community_${communityId}`
+        if (localStorage.getItem(key)) return null
+        localStorage.setItem(key, '1')
+        return await grantXP('join_community')
+    }
+
     return {
         createCommunity,
         getCommunities,
@@ -522,5 +536,6 @@ export const useCommunities = () => {
         deleteCommunity,
         removeMemberFromCommunity,
         addMembersToExistingCommunity,
+        recordCommunityJoin,
     }
 }

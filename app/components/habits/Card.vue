@@ -235,7 +235,8 @@ const handleClick = () => {
 }
 
 const goToHabit = () => {
-    router.push(`/mis-habitos/${props.habit.id}`);
+    const dateParam = props.selectedDate ? `?date=${props.selectedDate}` : ''
+    router.push(`/mis-habitos/${props.habit.id}${dateParam}`)
 }
 
 const completeHabit = async () => {
