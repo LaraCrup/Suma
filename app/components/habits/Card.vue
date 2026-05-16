@@ -153,10 +153,10 @@ const brilloCount = computed(() => {
 const completedBrillos = computed(() => {
     const option = props.habit.frequency_option
 
-    if (option === 'cantidad_dias_semana') {
+    if (option === 'cantidad_dias_semana' || option === 'dias_especificos_semana') {
         return props.habit.weekCompletedDays || 0
     }
-    if (option === 'cantidad_dias_mes') {
+    if (option === 'cantidad_dias_mes' || option === 'dias_especificos_mes') {
         return props.habit.monthCompletedDays || 0
     }
 

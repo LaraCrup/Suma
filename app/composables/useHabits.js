@@ -541,9 +541,9 @@ export const useHabits = () => {
             habits.map(async (habit) => {
                 const enrichedHabit = { ...habit }
 
-                if (habit.frequency_option === 'cantidad_dias_semana') {
+                if (habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana') {
                     enrichedHabit.weekCompletedDays = await getWeekCompletedDays(habit.id)
-                } else if (habit.frequency_option === 'cantidad_dias_mes') {
+                } else if (habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes') {
                     enrichedHabit.monthCompletedDays = await getMonthCompletedDays(habit.id)
                 }
 
