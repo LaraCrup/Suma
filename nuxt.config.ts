@@ -43,7 +43,6 @@ export default defineNuxtConfig({
         '/restablecer-contrasena-confirmacion',
         '/confirmar-cuenta',
         '/nueva-contrasena',
-        '/offline',
       ]
     },
     cookieOptions: {
@@ -90,7 +89,7 @@ export default defineNuxtConfig({
         'images/**/*.{png,jpg,jpeg,svg,webp}',
         '*.{ico,png}',
       ],
-      navigateFallback: '/offline',
+      navigateFallback: '/',
       navigateFallbackDenylist: [/^\/callback/, /^\/api\//],
       runtimeCaching: [
         {

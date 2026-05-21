@@ -1,5 +1,6 @@
 <template>
     <DefaultHeader />
+    <OfflineBanner />
     <DefaultMain>
         <slot />
     </DefaultMain>
