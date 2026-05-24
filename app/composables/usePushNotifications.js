@@ -1,5 +1,6 @@
 export const usePushNotifications = () => {
   const client = useSupabaseClient()
+  const user = useSupabaseUser()
   const config = useRuntimeConfig()
 
   const isSupported = computed(() =>
@@ -27,7 +28,32 @@ export const usePushNotifications = () => {
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
-      isSubscribed.value = !!subscription
+      if (!subscription) { isSubscribed.value = false; return }
+
+      // Verificar que la suscripción también esté en la DB
+      const { data } = await client
+        .from('push_subscriptions')
+        .select('id')
+        .eq('endpoint', subscription.endpoint)
+        .maybeSingle()
+
+      if (data) {
+        isSubscribed.value = true
+      } else {
+        // El browser tiene suscripción pero la DB no — re-sincronizar
+        const { endpoint, keys } = subscription.toJSON()
+        const { error } = await client.from('push_subscriptions').upsert(
+          { user_id: user.value?.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+          { onConflict: 'user_id,endpoint' }
+        )
+        if (error) {
+          console.error('[PUSH] Error re-sincronizando suscripción:', error)
+          isSubscribed.value = false
+        } else {
+          console.log('[PUSH] Suscripción re-sincronizada con la DB')
+          isSubscribed.value = true
+        }
+      }
     } catch {
       isSubscribed.value = false
     }
@@ -48,12 +74,18 @@ export const usePushNotifications = () => {
       })
 
       const { endpoint, keys } = subscription.toJSON()
-      await client.from('push_subscriptions').upsert(
-        { endpoint, p256dh: keys.p256dh, auth: keys.auth },
+      const { error: upsertError } = await client.from('push_subscriptions').upsert(
+        { user_id: user.value.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
         { onConflict: 'user_id,endpoint' }
       )
 
+      if (upsertError) {
+        console.error('[PUSH] Error guardando suscripción:', upsertError)
+        return
+      }
+
       isSubscribed.value = true
+      console.log('[PUSH] Suscripción guardada correctamente')
     } catch (e) {
       console.error('[PUSH] Error al suscribir:', e)
     } finally {
