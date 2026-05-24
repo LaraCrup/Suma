@@ -1,7 +1,11 @@
 export const usePushNotifications = () => {
   const client = useSupabaseClient()
-  const user = useSupabaseUser()
   const config = useRuntimeConfig()
+
+  const getUserId = async () => {
+    const { data: { session } } = await client.auth.getSession()
+    return session?.user?.id ?? null
+  }
 
   const isSupported = computed(() =>
     typeof window !== 'undefined' &&
@@ -41,9 +45,11 @@ export const usePushNotifications = () => {
         isSubscribed.value = true
       } else {
         // El browser tiene suscripción pero la DB no — re-sincronizar
+        const userId = await getUserId()
+        if (!userId) { isSubscribed.value = false; return }
         const { endpoint, keys } = subscription.toJSON()
         const { error } = await client.from('push_subscriptions').upsert(
-          { user_id: user.value?.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+          { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
           { onConflict: 'user_id,endpoint' }
         )
         if (error) {
@@ -73,9 +79,12 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(config.public.vapidPublicKey),
       })
 
+      const userId = await getUserId()
+      if (!userId) { console.error('[PUSH] No hay sesión activa'); return }
+
       const { endpoint, keys } = subscription.toJSON()
       const { error: upsertError } = await client.from('push_subscriptions').upsert(
-        { user_id: user.value.id, endpoint, p256dh: keys.p256dh, auth: keys.auth },
+        { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
         { onConflict: 'user_id,endpoint' }
       )
 
