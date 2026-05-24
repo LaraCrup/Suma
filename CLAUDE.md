@@ -20,6 +20,7 @@ Guía para Claude Code y futuros desarrolladores que trabajen en este proyecto. 
 - **Tailwind CSS** (`@nuxtjs/tailwindcss`) + CSS global en [app/assets/css/main.css](app/assets/css/main.css)
 - **`@nuxt/fonts`** — fuente Montserrat Alternates
 - **`@nuxt/image`** — `<NuxtImg>` para imágenes
+- **`@vite-pwa/nuxt`** — PWA con service worker, manifest, workbox caching y soporte offline
 - **Package manager**: npm
 
 ## 3. Comandos
@@ -121,6 +122,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [useFriends.js](app/composables/useFriends.js) — búsqueda de usuarios, solicitudes y lista de amigos. `acceptFriendRequest` otorga XP; `removeFriend` lo revoca.
 - [useNovedades.js](app/composables/useNovedades.js) — feed de novedades (`status = 'approved'`) y categorías.
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
+- [useOnlineStatus.js](app/composables/useOnlineStatus.js) — expone `isOnline` (ref reactivo) usando `navigator.onLine` y los eventos `online`/`offline` de `window`. Usado por `OfflineBanner`.
 
 **Patrón**: cada composable llama a `useSupabaseClient()` adentro y expone funciones `async`. Los que requieren sesión definen un helper interno `getUserId()` que tira si no hay sesión.
 
@@ -168,6 +170,7 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 | `components/default/Section.vue` | `<DefaultSection>` |
 | `components/community/Card.vue` | `<CommunityCard>` |
 | `components/community/Header.vue` | `<CommunityHeader>` |
+| `components/community/chat/OutputMessage.vue` | `<CommunityChatOutputMessage>` |
 | `components/community/friends/Card.vue` | `<CommunityFriendsCard>` |
 | `components/community/friends/CardAdd.vue` | `<CommunityFriendsCardAdd>` |
 | `components/community/friends/Member.vue` | `<CommunityFriendsMember>` |
@@ -180,12 +183,16 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 | `components/skeleton/NewsCard.vue` | `<SkeletonNewsCard>` |
 | `components/skeleton/ProgresoDashboard.vue` | `<SkeletonProgresoDashboard>` |
 | `components/skeleton/TipCard.vue` | `<SkeletonTipCard>` |
+| `components/progress/Bar.vue` | `<ProgressBar>` |
+| `components/auth/Header.vue` | `<AuthHeader>` |
 
 **Carpetas existentes**: `auth/`, `benefits/`, `button/` (Primary/Secondary/Terciary), `community/` (+ `chat/`, `friends/`), `default/` (Header/Main/Nav/Section), `form/`, `habits/`, `heading/`, `navigation/`, `progress/`, `skeleton/`.
 
-**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `Splash`, `XpNotification`.
+**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `OfflineBanner`, `Splash`, `XpNotification`.
 
 `XpNotification` se monta en [layouts/default.vue](app/layouts/default.vue) (posición `fixed top-8 right-4 z-[9999]`). Lee del `xpNotificationStore` y se auto-descarta a los 5 segundos. Muestra `+ N XP` en `text-accent` para ganancias y `- N XP` en `text-error` para revocaciones.
+
+`OfflineBanner` también se monta en [layouts/default.vue](app/layouts/default.vue). Usa `useOnlineStatus` y muestra un banner "Sin conexión — mostrando datos guardados" cuando `isOnline` es `false`.
 
 ## 12. Estilos y theme
 
@@ -224,7 +231,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 - **Login por username, no por email**: el formulario de [iniciar-sesion.vue](app/pages/iniciar-sesion.vue) pide `username`, busca el `email` correspondiente en `profiles.display_name` y luego hace `signInWithPassword` con ese email. Cuando agregues flujos de auth recordá este indirect.
 - **Re-sync de hábitos**: la home corre `syncHabitsWithNewDay()` al montarse, en cada `visibilitychange` y en un `setInterval` que detecta cambio de día — ver [pages/index.vue:195-252](app/pages/index.vue). No remover sin entender por qué está.
 - **Sin tipos de Supabase**: `supabase.types: false` en [nuxt.config.ts](nuxt.config.ts). El proyecto es JS puro; no asumir tipos generados del esquema.
-- **PWA-ready**: el viewport está bloqueado a `user-scalable=no` y la app declara `apple-mobile-web-app-capable`. Pensada para instalarse en mobile.
+- **PWA con soporte offline**: la app usa `@vite-pwa/nuxt` con workbox para cachear assets y respuestas de red. `OfflineBanner` informa al usuario cuando pierde conexión. El manifest y los shortcuts de app están configurados en [nuxt.config.ts](nuxt.config.ts). El viewport está bloqueado a `user-scalable=no` y declara `apple-mobile-web-app-capable`.
 - **Plugin desactivado**: en [nuxt.config.ts](nuxt.config.ts) hay un `preload-data.js` comentado. No está activo.
 - **Frases y tips diarios**: se eligen al azar al iniciar la sesión y se cachean en `sessionStorage` (`sessionPhrase`, `sessionTip`). Se limpian al cerrar sesión.
 - **RLS de comunidades**: al crear una comunidad, [useCommunities.createCommunity](app/composables/useCommunities.js) hace el `insert` sin `.select()` y luego una `select` separada — workaround para evitar el RLS de `SELECT` antes de ser miembro.

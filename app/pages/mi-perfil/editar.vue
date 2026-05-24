@@ -61,14 +61,53 @@
         {{ authStore.loading ? 'Guardando...' : 'Guardar cambios' }}
       </ButtonPrimary>
     </form>
+
+    <div v-if="pushSupported" class="w-full flex flex-col gap-3 mt-2">
+      <div class="w-full h-px bg-midlight" />
+      <FormLabelSecondary>Notificaciones</FormLabelSecondary>
+      <div class="flex items-center justify-between gap-4">
+        <span class="text-sm text-gray">
+          Recordatorios y mensajes de comunidad
+        </span>
+        <FormSwitch
+          id="push-notifications"
+          :model-value="pushSubscribed"
+          @update:model-value="handlePushToggle"
+        />
+      </div>
+      <p v-if="pushPermission === 'denied'" class="text-xs text-error">
+        Notificaciones bloqueadas. Habilitarlas desde la configuración del navegador.
+      </p>
+    </div>
   </DefaultSection>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '~/stores/authStore'
 
 const authStore = useAuthStore()
+
+const {
+  isSupported: pushSupported,
+  isSubscribed,
+  permission: pushPermission,
+  isLoading: pushLoading,
+  subscribe: pushSubscribe,
+  unsubscribe: pushUnsubscribe,
+  checkSubscription,
+} = usePushNotifications()
+
+const pushSubscribed = computed(() => isSubscribed.value)
+
+const handlePushToggle = async (value) => {
+  if (pushLoading.value) return
+  if (value) {
+    await pushSubscribe()
+  } else {
+    await pushUnsubscribe()
+  }
+}
 const fileInput = ref(null)
 const previewImage = ref(null)
 const selectedFile = ref(null)
@@ -90,6 +129,7 @@ onMounted(async () => {
       display_name: authStore.profile.display_name || ''
     }
   }
+  await checkSubscription()
 })
 
 // Sincronizar cambios en el perfil con el formulario
