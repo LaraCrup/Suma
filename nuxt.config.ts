@@ -64,9 +64,6 @@ export default defineNuxtConfig({
     },
   },
   pwa: {
-    strategies: 'injectManifest',
-    srcDir: 'app',
-    filename: 'sw.js',
     registerType: 'autoUpdate',
     manifest: {
       name: 'Suma — Hábitos que suman',
@@ -90,12 +87,45 @@ export default defineNuxtConfig({
         { name: 'Novedades',    short_name: 'Novedades',   url: '/novedades',   icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }] },
       ],
     },
-    injectManifest: {
+    workbox: {
       globPatterns: [
         '_nuxt/**/*.{js,css}',
         '_fonts/**/*.{woff,woff2}',
         'images/**/*.{png,jpg,jpeg,svg,webp}',
         '*.{ico,png}',
+      ],
+      navigateFallback: '/',
+      navigateFallbackDenylist: [/^\/callback/, /^\/api\//],
+      importScripts: ['/sw-push.js'],
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) =>
+            url.hostname.includes('supabase.co') && !url.pathname.startsWith('/auth/'),
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'supabase-data',
+            networkTimeoutSeconds: 10,
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: /^\/_fonts\//,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'fonts',
+            expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: /^\/images\//,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'app-images',
+            expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
       ],
     },
     devOptions: {
