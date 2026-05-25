@@ -61,6 +61,22 @@
                 <p class="text-base font-bold text-primary mt-1">{{ friendCount }}</p>
             </div>
         </div>
+        <div class="w-full flex flex-col gap-1">
+            <div v-if="pushSupported" class="w-full flex items-center justify-between gap-4 py-1">
+                <div class="flex flex-col gap-0.5">
+                    <p class="text-sm font-bold">Notificaciones</p>
+                </div>
+                <FormSwitch id="push-toggle" :model-value="pushSubscribed" @update:model-value="handlePushToggle"
+                    class="flex-shrink-0" />
+            </div>
+            <p v-if="pushPermission === 'denied'" class="text-xs text-error">
+                Bloqueadas en el navegador. Habilitarlas desde Configuración.
+            </p>
+            <p v-else class="text-xs text-gray">
+                {{ pushSubscribed ? 'Activadas' : 'Desactivadas' }}
+            </p>
+        </div>
+
         <div class="w-full flex flex-col gap-2">
             <ButtonTerciary :to="ROUTE_NAMES.CHANGE_PASSWORD">Cambiar contrasña</ButtonTerciary>
             <form @submit.prevent="confirmLogout">
@@ -97,6 +113,24 @@ import { useFriends } from '~/composables/useFriends'
 import { useCommunities } from '~/composables/useCommunities'
 
 const authStore = useAuthStore()
+
+const {
+    isSupported: pushSupported,
+    isSubscribed,
+    permission: pushPermission,
+    isLoading: pushLoading,
+    subscribe: pushSubscribe,
+    unsubscribe: pushUnsubscribe,
+    checkSubscription,
+} = usePushNotifications()
+
+const pushSubscribed = computed(() => isSubscribed.value)
+
+const handlePushToggle = async (value) => {
+    if (pushLoading.value) return
+    if (value) await pushSubscribe()
+    else await pushUnsubscribe()
+}
 const { getHabits } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
 const { getFriends } = useFriends()
@@ -121,6 +155,7 @@ const levelInfo = ref({
 onMounted(async () => {
     try {
         await authStore.fetchUser()
+        await checkSubscription()
         const [habits, friends, communities] = await Promise.all([getHabits(), getFriends(), getCommunities()])
         habitCount.value = habits.length
         friendCount.value = friends.length
