@@ -64,9 +64,22 @@ const ACTION_LABELS = {
     friend_added: '¡Nuevo amigo!',
 }
 
+const PRIORITY_ORDER = [
+    'all_habits_daily', 'weekly_goal_met',
+    'streak_100', 'streak_60', 'streak_30', 'streak_14', 'streak_7',
+    'first_habit_created', 'create_community', 'join_community',
+    'friend_added', 'comeback', 'community_habit_completed', 'habit_completed',
+]
+
 const label = computed(() => {
-    const key = store.current?.actionKey
-    return ACTION_LABELS[key] ?? '¡XP obtenido!'
+    const current = store.current
+    if (!current) return ''
+    const keys = current.actionKeys ?? (current.actionKey ? [current.actionKey] : [])
+    if (keys.length === 0) return '¡XP obtenido!'
+    for (const key of PRIORITY_ORDER) {
+        if (keys.includes(key)) return ACTION_LABELS[key]
+    }
+    return ACTION_LABELS[keys[0]] ?? '¡XP obtenido!'
 })
 
 let timer = null

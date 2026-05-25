@@ -1,14 +1,30 @@
 import { defineStore } from 'pinia'
 
+let batchTimer = null
+
 export const useXpNotificationStore = defineStore('xpNotification', {
     state: () => ({
         queue: [],
         current: null,
         visible: false,
+        _pendingXP: 0,
+        _pendingKeys: [],
     }),
     actions: {
         enqueue(xpAmount, actionKey) {
-            this.queue.push({ type: 'xp', xpAmount, actionKey })
+            this._pendingXP += xpAmount
+            this._pendingKeys.push(actionKey)
+            clearTimeout(batchTimer)
+            batchTimer = setTimeout(() => this._flushBatch(), 600)
+        },
+        _flushBatch() {
+            if (this._pendingKeys.length === 0) return
+            const xpAmount = this._pendingXP
+            const actionKeys = [...this._pendingKeys]
+            this._pendingXP = 0
+            this._pendingKeys = []
+            batchTimer = null
+            this.queue.push({ type: 'xp', xpAmount, actionKeys })
             if (!this.visible) this._processNext()
         },
         enqueueLevelUp(level) {
