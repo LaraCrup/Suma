@@ -6,4 +6,5 @@
     </DefaultMain>
     <DefaultNav />
     <XpNotification />
+    <StreakGrace />
 </template>

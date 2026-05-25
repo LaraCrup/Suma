@@ -1,3 +1,11 @@
+// Workbox throws this when a navigation MessageChannel port disconnects mid-flight
+// during SPA client-side routing. Benign — navigation still completes correctly.
+self.addEventListener('unhandledrejection', (event) => {
+  if (event.reason?.message?.includes('disconnected port object')) {
+    event.preventDefault()
+  }
+})
+
 self.addEventListener('push', (event) => {
   if (!event.data) return
   const data = event.data.json()

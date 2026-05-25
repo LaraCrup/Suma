@@ -340,6 +340,9 @@ export const useHabits = () => {
         } else {
             // Racha diaria simple (frequency_option === 'todos' o default)
             if (isCompleted && !existingLog?.completed) {
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem(`streakGracePending_${habitId}`)
+                }
                 let newStreak
                 if (isPastDate) {
                     // Completing a past gap: anchor from the most recent completed date
@@ -722,14 +725,58 @@ export const useHabits = () => {
 
             // Racha diaria: verificar si se completó ayer
             const yesterday = getYesterdayString()
+
+            // Si hay una gracia pendiente de un día anterior al de ayer, auto-declinar
+            const pendingKey = `streakGracePending_${habit.id}`
+            const pendingRaw = typeof window !== 'undefined' ? localStorage.getItem(pendingKey) : null
+            if (pendingRaw) {
+                const { offeredForDate } = JSON.parse(pendingRaw)
+                if (offeredForDate !== yesterday) {
+                    await updateHabit(habit.id, { streak: 0 })
+                    localStorage.removeItem(pendingKey)
+                    return
+                } else {
+                    // La gracia de ayer ya está pendiente, no re-encolar
+                    return
+                }
+            }
+
             const yesterdayLog = await getHabitLogByDate(habit.id, yesterday)
             const wasCompletedYesterday = yesterdayLog?.completed || false
 
-            if (!wasCompletedYesterday) {
+            if (!wasCompletedYesterday && (habit.streak || 0) > 0) {
+                const currentMonth = getArgentineDate().slice(0, 7)
+                const graceAvailable = habit.streak_grace_used_month !== currentMonth
+
+                if (graceAvailable) {
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
+                    }
+                    const graceStore = useStreakGraceStore()
+                    graceStore.enqueue(habit.id, habit.name, habit.streak)
+                } else {
+                    await updateHabit(habit.id, { streak: 0 })
+                }
+            } else if (!wasCompletedYesterday) {
                 await updateHabit(habit.id, { streak: 0 })
             }
         } catch (error) {
             console.error('Error actualizando racha:', error)
+        }
+    }
+
+    const applyStreakGrace = async (habitId) => {
+        const currentMonth = getArgentineDate().slice(0, 7)
+        await updateHabit(habitId, { streak_grace_used_month: currentMonth })
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(`streakGracePending_${habitId}`)
+        }
+    }
+
+    const declineStreakGrace = async (habitId) => {
+        await updateHabit(habitId, { streak: 0 })
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(`streakGracePending_${habitId}`)
         }
     }
 
@@ -917,6 +964,8 @@ export const useHabits = () => {
         enrichHabitsWithCompletedDays,
         getWeekCompletedDays,
         getMonthCompletedDays,
-        getHabitLogByDate
+        getHabitLogByDate,
+        applyStreakGrace,
+        declineStreakGrace
     }
 }
