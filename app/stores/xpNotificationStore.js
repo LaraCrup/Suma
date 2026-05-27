@@ -15,7 +15,7 @@ export const useXpNotificationStore = defineStore('xpNotification', {
             this._pendingXP += xpAmount
             this._pendingKeys.push(actionKey)
             clearTimeout(batchTimer)
-            batchTimer = setTimeout(() => this._flushBatch(), 600)
+            batchTimer = setTimeout(() => this._flushBatch(), 1500)
         },
         _flushBatch() {
             if (this._pendingKeys.length === 0) return
