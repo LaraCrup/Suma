@@ -90,6 +90,7 @@ import { useAuthStore } from '~/stores/authStore'
 const { getHabitsForDate, shouldShowHabitForDate, syncHabitsWithNewDay, getArgentineDate } = useHabits()
 const { getCommunities, getCommunityHabitCompletions } = useCommunities()
 const authStore = useAuthStore()
+const graceStore = useStreakGraceStore()
 const habits = ref([])
 const showAllHabits = ref(false)
 const communityHabits = ref([])
@@ -166,6 +167,17 @@ const handleCommunityHabitUpdated = async (habitId) => {
         console.error('Error refrescando miembros del hábito comunitario:', error)
     }
 }
+
+// Cuando el modal de gracia indica "marcar de ayer", navegar a ayer en el DateNavigator
+watch(() => graceStore.navigateToYesterday, (val) => {
+    if (!val) return
+    const today = getArgentineDate()
+    const [y, m, d] = today.split('-').map(Number)
+    const prev = new Date(y, m - 1, d - 1)
+    const yesterday = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+    selectedDate.value = yesterday
+    graceStore.clearNavigateToYesterday()
+})
 
 watch(selectedDate, async (newDate) => {
     try {

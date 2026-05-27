@@ -753,7 +753,7 @@ export const useHabits = () => {
                         localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
                     }
                     const graceStore = useStreakGraceStore()
-                    graceStore.enqueue(habit.id, habit.name, habit.streak)
+                    graceStore.add(habit.id, habit.name, habit.streak, graceAvailable)
                 } else {
                     await updateHabit(habit.id, { streak: 0 })
                 }
@@ -800,6 +800,10 @@ export const useHabits = () => {
             }
 
             console.log('[RESET DIARIO] Reset completado exitosamente')
+
+            // Mostrar modal combinado si hay hábitos con gracias pendientes
+            const graceStore = useStreakGraceStore()
+            graceStore.show()
 
         } catch (error) {
             console.error('[RESET DIARIO] Error durante reset:', error)
