@@ -79,8 +79,15 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(config.public.vapidPublicKey),
       })
 
+      // Actualizar switch visualmente apenas el browser confirma
+      isSubscribed.value = true
+
       const userId = await getUserId()
-      if (!userId) { console.error('[PUSH] No hay sesión activa'); return }
+      if (!userId) {
+        console.error('[PUSH] No hay sesión activa')
+        isSubscribed.value = false
+        return
+      }
 
       const { endpoint, keys } = subscription.toJSON()
       const { error: upsertError } = await client.from('push_subscriptions').upsert(
@@ -90,13 +97,14 @@ export const usePushNotifications = () => {
 
       if (upsertError) {
         console.error('[PUSH] Error guardando suscripción:', upsertError)
+        isSubscribed.value = false
         return
       }
 
-      isSubscribed.value = true
       console.log('[PUSH] Suscripción guardada correctamente')
     } catch (e) {
       console.error('[PUSH] Error al suscribir:', e)
+      isSubscribed.value = false
     } finally {
       isLoading.value = false
     }

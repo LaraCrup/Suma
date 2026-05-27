@@ -130,6 +130,7 @@ const handlePushToggle = async (value) => {
     if (pushLoading.value) return
     if (value) await pushSubscribe()
     else await pushUnsubscribe()
+    await checkSubscription()
 }
 const { getHabits } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
