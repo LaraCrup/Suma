@@ -41,6 +41,11 @@ Crear `.env` en la raíz a partir de [.env.example](.env.example):
 
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
+- `VAPID_PUBLIC_KEY` — clave pública VAPID para Web Push (generar con `npx web-push generate-vapid-keys`)
+- `VAPID_PRIVATE_KEY` — clave privada VAPID (solo usada en el servidor/edge para enviar notificaciones)
+- `VAPID_SUBJECT` — contacto VAPID, ej. `mailto:tu@email.com`
+
+`VAPID_PUBLIC_KEY` se expone al cliente vía `runtimeConfig.public.vapidPublicKey` en [nuxt.config.ts](nuxt.config.ts).
 
 ## 5. Estructura del proyecto
 
@@ -98,7 +103,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 | Tabla | Campos clave |
 |---|---|
 | `profiles` | `id`, `email`, `name`, `display_name`, `avatar_url`, `experience_points`, `current_level` |
-| `habits` | `user_id`, `name`, `icon`, `when_where`, `identity`, `unit`, `goal_value`, `frequency_type`, `frequency_option`, `frequency_detail`, `streak`, `longest_streak`, `reminder_enabled` |
+| `habits` | `user_id`, `name`, `icon`, `when_where`, `identity`, `unit`, `goal_value`, `frequency_type`, `frequency_option`, `frequency_detail`, `streak`, `longest_streak`, `reminder_enabled`, `streak_grace_used_month` |
 | `habit_logs` | `habit_id`, `date`, `value`, `completed` |
 | `communities` | `id`, `name`, `icon`, `created_by` |
 | `community_members` | `community_id`, `user_id`, `role` (`admin`/`member`) |
@@ -111,6 +116,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 | `levels` | `level_number`, `xp_required` |
 | `benefits` | beneficios desbloqueables mostrados en `/progreso` |
 | `xp_actions` | `action_key` (PK), `xp_value`, `active` — acciones de XP. Ver §16 para la lista completa. |
+| `push_subscriptions` | `user_id`, `endpoint`, `p256dh`, `auth` — suscripciones Web Push por usuario/dispositivo. PK compuesta `user_id + endpoint`. |
 
 **Errores de Supabase**: pasarlos siempre por [`handleSupabaseError()`](app/utils/handleSupabaseError.js) — traduce los mensajes a español.
 
@@ -123,6 +129,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [useNovedades.js](app/composables/useNovedades.js) — feed de novedades (`status = 'approved'`) y categorías.
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
 - [useOnlineStatus.js](app/composables/useOnlineStatus.js) — expone `isOnline` (ref reactivo) usando `navigator.onLine` y los eventos `online`/`offline` de `window`. Usado por `OfflineBanner`.
+- [usePushNotifications.js](app/composables/usePushNotifications.js) — gestiona suscripciones Web Push. Expone `isSupported`, `permission`, `isSubscribed`, `isLoading`, `subscribe()`, `unsubscribe()`, `checkSubscription()`. Persiste las suscripciones en la tabla `push_subscriptions` de Supabase. Usa `config.public.vapidPublicKey` para la clave del applicationServerKey.
 
 **Patrón**: cada composable llama a `useSupabaseClient()` adentro y expone funciones `async`. Los que requieren sesión definen un helper interno `getUserId()` que tira si no hay sesión.
 
@@ -132,11 +139,13 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [habitStore.js](app/stores/habitStore.js) — estado efímero durante el wizard de creación de hábito (`selectedHabit`, `isCustom`).
 - [splashStore.js](app/stores/splashStore.js) — visibilidad del splash inicial.
 - [xpNotificationStore.js](app/stores/xpNotificationStore.js) — cola de notificaciones de XP. Expone `enqueue(xpAmount, actionKey)` (valores negativos para revocaciones) y `dismiss()`. Procesa una notificación por vez; la siguiente se muestra automáticamente al cerrar la anterior.
+- [streakGraceStore.js](app/stores/streakGraceStore.js) — controla la visibilidad del modal `StreakGrace`. Acumula hábitos perdidos ayer con `add(habitId, habitName, streak, graceAvailable)`, los muestra con `show()`, y expone el flag `navigateToYesterday` que `index.vue` observa para cambiar la fecha seleccionada al día anterior.
 
 ## 10. Plugins (client-only)
 
 - [plugins/splash.client.js](app/plugins/splash.client.js) — oculta el splash a los 2.5 s o al primer cambio de ruta.
 - [plugins/habitSync.client.js](app/plugins/habitSync.client.js) — en `visibilitychange` (vuelta del background) llama a `syncHabitsWithNewDay()` y `checkComeback()`.
+- [plugins/pushNotifications.client.js](app/plugins/pushNotifications.client.js) — observa `useSupabaseUser()` y, cuando el usuario se autentica, llama a `checkSubscription()` y auto-suscribe al push si tiene permiso y no estaba suscripto.
 
 ## 11. Componentes
 
@@ -170,6 +179,7 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 | `components/default/Section.vue` | `<DefaultSection>` |
 | `components/community/Card.vue` | `<CommunityCard>` |
 | `components/community/Header.vue` | `<CommunityHeader>` |
+| `components/community/chat/InputMessage.vue` | `<CommunityChatInputMessage>` |
 | `components/community/chat/OutputMessage.vue` | `<CommunityChatOutputMessage>` |
 | `components/community/friends/Card.vue` | `<CommunityFriendsCard>` |
 | `components/community/friends/CardAdd.vue` | `<CommunityFriendsCardAdd>` |
@@ -188,11 +198,13 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 
 **Carpetas existentes**: `auth/`, `benefits/`, `button/` (Primary/Secondary/Terciary), `community/` (+ `chat/`, `friends/`), `default/` (Header/Main/Nav/Section), `form/`, `habits/`, `heading/`, `navigation/`, `progress/`, `skeleton/`.
 
-**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `OfflineBanner`, `Splash`, `XpNotification`.
+**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `OfflineBanner`, `Splash`, `StreakGrace`, `XpNotification`.
 
 `XpNotification` se monta en [layouts/default.vue](app/layouts/default.vue) (posición `fixed top-8 right-4 z-[9999]`). Lee del `xpNotificationStore` y se auto-descarta a los 5 segundos. Muestra `+ N XP` en `text-accent` para ganancias y `- N XP` en `text-error` para revocaciones.
 
 `OfflineBanner` también se monta en [layouts/default.vue](app/layouts/default.vue). Usa `useOnlineStatus` y muestra un banner "Sin conexión — mostrando datos guardados" cuando `isOnline` es `false`.
+
+`StreakGrace` también se monta en [layouts/default.vue](app/layouts/default.vue) (posición `fixed inset-0 z-50`). Lee del `streakGraceStore` y muestra un bottom sheet modal con los hábitos no completados ayer. Permite al usuario usar su gracia mensual (para mantener la racha), marcar los hábitos de ayer manualmente (navega al día anterior), o perder todas las rachas.
 
 ## 12. Estilos y theme
 
@@ -238,6 +250,9 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 - **Swipe en cards de hábitos**: `HabitsCard` y `HabitsCommunityCard` implementan swipe táctil para completar/descompletar hábitos. Lógica de `touchstart`/`touchend` con animación de fill. No romper la dirección del swipe al modificar el layout de las cards.
 - **DateNavigator bloqueado a la semana actual**: `HabitsDateNavigator` solo muestra los últimos 7 días hasta hoy. No navega hacia semanas anteriores ni permite seleccionar fechas futuras. Cada día tiene un arco de progreso circular calculado contra los hábitos del día.
 - **Realtime en comunidades**: la página [`/comunidades/[id]/`](app/pages/comunidades/[id]/index.vue) usa Supabase Realtime (`client.channel()`) para escuchar cambios en `community_messages` y `community_habit_logs` en tiempo real. El canal se limpia en `onUnmounted`.
+- **Sistema de gracia de rachas**: cuando `syncHabitsWithNewDay()` detecta hábitos no completados ayer con racha > 0, los encola en `streakGraceStore` con un flag `graceAvailable` (`streak_grace_used_month !== currentMonth`). El store muestra el modal `StreakGrace`. Usar la gracia llama a `applyStreakGrace(habitId)` — actualiza `streak_grace_used_month` al mes actual y mantiene la racha intacta. Rechazar llama a `declineStreakGrace(habitId)` — resetea la racha a 0 sin consumir la gracia. Guard en localStorage (`streakGracePending_{id}`) para no procesar el mismo hábito dos veces. **La gracia se consume una sola vez por mes por hábito.**
+- **Push Notifications (Web Push)**: el plugin `pushNotifications.client.js` auto-suscribe al push al autenticarse. El composable `usePushNotifications` persiste las suscripciones en `push_subscriptions`. El service worker `app/sw.js` maneja `push` y `notificationclick`; está importado como `/sw-push.js` vía `workbox.importScripts` en [nuxt.config.ts](nuxt.config.ts). Requiere las tres vars VAPID en el `.env`. El usuario puede activar/desactivar las notificaciones desde [mi-perfil](app/pages/mi-perfil/index.vue) con el `FormSwitch` de push.
+- **Chat de comunidades**: `CommunityChatInputMessage` muestra mensajes recibidos de otros miembros; `CommunityChatOutputMessage` muestra los propios. Ambos viven en `components/community/chat/`.
 
 ## 15. Cómo verificar cambios
 

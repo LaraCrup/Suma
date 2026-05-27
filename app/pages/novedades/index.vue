@@ -77,11 +77,17 @@
 
 <script setup>
 const { getNews, getCategories } = useNovedades()
+const { registerRefresh } = usePullToRefresh()
 
 const categories = ref([])
 const news = ref([])
 const activeCategory = ref(null)
 const loading = ref(true)
+
+// Caché de 5 min: las novedades de marcas no cambian tan seguido.
+// El pull-to-refresh siempre fuerza el reload (force = true).
+const CACHE_KEY = 'novedades_last_fetch'
+const CACHE_TTL = 5 * 60 * 1000
 
 const formatDate = (date) => {
     if (!date) return ''
@@ -97,9 +103,22 @@ const selectCategory = async (categoryId) => {
     loading.value = false
 }
 
-onMounted(async () => {
+const loadData = async (force = false) => {
+    if (typeof window !== 'undefined') {
+        const last = sessionStorage.getItem(CACHE_KEY)
+        if (!force && last && Date.now() - Number(last) < CACHE_TTL) return
+    }
+    loading.value = true
     categories.value = await getCategories()
-    news.value = await getNews()
+    news.value = await getNews(activeCategory.value)
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem(CACHE_KEY, String(Date.now()))
+    }
     loading.value = false
+}
+
+onMounted(() => {
+    loadData()
+    registerRefresh(() => loadData(true))
 })
 </script>

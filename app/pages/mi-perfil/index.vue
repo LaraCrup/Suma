@@ -136,6 +136,7 @@ const { getHabits } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
 const { getFriends } = useFriends()
 const { getCommunities } = useCommunities()
+const { registerRefresh } = usePullToRefresh()
 const errorMsg = ref('')
 const showConfirmation = ref(false)
 const habitCount = ref(0)
@@ -153,22 +154,27 @@ const levelInfo = ref({
     isMaxLevel: false
 })
 
-onMounted(async () => {
+// loadData es reutilizado por onMounted y pull-to-refresh.
+// checkSubscription queda solo en onMounted (no tiene sentido re-verificarla en cada pull).
+const loadData = async () => {
     try {
         await authStore.fetchUser()
-        await checkSubscription()
         const [habits, friends, communities] = await Promise.all([getHabits(), getFriends(), getCommunities()])
         habitCount.value = habits.length
         friendCount.value = friends.length
         communityCount.value = communities.length
-
-        // Cargar información de XP y nivel
         userXP.value = await getUserExperience()
         levelInfo.value = await getLevelInfo(userXP.value.experience_points)
     } catch (error) {
         console.error('Error cargando datos del perfil:', error)
         habitCount.value = 0
     }
+}
+
+onMounted(async () => {
+    await loadData()
+    await checkSubscription()
+    registerRefresh(loadData)
 })
 
 const formattedCreatedAt = computed(() => {

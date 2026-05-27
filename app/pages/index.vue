@@ -89,6 +89,7 @@ import { useAuthStore } from '~/stores/authStore'
 
 const { getHabitsForDate, shouldShowHabitForDate, syncHabitsWithNewDay, getArgentineDate } = useHabits()
 const { getCommunities, getCommunityHabitCompletions } = useCommunities()
+const { registerRefresh } = usePullToRefresh()
 const authStore = useAuthStore()
 const graceStore = useStreakGraceStore()
 const habits = ref([])
@@ -195,20 +196,17 @@ watch(selectedDate, async (newDate) => {
     }
 })
 
-let dateCheckInterval = null
-let visibilityChangeHandler = null
-
-onMounted(async () => {
+// Carga de datos — reutilizada por onMounted y pull-to-refresh
+const loadHabitsData = async () => {
+    isLoading.value = true
+    isCommunityLoading.value = true
     try {
-        await authStore.fetchUser()
-        console.log('[PAGE INDEX] Usuario autenticado:', authStore.isLoggedIn)
-
         console.log('[PAGE INDEX] Iniciando sincronización de hábitos...')
         await syncHabitsWithNewDay()
         console.log('[PAGE INDEX] Sincronización completada')
 
         habits.value = await getHabitsForDate(selectedDate.value)
-        console.log('[PAGE INDEX] Hábitos cargados después del reset:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
+        console.log('[PAGE INDEX] Hábitos cargados:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
 
         await filterHabitsByVisibility()
         isLoading.value = false
@@ -225,6 +223,22 @@ onMounted(async () => {
         isCommunityLoading.value = false
     } catch (error) {
         console.error('Error cargando hábitos:', error)
+        isLoading.value = false
+        isCommunityLoading.value = false
+    }
+}
+
+let dateCheckInterval = null
+let visibilityChangeHandler = null
+
+onMounted(async () => {
+    try {
+        await authStore.fetchUser()
+        console.log('[PAGE INDEX] Usuario autenticado:', authStore.isLoggedIn)
+        await loadHabitsData()
+        registerRefresh(loadHabitsData)
+    } catch (error) {
+        console.error('Error en mount:', error)
         isLoading.value = false
         isCommunityLoading.value = false
     }

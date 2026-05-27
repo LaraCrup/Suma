@@ -41,6 +41,7 @@
 
 <script setup>
 const { searchUsers, getSentPendingIds, getFriendIds } = useFriends()
+const { registerRefresh } = usePullToRefresh()
 
 const inputElement = ref(null)
 const query = ref('')
@@ -72,10 +73,15 @@ const onRequestCancelled = (userId) => {
     pendingIds.value = pendingIds.value.filter(id => id !== userId)
 }
 
-onMounted(async () => {
+const loadIds = async () => {
     const [pending, friends] = await Promise.all([getSentPendingIds(), getFriendIds()])
     pendingIds.value = pending
     friendIds.value = friends
+}
+
+onMounted(async () => {
+    await loadIds()
     nextTick(() => inputElement.value?.focus())
+    registerRefresh(loadIds)
 })
 </script>

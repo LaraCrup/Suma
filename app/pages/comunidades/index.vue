@@ -72,6 +72,7 @@
 <script setup>
 const { getPendingRequests, getFriends } = useFriends()
 const { getCommunities } = useCommunities()
+const { registerRefresh } = usePullToRefresh()
 
 const pendingRequests = ref([])
 const friends = ref([])
@@ -98,5 +99,5 @@ const onRequestHandled = (requestId) => {
     loadData()
 }
 
-onMounted(loadData)
+onMounted(() => { loadData(); registerRefresh(loadData) })
 </script>

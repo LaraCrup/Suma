@@ -89,6 +89,7 @@
 <script setup>
 const { getHabits, shouldShowHabitToday, getArgentineDate } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
+const { registerRefresh } = usePullToRefresh()
 const client = useSupabaseClient()
 
 const loading = ref(true)
@@ -303,5 +304,6 @@ const loadBenefits = async () => {
 
 onMounted(() => {
     loadData()
+    registerRefresh(loadData)
 })
 </script>
