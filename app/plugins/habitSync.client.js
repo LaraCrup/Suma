@@ -7,22 +7,22 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     // Sincronizar cuando la app vuelve del background
     if (typeof window !== 'undefined') {
         const handleVisibilityChange = async () => {
-            console.log('[HABIT SYNC] Visibility changed to:', document.visibilityState)
-            if (document.visibilityState === 'visible') {
-                try {
-                    console.log('[HABIT SYNC] Starting background sync...')
-                    const { useHabits } = await import('~/composables/useHabits')
-                    const { useExperience } = await import('~/composables/useExperience')
-                    const { syncHabitsWithNewDay } = useHabits()
-                    const { checkComeback } = useExperience()
+            if (document.visibilityState !== 'visible') return
+            const user = useSupabaseUser()
+            if (!user.value) return
 
-                    await syncHabitsWithNewDay()
-                    await checkComeback()
+            try {
+                const { useHabits } = await import('~/composables/useHabits')
+                const { useExperience } = await import('~/composables/useExperience')
+                const { syncHabitsWithNewDay } = useHabits()
+                const { checkComeback } = useExperience()
 
-                    console.log('[HABIT SYNC] Background sync completed')
-                } catch (error) {
-                    console.error('[HABIT SYNC] Error during background sync:', error)
-                }
+                await syncHabitsWithNewDay()
+                await checkComeback()
+
+                console.log('[HABIT SYNC] Background sync completed')
+            } catch (error) {
+                console.error('[HABIT SYNC] Error during background sync:', error)
             }
         }
 
