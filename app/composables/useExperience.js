@@ -136,37 +136,44 @@ export const useExperience = () => {
                 return null
             }
 
-            // Obtener experiencia actual
-            const currentExp = await getUserExperience()
-            const newXP = currentExp.experience_points + xpToGrant
+            // Leer XP y nivel actuales desde el store (in-memory, sincrónico) para evitar
+            // race conditions: si dos grantXP corren en paralelo y ambas leen de la DB
+            // antes de que la otra escriba, ambas detectarían un level-up falso.
+            const currentXP = authStore.profile?.experience_points ?? (await getUserExperience()).experience_points
+            const currentLevel = authStore.profile?.current_level ?? (await getUserExperience()).current_level
+            const newXP = currentXP + xpToGrant
 
             // Calcular nuevo nivel
             const newLevel = await calculateLevel(newXP)
 
+            // Actualizar el store ANTES del write a la DB para que llamadas
+            // concurrentes vean el valor ya incrementado y no detecten doble level-up.
+            if (authStore.profile) {
+                authStore.profile.experience_points = newXP
+                authStore.profile.current_level = newLevel
+            }
+
             // Actualizar en base de datos
-            const { data, error } = await client
+            const { error } = await client
                 .from('profiles')
                 .update({
                     experience_points: newXP,
                     current_level: newLevel
                 })
                 .eq('id', userId)
-                .select('experience_points, current_level')
-                .single()
 
             if (error) {
+                // Revertir el store si la DB falló
+                if (authStore.profile) {
+                    authStore.profile.experience_points = currentXP
+                    authStore.profile.current_level = currentLevel
+                }
                 console.error('Error otorgando XP:', error)
                 throw error
             }
 
-            // Actualizar el store de auth para reflejar los cambios
-            if (authStore.profile) {
-                authStore.profile.experience_points = newXP
-                authStore.profile.current_level = newLevel
-            }
-
             // Detectar si subió de nivel
-            const leveledUp = newLevel > currentExp.current_level
+            const leveledUp = newLevel > currentLevel
 
             console.log(`[XP] +${xpToGrant} XP por "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
 
@@ -177,7 +184,7 @@ export const useExperience = () => {
                 xpGranted: xpToGrant,
                 totalXP: newXP,
                 currentLevel: newLevel,
-                previousLevel: currentExp.current_level,
+                previousLevel: currentLevel,
                 leveledUp
             }
 
