@@ -14,8 +14,12 @@ export const usePushNotifications = () => {
     'serviceWorker' in navigator
   )
 
+  // OJO: en Safari/Chrome de iOS (navegador) la API `Notification` NO existe.
+  // Acceder a `Notification.permission` sin chequear su existencia tira ReferenceError
+  // al hidratar (el plugin pushNotifications.client corre en cada página) → la app
+  // cae a error.vue ("Error 404"). Hay que guardar con `'Notification' in window`.
   const permission = ref(
-    typeof window !== 'undefined' ? Notification.permission : 'default'
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
   )
   const isSubscribed = ref(false)
   const isLoading = ref(false)
