@@ -27,6 +27,7 @@ export default defineNuxtConfig({
       meta: [
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#157A6E' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }
       ],
@@ -94,6 +95,14 @@ export default defineNuxtConfig({
         'images/**/*.{png,jpg,jpeg,svg,webp}',
         '*.{ico,png}',
       ],
+      // App SSR en Vercel: cada ruta la sirve el servidor, no hay app shell estático que
+      // precachear. El default de @vite-pwa/nuxt (navigateFallback: '/') hace que el SW
+      // intente servir '/' desde el precache; como '/' no está precacheado, Workbox tira
+      // 'non-precached-url' y la navegación termina en 404 (se ve en iOS Safari donde el SW
+      // queda activo). Lo dejamos en `false` para desactivar el NavigationRoute por completo.
+      // OJO: hay que dejar la key presente — si se borra, el módulo la re-inyecta como '/'.
+      // Debe ser null (no false): workbox-build exige tipo null|string.
+      navigateFallback: null,
       importScripts: ['/sw-push.js'],
       runtimeCaching: [
         {
