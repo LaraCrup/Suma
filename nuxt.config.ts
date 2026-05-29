@@ -94,8 +94,6 @@ export default defineNuxtConfig({
         'images/**/*.{png,jpg,jpeg,svg,webp}',
         '*.{ico,png}',
       ],
-      navigateFallback: '/',
-      navigateFallbackDenylist: [/^\/callback/, /^\/api\//],
       importScripts: ['/sw-push.js'],
       runtimeCaching: [
         {
