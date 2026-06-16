@@ -1,7 +1,7 @@
 <template>
     <DefaultSection class="gap-6">
         <div class="w-full flex flex-col items-center gap-2">
-            <HeadingH1>¡Que bueno verte!</HeadingH1>
+            <HeadingH1>¡Qué bueno verte!</HeadingH1>
             <p class="text-xs">Tu progreso te espera.</p>
         </div>
 

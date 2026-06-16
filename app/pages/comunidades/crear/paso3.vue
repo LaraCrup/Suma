@@ -162,9 +162,9 @@ const errors = ref({
 })
 
 const frequencyVariants = {
-    'Diario': ['Todos los días', 'Dias especificos de la semana', 'Cantidad de dias de la semana', 'Dias especificos del mes', 'Cantidad de dias del mes'],
-    'Semanal': ['Toda la semana', 'Dias especificos de la semana'],
-    'Mensual': ['Todo el mes', 'Dias especificos del mes']
+    'Diario': ['Todos los días', 'Días específicos de la semana', 'Cantidad de días de la semana', 'Días específicos del mes', 'Cantidad de días del mes'],
+    'Semanal': ['Toda la semana', 'Días específicos de la semana'],
+    'Mensual': ['Todo el mes', 'Días específicos del mes']
 }
 
 const validateEmojiInput = () => {
@@ -190,8 +190,8 @@ const getFrequencyDescription = () => {
         return { diario: 'cada día', semanal: 'cada semana', mensual: 'cada mes' }[formData.frequencyType] ?? 'cada día'
     }
     const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
-    if (formData.frequencyVariant.includes('especificos de la semana') && match) return `los días: ${match[1]}`
-    if (formData.frequencyVariant.includes('especificos del mes') && match) return `los días del mes: ${match[1]}`
+    if ((formData.frequencyVariant.includes('específicos de la semana') || formData.frequencyVariant.includes('especificos de la semana')) && match) return `los días: ${match[1]}`
+    if ((formData.frequencyVariant.includes('específicos del mes') || formData.frequencyVariant.includes('especificos del mes')) && match) return `los días del mes: ${match[1]}`
     if (formData.frequencyVariant.includes('Cantidad de') && match) {
         return formData.frequencyVariant.includes('semana') ? `${match[1]} días a la semana` : `${match[1]} días del mes`
     }

@@ -33,7 +33,7 @@
 
             <p class="text-center text-sm">
                 Vamos a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span>
-                para ser en <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejores personas' }}</span>.
+                para convertirnos en <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejores personas' }}</span>.
             </p>
 
             <div>

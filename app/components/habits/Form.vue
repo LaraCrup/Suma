@@ -130,18 +130,18 @@ const formData = reactive({
 const frequencyVariants = {
     'Diario': [
         'Todos los días',
-        'Dias especificos de la semana',
-        'Cantidad de dias de la semana',
-        'Dias especificos del mes',
-        'Cantidad de dias del mes'
+        'Días específicos de la semana',
+        'Cantidad de días de la semana',
+        'Días específicos del mes',
+        'Cantidad de días del mes'
     ],
     'Semanal': [
         'Toda la semana',
-        'Dias especificos de la semana'
+        'Días específicos de la semana'
     ],
     'Mensual': [
         'Todo el mes',
-        'Dias especificos del mes'
+        'Días específicos del mes'
     ]
 }
 
@@ -201,7 +201,7 @@ const getFrequencyDescription = () => {
         return frequencyLabels[formData.frequencyType] || 'cada día'
     }
 
-    if (formData.frequencyVariant.includes('Dias especificos de la semana')) {
+    if (formData.frequencyVariant.includes('Días específicos de la semana') || formData.frequencyVariant.includes('Dias especificos de la semana')) {
         const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
         if (match) {
             return `los días: ${match[1]}`
@@ -209,7 +209,7 @@ const getFrequencyDescription = () => {
         return 'en días específicos de la semana'
     }
 
-    if (formData.frequencyVariant.includes('Dias especificos del mes')) {
+    if (formData.frequencyVariant.includes('Días específicos del mes') || formData.frequencyVariant.includes('Dias especificos del mes')) {
         const match = formData.frequencyVariant.match(/\(([^)]+)\)/)
         if (match) {
             const content = match[1]
@@ -380,15 +380,15 @@ const mapFrequencyOption = () => {
         return 'todos'
     }
 
-    if (variantLower.includes('dias especificos de la semana')) {
+    if (variantLower.includes('días específicos de la semana') || variantLower.includes('dias especificos de la semana')) {
         return 'dias_especificos_semana'
     }
 
-    if (variantLower.includes('dias especificos del mes')) {
+    if (variantLower.includes('días específicos del mes') || variantLower.includes('dias especificos del mes')) {
         return 'dias_especificos_mes'
     }
 
-    if (variantLower.includes('cantidad de dias')) {
+    if (variantLower.includes('cantidad de días') || variantLower.includes('cantidad de dias')) {
         if (variantLower.includes('semana')) {
             return 'cantidad_dias_semana'
         }

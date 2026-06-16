@@ -2,7 +2,7 @@
     <DefaultSection class="gap-6">
         <NavigationBackArrow color="text-green-light" />
         <div class="flex flex-col items-center gap-2">
-            <HeadingH1 class="text-center">Te ayudamos a volver a suma</HeadingH1>
+            <HeadingH1 class="text-center">Te ayudamos a volver a Suma</HeadingH1>
             <p class="text-xs text-center">Te mandaremos un correo con un enlace para que puedas restablecer tu
                 contraseña.</p>
         </div>

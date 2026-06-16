@@ -15,7 +15,7 @@
                 <p class="text-center text-sm">{{ message }}</p>
             </div>
             <div class="w-full flex flex-col items-center gap-2">
-                <ButtonPrimary type="button" @click="confirm">Si, eliminar permanentemente</ButtonPrimary>
+                <ButtonPrimary type="button" @click="confirm">Sí, eliminar permanentemente</ButtonPrimary>
                 <ButtonTerciary type="button" @click="close">Cancelar</ButtonTerciary>
             </div>
         </div>
@@ -30,7 +30,7 @@ defineProps({
     },
     message: {
         type: String,
-        default: '¿Estás seguro que queres eliminar este hábito de manera permanente?'
+        default: '¿Estás seguro de que querés eliminar este hábito de manera permanente?'
     }
 })
 

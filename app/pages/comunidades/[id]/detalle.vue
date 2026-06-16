@@ -177,7 +177,7 @@
                         <NuxtImg src="/images/icons/delete-accent.svg" alt="Icono Borrar" class="w-3" />
                     </div>
                     <p class="text-center text-sm">
-                        ¿Estás seguro que querés eliminar a
+                        ¿Estás seguro de que querés eliminar a
                         <strong>{{ memberToRemove?.profile?.display_name }}</strong>
                         de esta comunidad?
                     </p>
@@ -205,7 +205,7 @@
                         </svg>
                     </button>
                     <div class="w-full flex flex-col items-center gap-3">
-                        <p class="text-center text-sm">¿Estás seguro que querés salir de esta comunidad?</p>
+                        <p class="text-center text-sm">¿Estás seguro de que querés salir de esta comunidad?</p>
                     </div>
                     <p v-if="leaveCommunityError" class="text-xs text-red-500 text-center">{{ leaveCommunityError }}</p>
                     <div class="w-full flex flex-col items-center gap-2">
@@ -234,7 +234,7 @@
                         <div class="w-9 h-9 flex justify-center items-center bg-gradient-secondary rounded-full">
                             <NuxtImg src="/images/icons/delete-accent.svg" alt="Icono Borrar" class="w-3" />
                         </div>
-                        <p class="text-center text-sm">¿Estás seguro que querés eliminar esta comunidad de manera
+                        <p class="text-center text-sm">¿Estás seguro de que querés eliminar esta comunidad de manera
                             permanente?
                         </p>
                     </div>

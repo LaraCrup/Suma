@@ -1,6 +1,6 @@
 const errorMessages = {
     'Invalid login credentials': 'El correo o contraseña no coinciden. Por favor verifica tus datos e intenta nuevamente.',
-    'Email not confirmed': 'Tu correo electrónico aún no ha sido verificado. Por favor revisa tu bandeja de entrada y haz click en el enlace de confirmación.',
+    'Email not confirmed': 'Tu correo electrónico aún no ha sido verificado. Por favor revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.',
     'User not found': 'No encontramos una cuenta con esos datos.',
     'Password recovery token is invalid or has expired': 'El enlace de recuperación ha expirado. Por favor solicita uno nuevo.',
     'Rate limit exceeded': 'Has realizado demasiados intentos. Por favor espera unos minutos antes de intentar nuevamente.',

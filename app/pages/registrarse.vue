@@ -169,7 +169,7 @@ const validatePassword = () => {
     }
 
     if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(form.password)) {
-        errors.password = 'La contraseña debe contener al menos un caracter especial'
+        errors.password = 'La contraseña debe contener al menos un carácter especial'
         isPasswordCompromised.value = false
         return false
     }

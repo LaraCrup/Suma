@@ -78,7 +78,7 @@
         </div>
 
         <div class="w-full flex flex-col gap-2">
-            <ButtonTerciary :to="ROUTE_NAMES.CHANGE_PASSWORD">Cambiar contrasña</ButtonTerciary>
+            <ButtonTerciary :to="ROUTE_NAMES.CHANGE_PASSWORD">Cambiar contraseña</ButtonTerciary>
             <form @submit.prevent="confirmLogout">
                 <ButtonPrimary type="submit">Cerrar sesión</ButtonPrimary>
             </form>
@@ -94,9 +94,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
-            <p class="text-center text-sm">¿Estas seguro de que deseas cerrar tu sesión?</p>
+            <p class="text-center text-sm">¿Estás seguro de que querés cerrar tu sesión?</p>
             <div class="w-full flex flex-col items-center gap-2">
-                <ButtonPrimary type="button" @click="handleLogout">Si, cerrar sesión</ButtonPrimary>
+                <ButtonPrimary type="button" @click="handleLogout">Sí, cerrar sesión</ButtonPrimary>
                 <ButtonTerciary type="button" @click="showConfirmation = false">Cancelar</ButtonTerciary>
             </div>
         </div>

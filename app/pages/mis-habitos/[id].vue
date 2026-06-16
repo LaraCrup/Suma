@@ -1,7 +1,7 @@
 <template>
     <FormDelete
         :isOpen="showDeleteModal"
-        :message="`¿Estás seguro que queres eliminar el hábito ${habit?.name} de manera permanente?`"
+        :message="`¿Estás seguro de que querés eliminar el hábito ${habit?.name} de manera permanente?`"
         @confirm="confirmDelete"
         @close="closeDeleteModal"
     />
