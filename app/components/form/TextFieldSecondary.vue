@@ -7,7 +7,7 @@
             <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
                 :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
                 :autocomplete="autocomplete"
-                class="border-b border-gray outline-none bg-transparent text-dark text-xs font-bold placeholder:text-gray placeholder:text-xs pb-1 mb-1" />
+                class="text-xs font-bold text-dark placeholder:text-gray placeholder:text-xs border border-gray outline-none bg-transparent rounded-full px-3 py-2" />
 
             <FormError v-if="error && showError">{{ error }}</FormError>
         </div>
