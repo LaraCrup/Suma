@@ -681,54 +681,70 @@ export const useHabits = () => {
             const isWeeklyPeriod = habit.frequency_type === 'semanal' || habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana'
             const isMonthlyPeriod = habit.frequency_type === 'mensual' || habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes'
 
+            const pendingKey = `streakGracePending_${habit.id}`
+            const pendingRaw = typeof window !== 'undefined' ? localStorage.getItem(pendingKey) : null
+            const currentMonth = getArgentineDate().slice(0, 7)
+            const graceAvailable = habit.streak_grace_used_month !== currentMonth
+            const yesterday = getYesterdayString()
+
             if (isWeeklyPeriod) {
+                if (pendingRaw) {
+                    const { offeredForDate } = JSON.parse(pendingRaw)
+                    if (offeredForDate !== yesterday) {
+                        // Pending key vencida (de la semana anterior): auto-declinar
+                        await updateHabit(habit.id, { streak: 0 })
+                        localStorage.removeItem(pendingKey)
+                    }
+                    // Si offeredForDate === yesterday: salvar racha sigue pendiente para esta semana
+                    return
+                }
                 // Solo verificar los lunes
                 if (dayOfWeek !== 1) return
 
-                const yesterdayStr = getYesterdayString()
-                const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
-                const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
-
-                const previousWeekStart = getWeekStart(yesterday)
-                const previousWeekEnd = getWeekEnd(yesterday)
-
+                const [yy, ym, yd] = yesterday.split('-').map(Number)
+                const yesterdayDate = new Date(yy, ym - 1, yd)
+                const previousWeekStart = getWeekStart(yesterdayDate)
+                const previousWeekEnd = getWeekEnd(yesterdayDate)
                 const wasLastWeekComplete = await isPeriodComplete(habit, previousWeekStart, previousWeekEnd)
 
-                if (!wasLastWeekComplete) {
+                if (!wasLastWeekComplete && (habit.streak || 0) > 0 && graceAvailable) {
+                    localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
+                } else if (!wasLastWeekComplete) {
                     await updateHabit(habit.id, { streak: 0 })
                 }
                 return
             }
 
             if (isMonthlyPeriod) {
+                if (pendingRaw) {
+                    const { offeredForDate } = JSON.parse(pendingRaw)
+                    if (offeredForDate !== yesterday) {
+                        await updateHabit(habit.id, { streak: 0 })
+                        localStorage.removeItem(pendingKey)
+                    }
+                    return
+                }
                 // Solo verificar el 1ro del mes
                 if (dayOfMonth !== 1) return
 
-                const yesterdayStr = getYesterdayString()
-                const [yesterdayYear, yesterdayMonth, yesterdayDay] = yesterdayStr.split('-').map(Number)
-                const yesterday = new Date(yesterdayYear, yesterdayMonth - 1, yesterdayDay)
-
-                const previousMonthNum = yesterday.getMonth() + 1
-                const previousMonthYear = yesterday.getFullYear()
-
+                const [yy, ym, yd] = yesterday.split('-').map(Number)
+                const yesterdayDate = new Date(yy, ym - 1, yd)
+                const previousMonthNum = yesterdayDate.getMonth() + 1
+                const previousMonthYear = yesterdayDate.getFullYear()
                 const lastDay = new Date(previousMonthYear, previousMonthNum, 0).getDate()
                 const previousMonthStart = `${previousMonthYear}-${String(previousMonthNum).padStart(2, '0')}-01`
                 const previousMonthEnd = `${previousMonthYear}-${String(previousMonthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
                 const wasLastMonthComplete = await isPeriodComplete(habit, previousMonthStart, previousMonthEnd)
 
-                if (!wasLastMonthComplete) {
+                if (!wasLastMonthComplete && (habit.streak || 0) > 0 && graceAvailable) {
+                    localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
+                } else if (!wasLastMonthComplete) {
                     await updateHabit(habit.id, { streak: 0 })
                 }
                 return
             }
 
             // Racha diaria: verificar si se completó ayer
-            const yesterday = getYesterdayString()
-
-            // Si hay una gracia pendiente de un día anterior al de ayer, auto-declinar
-            const pendingKey = `streakGracePending_${habit.id}`
-            const pendingRaw = typeof window !== 'undefined' ? localStorage.getItem(pendingKey) : null
             if (pendingRaw) {
                 const { offeredForDate } = JSON.parse(pendingRaw)
                 if (offeredForDate !== yesterday) {
@@ -736,7 +752,7 @@ export const useHabits = () => {
                     localStorage.removeItem(pendingKey)
                     return
                 } else {
-                    // La gracia de ayer ya está pendiente, no re-encolar
+                    // Salvar racha de ayer ya está pendiente, no re-encolar
                     return
                 }
             }
@@ -744,25 +760,47 @@ export const useHabits = () => {
             const yesterdayLog = await getHabitLogByDate(habit.id, yesterday)
             const wasCompletedYesterday = yesterdayLog?.completed || false
 
-            if (!wasCompletedYesterday && (habit.streak || 0) > 0) {
-                const currentMonth = getArgentineDate().slice(0, 7)
-                const graceAvailable = habit.streak_grace_used_month !== currentMonth
-
-                if (graceAvailable) {
-                    if (typeof window !== 'undefined') {
-                        localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
-                    }
-                    const graceStore = useStreakGraceStore()
-                    graceStore.add(habit.id, habit.name, habit.streak, graceAvailable)
-                } else {
-                    await updateHabit(habit.id, { streak: 0 })
-                }
+            if (!wasCompletedYesterday && (habit.streak || 0) > 0 && graceAvailable) {
+                localStorage.setItem(pendingKey, JSON.stringify({ offeredForDate: yesterday }))
             } else if (!wasCompletedYesterday) {
                 await updateHabit(habit.id, { streak: 0 })
             }
         } catch (error) {
             console.error('Error actualizando racha:', error)
         }
+    }
+
+    const isPeriodStillMissed = async (habit, offeredForDate) => {
+        const isWeeklyPeriod = habit.frequency_type === 'semanal'
+            || habit.frequency_option === 'cantidad_dias_semana'
+            || habit.frequency_option === 'dias_especificos_semana'
+        const isMonthlyPeriod = habit.frequency_type === 'mensual'
+            || habit.frequency_option === 'cantidad_dias_mes'
+            || habit.frequency_option === 'dias_especificos_mes'
+
+        if (isWeeklyPeriod) {
+            const [y, m, d] = offeredForDate.split('-').map(Number)
+            const refDate = new Date(y, m - 1, d)
+            const weekStart = getWeekStart(refDate)
+            const weekEnd = getWeekEnd(refDate)
+            const complete = await isPeriodComplete(habit, weekStart, weekEnd)
+            return !complete
+        }
+
+        if (isMonthlyPeriod) {
+            const parts = offeredForDate.split('-')
+            const y = parseInt(parts[0])
+            const m = parseInt(parts[1])
+            const monthStart = `${y}-${String(m).padStart(2, '0')}-01`
+            const lastDay = new Date(y, m, 0).getDate()
+            const monthEnd = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+            const complete = await isPeriodComplete(habit, monthStart, monthEnd)
+            return !complete
+        }
+
+        // Diario
+        const log = await getHabitLogByDate(habit.id, offeredForDate)
+        return !(log?.completed)
     }
 
     const applyStreakGrace = async (habitId) => {
@@ -800,10 +838,6 @@ export const useHabits = () => {
             }
 
             console.log('[RESET DIARIO] Reset completado exitosamente')
-
-            // Mostrar modal combinado si hay hábitos con gracias pendientes
-            const graceStore = useStreakGraceStore()
-            graceStore.show()
 
         } catch (error) {
             console.error('[RESET DIARIO] Error durante reset:', error)
@@ -970,6 +1004,7 @@ export const useHabits = () => {
         getMonthCompletedDays,
         getHabitLogByDate,
         applyStreakGrace,
-        declineStreakGrace
+        declineStreakGrace,
+        isPeriodStillMissed
     }
 }

@@ -36,6 +36,7 @@
             <div v-if="habit.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
                 <p class="text-xs">{{ habit.streak }}</p>
+                <span v-if="hasPendingStreakSave" class="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
             </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', isCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">
                 <NuxtImg :src="isCompleted ? '/images/icons/brillo-light-green.svg' : '/images/brillo.svg'" :alt="isCompleted ? 'Completado' : 'Brillo'" class="w-3" />
@@ -64,6 +65,7 @@ const props = defineProps({
 
 const emit = defineEmits(['habitUpdated'])
 
+const hasPendingStreakSave = ref(false)
 const cardRef = ref(null)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -179,6 +181,9 @@ const handleTouchMove = (e) => {
 
 onMounted(() => {
     cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
+    if (typeof window !== 'undefined') {
+        hasPendingStreakSave.value = !!localStorage.getItem(`streakGracePending_${props.habit.id}`)
+    }
 })
 
 onUnmounted(() => {

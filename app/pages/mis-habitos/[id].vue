@@ -69,6 +69,27 @@
                 </div>
             </div>
         </div>
+        <div v-if="hasStreakPending" class="w-full flex flex-col gap-3 bg-midlight rounded-2xl px-4 py-4">
+            <div class="flex items-center gap-2">
+                <span>🔥</span>
+                <p class="text-sm font-semibold text-dark">Tu racha está en riesgo</p>
+            </div>
+            <p class="text-xs text-gray">No completaste este hábito en el último período.</p>
+            <ButtonPrimary
+                v-if="graceAvailable"
+                type="button"
+                :disabled="streakSaveLoading"
+                @click="saveStreak">
+                {{ streakSaveLoading ? 'Guardando...' : 'Salvar racha' }}
+            </ButtonPrimary>
+            <p v-else class="text-xs text-gray italic">Ya usaste tu Salvar racha este mes</p>
+            <ButtonTerciary
+                type="button"
+                :disabled="streakSaveLoading"
+                @click="loseStreak">
+                {{ streakSaveLoading ? 'Guardando...' : 'Perder racha' }}
+            </ButtonTerciary>
+        </div>
         <div class="w-full flex justify-between items-center">
             <button @click="resetProgress" class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
                 <NuxtImg src="/images/icons/restart.svg" alt="Restablecer hábito" class="w-4" />
@@ -86,12 +107,15 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 
 const route = useRoute()
-const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress } = useHabits()
+const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress, applyStreakGrace, declineStreakGrace, getArgentineDate, isPeriodStillMissed } = useHabits()
 const habit = ref(null)
 const selectedDate = ref(null)
 const showMenu = ref(false)
 const showDeleteModal = ref(false)
 const isLoading = ref(true)
+const hasStreakPending = ref(false)
+const graceAvailable = ref(false)
+const streakSaveLoading = ref(false)
 
 const hasSpecificFrequency = computed(() => {
     const specificOptions = [
@@ -140,6 +164,47 @@ const completedBrillos = computed(() => {
     return Math.min(habit.value?.progress_count || 0, brilloCount.value)
 })
 
+const checkStreakSavePending = async () => {
+    if (typeof window === 'undefined') return
+    const habitId = route.params.id
+    const key = `streakGracePending_${habitId}`
+    const pendingRaw = localStorage.getItem(key)
+    if (!pendingRaw) return
+
+    const { offeredForDate } = JSON.parse(pendingRaw)
+
+    const stillMissed = await isPeriodStillMissed(habit.value, offeredForDate)
+    if (!stillMissed) {
+        localStorage.removeItem(key)
+        return
+    }
+
+    if ((habit.value?.streak || 0) === 0) {
+        localStorage.removeItem(key)
+        return
+    }
+
+    hasStreakPending.value = true
+    const currentMonth = getArgentineDate().slice(0, 7)
+    graceAvailable.value = habit.value?.streak_grace_used_month !== currentMonth
+}
+
+const saveStreak = async () => {
+    streakSaveLoading.value = true
+    await applyStreakGrace(route.params.id)
+    hasStreakPending.value = false
+    habit.value = await getHabitById(route.params.id, selectedDate.value)
+    streakSaveLoading.value = false
+}
+
+const loseStreak = async () => {
+    streakSaveLoading.value = true
+    await declineStreakGrace(route.params.id)
+    hasStreakPending.value = false
+    habit.value = await getHabitById(route.params.id, selectedDate.value)
+    streakSaveLoading.value = false
+}
+
 onMounted(async () => {
     try {
         const habitId = route.params.id
@@ -149,6 +214,8 @@ onMounted(async () => {
         if (!habit.value) {
             throw new Error('Hábito no encontrado')
         }
+
+        await checkStreakSavePending()
     } catch (error) {
         console.error('Error cargando hábito:', error)
         navigateTo('/')
