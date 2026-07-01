@@ -75,13 +75,15 @@
                 <p class="text-sm font-semibold text-dark">Tu racha está en riesgo</p>
             </div>
             <p class="text-xs text-gray">No completaste este hábito en el último período.</p>
-            <ButtonPrimary
-                v-if="graceAvailable"
-                type="button"
-                :disabled="streakSaveLoading"
-                @click="saveStreak">
-                {{ streakSaveLoading ? 'Guardando...' : 'Salvar racha' }}
-            </ButtonPrimary>
+            <template v-if="graceAvailable">
+                <ButtonPrimary
+                    type="button"
+                    :disabled="streakSaveLoading"
+                    @click="saveStreak">
+                    {{ streakSaveLoading ? 'Guardando...' : 'Salvar racha' }}
+                </ButtonPrimary>
+                <p class="text-xs text-gray italic">Podés salvar tu racha una vez por mes.</p>
+            </template>
             <p v-else class="text-xs text-gray italic">Ya usaste tu Salvar racha este mes</p>
             <ButtonTerciary
                 type="button"

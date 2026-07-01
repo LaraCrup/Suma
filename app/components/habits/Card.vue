@@ -50,7 +50,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useHabits } from '~/composables/useHabits'
 
 const router = useRouter();
-const { logHabitProgress } = useHabits()
+const { logHabitProgress, isPeriodStillMissed } = useHabits()
 
 const props = defineProps({
     habit: {
@@ -179,11 +179,27 @@ const handleTouchMove = (e) => {
     }
 }
 
-onMounted(() => {
-    cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
-    if (typeof window !== 'undefined') {
-        hasPendingStreakSave.value = !!localStorage.getItem(`streakGracePending_${props.habit.id}`)
+const checkPendingStreakSave = async () => {
+    if (typeof window === 'undefined') return
+    const key = `streakGracePending_${props.habit.id}`
+    const raw = localStorage.getItem(key)
+    if (!raw) return
+    let offeredForDate = null
+    try { offeredForDate = JSON.parse(raw).offeredForDate } catch (e) { offeredForDate = null }
+    if (!offeredForDate) { localStorage.removeItem(key); return }
+    // Solo mostrar "racha en riesgo" si el período sigue incompleto y la racha no está en 0
+    const stillMissed = await isPeriodStillMissed(props.habit, offeredForDate)
+    if (!stillMissed || (props.habit.streak || 0) === 0) {
+        localStorage.removeItem(key)
+        return
     }
+    hasPendingStreakSave.value = true
+}
+
+onMounted(() => {
+    // Registrar el listener de swipe de forma síncrona ANTES de cualquier await
+    cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
+    checkPendingStreakSave()
 })
 
 onUnmounted(() => {

@@ -120,11 +120,8 @@ const isHabitApplicableForDate = (habit, dateStr) => {
     const dayOfWeek = dateObj.getDay()
     const dayOfMonth = dateObj.getDate()
     const fo = habit.frequency_option
-    const ft = habit.frequency_type
 
-    if (!ft || ft === 'diario' || ft === 'flexible') return true
-    if (fo === 'todos') return true
-
+    // La opción define en qué días aplica, independientemente de la frecuencia (type).
     if (fo === 'dias_especificos_semana') {
         const selected = (habit.frequency_detail?.weekDays || []).map(l => DAY_LETTER_TO_NUM[l])
         return selected.includes(dayOfWeek)
@@ -133,7 +130,7 @@ const isHabitApplicableForDate = (habit, dateStr) => {
         return (habit.frequency_detail?.monthDays || []).includes(dayOfMonth)
     }
 
-    // cantidad_dias_semana / cantidad_dias_mes: aplica cualquier día del período
+    // todos / cantidad_dias_semana / cantidad_dias_mes / sin opción: aplica cualquier día del período
     return true
 }
 
