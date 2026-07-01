@@ -171,18 +171,23 @@ const checkStreakSavePending = async () => {
     const habitId = route.params.id
     const key = `streakGracePending_${habitId}`
     const pendingRaw = localStorage.getItem(key)
-    if (!pendingRaw) return
+    if (!pendingRaw) {
+        hasStreakPending.value = false
+        return
+    }
 
     const { offeredForDate } = JSON.parse(pendingRaw)
 
     const stillMissed = await isPeriodStillMissed(habit.value, offeredForDate)
     if (!stillMissed) {
         localStorage.removeItem(key)
+        hasStreakPending.value = false
         return
     }
 
     if ((habit.value?.streak || 0) === 0) {
         localStorage.removeItem(key)
+        hasStreakPending.value = false
         return
     }
 
@@ -230,6 +235,7 @@ const increaseProgress = async () => {
     try {
         const updated = await logHabitProgress(habit.value.id, 1, selectedDate.value)
         habit.value = updated
+        await checkStreakSavePending()
     } catch (error) {
         console.error('Error actualizando progreso:', error)
     }
@@ -239,6 +245,7 @@ const decreaseProgress = async () => {
     try {
         const updated = await logHabitProgress(habit.value.id, -1, selectedDate.value)
         habit.value = updated
+        await checkStreakSavePending()
     } catch (error) {
         console.error('Error actualizando progreso:', error)
     }
@@ -249,6 +256,7 @@ const resetProgress = async () => {
         const currentProgress = habit.value.progress_count || 0
         const updated = await logHabitProgress(habit.value.id, -currentProgress, selectedDate.value)
         habit.value = updated
+        await checkStreakSavePending()
     } catch (error) {
         console.error('Error reiniciando progreso:', error)
     }
@@ -261,6 +269,7 @@ const completeHabit = async () => {
         const progressNeeded = goalValue - currentProgress
         const updated = await logHabitProgress(habit.value.id, progressNeeded, selectedDate.value)
         habit.value = updated
+        await checkStreakSavePending()
     } catch (error) {
         console.error('Error completando hábito:', error)
     }

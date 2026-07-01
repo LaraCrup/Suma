@@ -179,18 +179,27 @@ const handleTouchMove = (e) => {
     }
 }
 
-const checkPendingStreakSave = async () => {
+const checkPendingStreakSave = async (habitOverride = null) => {
     if (typeof window === 'undefined') return
+    const habit = habitOverride || props.habit
     const key = `streakGracePending_${props.habit.id}`
     const raw = localStorage.getItem(key)
-    if (!raw) return
+    if (!raw) {
+        hasPendingStreakSave.value = false
+        return
+    }
     let offeredForDate = null
     try { offeredForDate = JSON.parse(raw).offeredForDate } catch (e) { offeredForDate = null }
-    if (!offeredForDate) { localStorage.removeItem(key); return }
-    // Solo mostrar "racha en riesgo" si el período sigue incompleto y la racha no está en 0
-    const stillMissed = await isPeriodStillMissed(props.habit, offeredForDate)
-    if (!stillMissed || (props.habit.streak || 0) === 0) {
+    if (!offeredForDate) {
         localStorage.removeItem(key)
+        hasPendingStreakSave.value = false
+        return
+    }
+    // Solo mostrar "racha en riesgo" si el período sigue incompleto y la racha no está en 0
+    const stillMissed = await isPeriodStillMissed(habit, offeredForDate)
+    if (!stillMissed || (habit.streak || 0) === 0) {
+        localStorage.removeItem(key)
+        hasPendingStreakSave.value = false
         return
     }
     hasPendingStreakSave.value = true
@@ -271,6 +280,7 @@ const completeHabit = async () => {
     try {
         const updated = await logHabitProgress(props.habit.id, progressNeeded, props.selectedDate)
         emit('habitUpdated', updated)
+        await checkPendingStreakSave(updated)
     } catch (error) {
         console.error('Error completando hábito:', error)
         localOverrideProgress.value = null
@@ -286,6 +296,7 @@ const resetHabit = async () => {
     try {
         const updated = await logHabitProgress(props.habit.id, -currentProgress, props.selectedDate)
         emit('habitUpdated', updated)
+        await checkPendingStreakSave(updated)
     } catch (error) {
         console.error('Error reiniciando hábito:', error)
         localOverrideProgress.value = null
