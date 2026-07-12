@@ -599,7 +599,15 @@ export const useHabits = () => {
             return false
         }
 
-        const completedCount = logs?.length || 0
+        let completedCount = logs?.length || 0
+        // Un día perdonado por "Salvar racha" cuenta como completado para la cuota
+        // del período, aunque no tenga un habit_log real.
+        if (typeof window !== 'undefined') {
+            const forgivenDate = localStorage.getItem(`streakGraceForgiven_${habit.id}`)
+            if (forgivenDate && forgivenDate >= startDate && forgivenDate <= endDate && !logs?.some(l => l.date === forgivenDate)) {
+                completedCount += 1
+            }
+        }
 
         switch (habit.frequency_option) {
             case 'todos':
@@ -671,9 +679,16 @@ export const useHabits = () => {
             .lte('date', dateStr)
             .order('date', { ascending: false })
 
-        if (!logs || logs.length === 0) return 0
-        const completedDates = new Set(logs.map(l => l.date))
-        const earliest = logs[logs.length - 1].date
+        const completedDates = new Set((logs || []).map(l => l.date))
+        // Un día perdonado por "Salvar racha" cuenta como completado para la racha,
+        // aunque no tenga un habit_log real (si no, un completado retroactivo del
+        // día siguiente "atropella" el día perdonado y resetea la racha a 1).
+        if (typeof window !== 'undefined') {
+            const forgivenDate = localStorage.getItem(`streakGraceForgiven_${habit.id}`)
+            if (forgivenDate && forgivenDate <= dateStr) completedDates.add(forgivenDate)
+        }
+        if (completedDates.size === 0) return 0
+        const earliest = [...completedDates].sort()[0]
         const option = habit.frequency_option
 
         // Híbrido "N veces por semana/mes": cuenta todos los completados hacia atrás,
