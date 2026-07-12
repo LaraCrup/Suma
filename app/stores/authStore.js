@@ -1,26 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-/**
- * @typedef {Object} Profile
- * @property {string} id
- * @property {string} [name]
- * @property {string} [display_name]
- * @property {string} [avatar_url]
- * @property {number} [experience_points]
- * @property {number} [current_level]
- */
 
-/**
- * @typedef {Object} User
- * @property {string} id
- * @property {string} email
- * @property {string} [created_at]
- */
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref(/** @type {User | null} */ (null))
-  const profile = ref(/** @type {Profile | null} */ (null))
+  const user = ref(null)
+  const profile = ref(null)
   const loading = ref(false)
   const error = ref(null)
 

@@ -145,16 +145,18 @@ const selectedMonthDays = computed({
     set: (value) => emit('update:monthDaysSelected', value)
 })
 
+const normalizeText = (text) => text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
 const isCounter = computed(() => {
-    return props.variant && props.variant.toLowerCase().startsWith('cantidad de')
+    return props.variant && normalizeText(props.variant).startsWith('cantidad de')
 })
 
 const isWeekDays = computed(() => {
-    return props.variant && props.variant.toLowerCase().includes('dias especificos de la semana')
+    return props.variant && normalizeText(props.variant).includes('dias especificos de la semana')
 })
 
 const isMonthDays = computed(() => {
-    return props.variant && props.variant.toLowerCase().includes('dias especificos del mes')
+    return props.variant && normalizeText(props.variant).includes('dias especificos del mes')
 })
 
 const toggleWeekDay = (day) => {

@@ -10,10 +10,6 @@ export const useFriends = () => {
         return session.user.id
     }
 
-    /**
-     * Busca usuarios por display_name, excluyendo al usuario actual.
-     * Retorna también el estado de solicitud si existe.
-     */
     const searchUsers = async (query) => {
         if (!query || query.trim().length < 1) return []
 
@@ -34,9 +30,6 @@ export const useFriends = () => {
         return data || []
     }
 
-    /**
-     * Envía una solicitud de amistad al usuario con receiverId.
-     */
     const sendFriendRequest = async (receiverId) => {
         const userId = await getUserId()
 
@@ -54,9 +47,6 @@ export const useFriends = () => {
         return data
     }
 
-    /**
-     * Obtiene IDs de todos los amigos aceptados del usuario actual.
-     */
     const getFriendIds = async () => {
         const userId = await getUserId()
 
@@ -74,9 +64,6 @@ export const useFriends = () => {
         return (data || []).map(r => r.sender_id === userId ? r.receiver_id : r.sender_id)
     }
 
-    /**
-     * Obtiene IDs de usuarios a los que el usuario actual les envió una solicitud pendiente.
-     */
     const getSentPendingIds = async () => {
         const userId = await getUserId()
 
@@ -94,10 +81,6 @@ export const useFriends = () => {
         return (data || []).map(r => r.receiver_id)
     }
 
-    /**
-     * Obtiene las solicitudes pendientes recibidas por el usuario actual,
-     * incluyendo datos del perfil del sender.
-     */
     const getPendingRequests = async () => {
         const userId = await getUserId()
 
@@ -116,9 +99,6 @@ export const useFriends = () => {
         return data || []
     }
 
-    /**
-     * Acepta una solicitud de amistad.
-     */
     const acceptFriendRequest = async (requestId) => {
         const { error } = await client
             .from('friend_requests')
@@ -133,9 +113,6 @@ export const useFriends = () => {
         await grantXP('friend_added')
     }
 
-    /**
-     * Rechaza/elimina una solicitud de amistad recibida.
-     */
     const declineFriendRequest = async (requestId) => {
         const { error } = await client
             .from('friend_requests')
@@ -148,9 +125,6 @@ export const useFriends = () => {
         }
     }
 
-    /**
-     * Cancela una solicitud enviada por el usuario actual a receiverId.
-     */
     const cancelFriendRequest = async (receiverId) => {
         const userId = await getUserId()
 
@@ -167,9 +141,6 @@ export const useFriends = () => {
         }
     }
 
-    /**
-     * Obtiene la lista de amigos (solicitudes aceptadas) del usuario actual.
-     */
     const getFriends = async () => {
         const userId = await getUserId()
 
@@ -184,16 +155,11 @@ export const useFriends = () => {
             return []
         }
 
-        // Devolver el perfil del otro usuario (no el del actual)
         return (data || []).map(row => {
             return row.sender.id === userId ? row.receiver : row.sender
         })
     }
 
-    /**
-     * Obtiene el perfil público de cualquier usuario por ID.
-     * Retorna null si no existe.
-     */
     const getProfileById = async (userId) => {
         const { data, error } = await client
             .from('profiles')
@@ -209,9 +175,6 @@ export const useFriends = () => {
         return data
     }
 
-    /**
-     * Elimina la amistad entre el usuario actual y otherUserId.
-     */
     const removeFriend = async (otherUserId) => {
         const userId = await getUserId()
 

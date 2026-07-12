@@ -13,9 +13,15 @@ export const useExperience = () => {
         return session.user.id
     }
 
-    /**
-     * Obtiene la información de XP y nivel del usuario
-     */
+    const getWeekKey = () => {
+        const [year, month, day] = getArgentineDate().split('-').map(Number)
+        const date = new Date(year, month - 1, day)
+        const dow = date.getDay()
+        const diff = date.getDate() - dow + (dow === 0 ? -6 : 1)
+        const monday = new Date(date.getFullYear(), date.getMonth(), diff)
+        return `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`
+    }
+
     const getUserExperience = async () => {
         const userId = await getUserId()
 
@@ -36,9 +42,6 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Obtiene todos los niveles disponibles
-     */
     const getLevels = async () => {
         const { data, error } = await client
             .from('levels')
@@ -53,15 +56,11 @@ export const useExperience = () => {
         return data || []
     }
 
-    /**
-     * Calcula el nivel basado en los puntos de experiencia
-     */
     const calculateLevel = async (experiencePoints) => {
         const levels = await getLevels()
 
         if (levels.length === 0) return 1
 
-        // Encuentra el nivel más alto que el usuario ha alcanzado
         const currentLevel = levels
             .reverse()
             .find(level => experiencePoints >= level.xp_required)
@@ -69,9 +68,6 @@ export const useExperience = () => {
         return currentLevel?.level_number || 1
     }
 
-    /**
-     * Obtiene la información del nivel actual y siguiente
-     */
     const getLevelInfo = async (experiencePoints) => {
         const levels = await getLevels()
         const currentLevelNumber = await calculateLevel(experiencePoints)
@@ -82,7 +78,6 @@ export const useExperience = () => {
         const currentLevelXP = currentLevel?.xp_required || 0
         const nextLevelXP = nextLevel?.xp_required || currentLevelXP
 
-        // XP dentro del nivel actual
         const xpInCurrentLevel = experiencePoints - currentLevelXP
         const xpNeededForNextLevel = nextLevelXP - currentLevelXP
 
@@ -100,9 +95,6 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Obtiene el valor de XP de una acción
-     */
     const getXPForAction = async (actionKey) => {
         const { data, error } = await client
             .from('xp_actions')
@@ -119,14 +111,10 @@ export const useExperience = () => {
         return data?.xp_value || 0
     }
 
-    /**
-     * Otorga XP al usuario y actualiza su nivel
-     */
     const grantXP = async (actionKey, customAmount = null) => {
         try {
             const userId = await getUserId()
 
-            // Obtener XP a otorgar
             const xpToGrant = customAmount !== null
                 ? customAmount
                 : await getXPForAction(actionKey)
@@ -136,24 +124,17 @@ export const useExperience = () => {
                 return null
             }
 
-            // Leer XP y nivel actuales desde el store (in-memory, sincrónico) para evitar
-            // race conditions: si dos grantXP corren en paralelo y ambas leen de la DB
-            // antes de que la otra escriba, ambas detectarían un level-up falso.
             const currentXP = authStore.profile?.experience_points ?? (await getUserExperience()).experience_points
             const currentLevel = authStore.profile?.current_level ?? (await getUserExperience()).current_level
             const newXP = currentXP + xpToGrant
 
-            // Calcular nuevo nivel
             const newLevel = await calculateLevel(newXP)
 
-            // Actualizar el store ANTES del write a la DB para que llamadas
-            // concurrentes vean el valor ya incrementado y no detecten doble level-up.
             if (authStore.profile) {
                 authStore.profile.experience_points = newXP
                 authStore.profile.current_level = newLevel
             }
 
-            // Actualizar en base de datos
             const { error } = await client
                 .from('profiles')
                 .update({
@@ -163,7 +144,6 @@ export const useExperience = () => {
                 .eq('id', userId)
 
             if (error) {
-                // Revertir el store si la DB falló
                 if (authStore.profile) {
                     authStore.profile.experience_points = currentXP
                     authStore.profile.current_level = currentLevel
@@ -172,7 +152,6 @@ export const useExperience = () => {
                 throw error
             }
 
-            // Detectar si subió de nivel
             const leveledUp = newLevel > currentLevel
 
             console.log(`[XP] +${xpToGrant} XP por "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
@@ -194,9 +173,6 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Verifica si el usuario alcanzó un milestone de racha y otorga XP
-     */
     const checkStreakMilestone = async (streak) => {
         const milestones = [
             { days: 7, key: 'streak_7' },
@@ -213,28 +189,18 @@ export const useExperience = () => {
         return null
     }
 
-    /**
-     * Verifica si el usuario volvió después de inactividad (comeback)
-     * Se considera comeback si pasaron 3+ días sin completar ningún hábito
-     */
     const checkComeback = async () => {
         try {
             const userId = await getUserId()
 
-            // Evitar otorgar comeback más de una vez por sesión
             if (typeof window !== 'undefined') {
-                const today = new Intl.DateTimeFormat('es-AR', {
-                    timeZone: 'America/Argentina/Buenos_Aires',
-                    year: 'numeric', month: '2-digit', day: '2-digit'
-                }).formatToParts(new Date())
-                const todayStr = `${today.find(p => p.type === 'year').value}-${today.find(p => p.type === 'month').value}-${today.find(p => p.type === 'day').value}`
+                const todayStr = getArgentineDate()
 
                 const lastComebackCheck = localStorage.getItem('lastComebackCheck')
                 if (lastComebackCheck === todayStr) return null
                 localStorage.setItem('lastComebackCheck', todayStr)
             }
 
-            // Buscar el log más reciente del usuario
             const { data: habits } = await client
                 .from('habits')
                 .select('id')
@@ -254,7 +220,6 @@ export const useExperience = () => {
 
             if (!lastLog) return null
 
-            // Calcular días de inactividad
             const lastDate = new Date(lastLog.date + 'T12:00:00')
             const now = new Date()
             const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24))
@@ -271,15 +236,11 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Verifica si se completaron todos los hábitos del día
-     */
     const checkAllHabitsDaily = async (getHabits, shouldShowHabitToday) => {
         try {
             const habits = await getHabits()
             if (habits.length === 0) return null
 
-            // Filtrar solo los hábitos que corresponden a hoy
             const todayHabits = []
             for (const habit of habits) {
                 const showToday = await shouldShowHabitToday(habit)
@@ -288,17 +249,11 @@ export const useExperience = () => {
 
             if (todayHabits.length === 0) return null
 
-            // Verificar que todos estén completados
             const allCompleted = todayHabits.every(h => h.progress_count >= (h.goal_value || 1))
 
             if (allCompleted) {
-                // Evitar otorgar más de una vez por día
                 if (typeof window !== 'undefined') {
-                    const today = new Intl.DateTimeFormat('es-AR', {
-                        timeZone: 'America/Argentina/Buenos_Aires',
-                        year: 'numeric', month: '2-digit', day: '2-digit'
-                    }).formatToParts(new Date())
-                    const todayStr = `${today.find(p => p.type === 'year').value}-${today.find(p => p.type === 'month').value}-${today.find(p => p.type === 'day').value}`
+                    const todayStr = getArgentineDate()
 
                     const lastAllDaily = localStorage.getItem('lastAllHabitsDailyXP')
                     if (lastAllDaily === todayStr) return null
@@ -316,9 +271,6 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Verifica si es el primer hábito creado y otorga XP
-     */
     const checkFirstHabitCreated = async () => {
         try {
             const userId = await getUserId()
@@ -333,8 +285,12 @@ export const useExperience = () => {
                 return null
             }
 
-            // count === 1 significa que recién se creó el primero
             if (count === 1) {
+                const guardKey = `firstHabitXP_${userId}`
+                if (typeof window !== 'undefined') {
+                    if (localStorage.getItem(guardKey)) return null
+                    localStorage.setItem(guardKey, '1')
+                }
                 console.log('[XP] Primer hábito creado!')
                 return await grantXP('first_habit_created')
             }
@@ -346,9 +302,6 @@ export const useExperience = () => {
         }
     }
 
-    /**
-     * Verifica si se cumplió la meta semanal (todos los hábitos semanales cumplidos)
-     */
     const checkWeeklyGoalMet = async (getHabits) => {
         try {
             const habits = await getHabits()
@@ -359,7 +312,6 @@ export const useExperience = () => {
 
             if (weeklyHabits.length === 0) return null
 
-            // Verificar que todos los hábitos semanales cumplieron su meta esta semana
             const allWeeklyMet = weeklyHabits.every(h => {
                 const required = h.frequency_option === 'dias_especificos_semana'
                     ? (h.frequency_detail?.weekDays?.length || 0)
@@ -368,13 +320,11 @@ export const useExperience = () => {
             })
 
             if (allWeeklyMet) {
-                // Evitar otorgar más de una vez por semana
                 if (typeof window !== 'undefined') {
-                    const now = new Date()
-                    const weekNum = `${now.getFullYear()}-W${Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + 1) / 7)}`
+                    const weekKey = getWeekKey()
                     const lastWeeklyGoal = localStorage.getItem('lastWeeklyGoalXP')
-                    if (lastWeeklyGoal === weekNum) return null
-                    localStorage.setItem('lastWeeklyGoalXP', weekNum)
+                    if (lastWeeklyGoal === weekKey) return null
+                    localStorage.setItem('lastWeeklyGoalXP', weekKey)
                 }
 
                 console.log('[XP] Meta semanal cumplida!')
@@ -424,11 +374,7 @@ export const useExperience = () => {
 
     const revokeAllHabitsDaily = async () => {
         if (typeof window === 'undefined') return null
-        const parts = new Intl.DateTimeFormat('es-AR', {
-            timeZone: 'America/Argentina/Buenos_Aires',
-            year: 'numeric', month: '2-digit', day: '2-digit'
-        }).formatToParts(new Date())
-        const todayStr = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}`
+        const todayStr = getArgentineDate()
         if (localStorage.getItem('lastAllHabitsDailyXP') !== todayStr) return null
         localStorage.removeItem('lastAllHabitsDailyXP')
         return await revokeXP('all_habits_daily')
@@ -436,9 +382,7 @@ export const useExperience = () => {
 
     const revokeWeeklyGoalXP = async () => {
         if (typeof window === 'undefined') return null
-        const now = new Date()
-        const weekNum = `${now.getFullYear()}-W${Math.ceil(((now - new Date(now.getFullYear(), 0, 1)) / 86400000 + 1) / 7)}`
-        if (localStorage.getItem('lastWeeklyGoalXP') !== weekNum) return null
+        if (localStorage.getItem('lastWeeklyGoalXP') !== getWeekKey()) return null
         localStorage.removeItem('lastWeeklyGoalXP')
         return await revokeXP('weekly_goal_met')
     }

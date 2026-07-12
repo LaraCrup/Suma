@@ -92,7 +92,6 @@ const setupRealtime = (communityId, habitId) => {
     realtimeChannel = client.channel(`community:${communityId}`)
 
     if (habitId) {
-        // Completions: cuando cualquier miembro loguea progreso
         realtimeChannel.on('postgres_changes', {
             event: '*',
             schema: 'public',
@@ -102,7 +101,6 @@ const setupRealtime = (communityId, habitId) => {
             completions.value = await getCommunityHabitCompletions(habitId)
         })
 
-        // Racha: cuando la racha comunitaria se actualiza
         realtimeChannel.on('postgres_changes', {
             event: 'UPDATE',
             schema: 'public',
@@ -115,7 +113,6 @@ const setupRealtime = (communityId, habitId) => {
         })
     }
 
-    // Chat: nuevos mensajes en tiempo real
     realtimeChannel.on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -142,7 +139,6 @@ const handleSend = async () => {
     isSending.value = true
     try {
         const msg = await sendMessage(route.params.id, newMessage.value)
-        // Agregar localmente para respuesta inmediata; realtime deduplicará
         if (!messages.value.some(m => m.id === msg.id)) {
             messages.value.push(msg)
         }

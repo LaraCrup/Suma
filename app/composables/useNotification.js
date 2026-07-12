@@ -1,6 +1,3 @@
-/**
- * Composable para mostrar notificaciones al usuario
- */
 export const useNotification = () => {
     const success = (message, options = {}) => {
         const title = options.title || 'Éxito'

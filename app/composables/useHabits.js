@@ -40,7 +40,6 @@ export const useHabits = () => {
             throw error
         }
 
-        // Verificar si es el primer hábito creado para otorgar XP
         await checkFirstHabitCreated()
 
         return data?.[0] || null
@@ -65,7 +64,6 @@ export const useHabits = () => {
     const getHabitsForDate = async (dateStr) => {
         const allHabits = await getHabits()
 
-        // Fetch all logs for this date in one batch query
         const habitIds = allHabits.map(h => h.id)
         const { data: dateLogs } = await client
             .from('habit_logs')
@@ -78,7 +76,6 @@ export const useHabits = () => {
 
         return allHabits.map(habit => {
             const log = logsByHabitId[habit.id]
-            // habit_logs.value is the source of truth: it's never wiped by a daily reset
             return log ? { ...habit, progress_count: log.value } : { ...habit, progress_count: 0 }
         })
     }
@@ -96,7 +93,6 @@ export const useHabits = () => {
 
         if (!data) return null
 
-        // Override progress_count with the log value for the target date (habit_logs is source of truth)
         const targetDate = date || getArgentineDate()
         const { data: targetLog } = await client
             .from('habit_logs')
@@ -208,7 +204,6 @@ export const useHabits = () => {
         const cadence = getStreakCadence(habit)
 
         if (cadence === 'weekly' || cadence === 'monthly') {
-            // Cadencia por período: +1 al cumplir la meta de la semana/mes.
             const { start: pStart, end: pEnd } = getPeriodBounds(habit, targetDate)
             const { data: periodLogs } = await client
                 .from('habit_logs')
@@ -237,8 +232,10 @@ export const useHabits = () => {
                 if (requiredCount > 0 && completedCount === requiredCount - 1) {
                     shouldRevokeXP = true
                     if (isPastDate) {
-                        const prevEnd = getPrevPeriodEndDate(habit, targetDate)
-                        const newStreak = await calculateStreakUpTo(habit, prevEnd)
+                        const { start: curStart, end: curEnd } = getPeriodBounds(habit, today)
+                        const currentComplete = await isPeriodComplete(habit, curStart, curEnd)
+                        const anchorDate = currentComplete ? today : getPrevPeriodEndDate(habit, today)
+                        const newStreak = await calculateStreakUpTo(habit, anchorDate)
                         streakUpdate = { streak: Math.max(0, newStreak) }
                     } else {
                         streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
@@ -246,15 +243,12 @@ export const useHabits = () => {
                 }
             }
         } else {
-            // Cadencia DIARIA: +1 por cada día completado (todos / especificos / cantidad).
             if (isCompleted && !existingLog?.completed) {
                 if (typeof window !== 'undefined') {
                     localStorage.removeItem(`streakGracePending_${habitId}`)
                 }
                 let newStreak
                 if (isPastDate) {
-                    // Completar un día pasado: anclar desde la fecha completada más reciente
-                    // para puentear la cadena hacia adelante.
                     const { data: latestCompleted } = await client
                         .from('habit_logs')
                         .select('date')
@@ -275,9 +269,18 @@ export const useHabits = () => {
             } else if (!isCompleted && existingLog?.completed) {
                 shouldRevokeXP = true
                 if (isPastDate) {
-                    const [y, m, d] = targetDate.split('-').map(Number)
-                    const prevEnd = getDateString(new Date(y, m - 1, d - 1))
-                    const newStreak = await calculateStreakUpTo(habit, prevEnd)
+                    const { data: latestCompleted } = await client
+                        .from('habit_logs')
+                        .select('date')
+                        .eq('habit_id', habitId)
+                        .eq('completed', true)
+                        .lte('date', today)
+                        .order('date', { ascending: false })
+                        .limit(1)
+                        .maybeSingle()
+                    const newStreak = latestCompleted?.date
+                        ? await calculateStreakUpTo(habit, latestCompleted.date)
+                        : 0
                     streakUpdate = { streak: Math.max(0, newStreak) }
                 } else {
                     streakUpdate = { streak: Math.max(0, (habit.streak || 0) - 1) }
@@ -304,7 +307,6 @@ export const useHabits = () => {
 
         const enriched = await enrichHabitsWithCompletedDays([updatedHabit[0]])
 
-        // Otorgar XP y verificar milestones DESPUÉS de guardar la racha
         if (shouldGrantXP) {
             try {
                 await grantXP('habit_completed')
@@ -314,7 +316,6 @@ export const useHabits = () => {
             }
         }
 
-        // Revocar XP si el hábito pasó de completado a no completado
         if (shouldRevokeXP) {
             try {
                 await revokeXP('habit_completed')
@@ -323,19 +324,16 @@ export const useHabits = () => {
             }
         }
 
-        // Verificar si se completaron todos los hábitos del día (solo para hoy)
         if (!isPastDate && isCompleted && !existingLog?.completed) {
             await checkAllHabitsDaily(getHabits, shouldShowHabitToday)
             await checkWeeklyGoalMet(getHabits)
         }
 
-        // Revocar bonos diario/semanal si se descompletó un hábito hoy
         if (!isPastDate && !isCompleted && existingLog?.completed) {
             await revokeAllHabitsDaily()
             await revokeWeeklyGoalXP()
         }
 
-        // Para días pasados retornar objeto sintético con progress_count del log
         if (isPastDate) {
             return { ...enriched[0], progress_count: newProgressCount }
         }
@@ -380,7 +378,12 @@ export const useHabits = () => {
         return data
     }
 
-    const getWeekStart = (date = new Date()) => {
+    const argentineTodayAsDate = () => {
+        const [year, month, day] = getArgentineDate().split('-').map(Number)
+        return new Date(year, month - 1, day)
+    }
+
+    const getWeekStart = (date = argentineTodayAsDate()) => {
         const d = new Date(date)
         const day = d.getDay()
         const diff = d.getDate() - day + (day === 0 ? -6 : 1)
@@ -388,26 +391,12 @@ export const useHabits = () => {
         return getDateString(result)
     }
 
-    const getWeekEnd = (date = new Date()) => {
+    const getWeekEnd = (date = argentineTodayAsDate()) => {
         const d = new Date(date)
         const day = d.getDay()
         const diff = d.getDate() - day + (day === 0 ? 0 : 7)
         const result = new Date(d.setDate(diff))
         return getDateString(result)
-    }
-
-    const getArgentineDate = () => {
-        const formatter = new Intl.DateTimeFormat('es-AR', {
-            timeZone: 'America/Argentina/Buenos_Aires',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        })
-        const parts = formatter.formatToParts(new Date())
-        const year = parts.find(p => p.type === 'year').value
-        const month = parts.find(p => p.type === 'month').value
-        const day = parts.find(p => p.type === 'day').value
-        return `${year}-${month}-${day}`
     }
 
     const getWeekCompletedDays = async (habitId) => {
@@ -464,9 +453,12 @@ export const useHabits = () => {
         return enriched
     }
 
-    const getDateString = (date = new Date()) => {
+    const getDateString = (date) => {
         if (!date) return getArgentineDate()
-        return date.toISOString().split('T')[0]
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
     }
 
     const getYesterdayString = () => {
@@ -476,17 +468,12 @@ export const useHabits = () => {
         return getDateString(yesterday)
     }
 
-    // ── Helpers de cadencia y período ────────────────────────────────────────
-    // La CADENCIA del +1 de racha se define SOLO por frequency_type. Las opciones
-    // (todos / dias_especificos_* / cantidad_dias_*) se repiten entre frecuencias,
-    // así que nunca deben usarse para inferir la cadencia.
     const getStreakCadence = (habit) => {
         if (habit.frequency_type === 'semanal') return 'weekly'
         if (habit.frequency_type === 'mensual') return 'monthly'
         return 'daily'
     }
 
-    // Granularidad del período de cuota (para bounds y "período cumplido").
     const getHabitPeriodGranularity = (habit) => {
         const o = habit.frequency_option
         if (habit.frequency_type === 'semanal' || o === 'cantidad_dias_semana' || o === 'dias_especificos_semana') return 'week'
@@ -494,9 +481,6 @@ export const useHabits = () => {
         return 'day'
     }
 
-    // Modo de corte de la racha para el sistema de gracia.
-    // week/month: se evalúa al cerrar el período (cuota). scheduled: por día programado
-    // (incluye 'todos', donde todos los días están programados).
     const getGraceBreakMode = (habit) => {
         const cadence = getStreakCadence(habit)
         if (cadence === 'weekly') return 'week'
@@ -507,7 +491,6 @@ export const useHabits = () => {
         return 'scheduled'
     }
 
-    // ¿El hábito está programado/aplica ese día según la opción? (sin tocar la BD)
     const isHabitScheduledOn = (habit, dateStr) => {
         const [y, m, d] = dateStr.split('-').map(Number)
         const dow = new Date(y, m - 1, d).getDay()
@@ -521,7 +504,6 @@ export const useHabits = () => {
         }
     }
 
-    // Límites del período de cuota que contiene dateStr.
     const getPeriodBounds = (habit, dateStr) => {
         const gran = getHabitPeriodGranularity(habit)
         const [y, m, d] = dateStr.split('-').map(Number)
@@ -539,7 +521,6 @@ export const useHabits = () => {
         return { start: dateStr, end: dateStr }
     }
 
-    // Cantidad de completados que requiere el período para "cumplir la meta".
     const getPeriodQuota = (habit, startDate) => {
         switch (habit.frequency_option) {
             case 'dias_especificos_semana':
@@ -560,14 +541,12 @@ export const useHabits = () => {
         }
     }
 
-    // Último día del período de cuota anterior (día previo al start del período de dateStr).
     const getPrevPeriodEndDate = (habit, dateStr) => {
         const { start } = getPeriodBounds(habit, dateStr)
         const [y, m, d] = start.split('-').map(Number)
         return getDateString(new Date(y, m - 1, d - 1))
     }
 
-    // Día programado más reciente <= dateStr (para hábitos diarios de días específicos).
     const findScheduledOnOrBefore = (habit, dateStr) => {
         let cur = dateStr
         for (let i = 0; i < 400; i++) {
@@ -578,7 +557,6 @@ export const useHabits = () => {
         return null
     }
 
-    // Día programado inmediatamente anterior a dateStr.
     const findScheduledBefore = (habit, dateStr) => {
         const [y, m, d] = dateStr.split('-').map(Number)
         const prev = getDateString(new Date(y, m - 1, d - 1))
@@ -600,8 +578,6 @@ export const useHabits = () => {
         }
 
         let completedCount = logs?.length || 0
-        // Un día perdonado por "Salvar racha" cuenta como completado para la cuota
-        // del período, aunque no tenga un habit_log real.
         if (typeof window !== 'undefined') {
             const forgivenDate = localStorage.getItem(`streakGraceForgiven_${habit.id}`)
             if (forgivenDate && forgivenDate >= startDate && forgivenDate <= endDate && !logs?.some(l => l.date === forgivenDate)) {
@@ -670,7 +646,6 @@ export const useHabits = () => {
             return streak
         }
 
-        // ── Cadencia DIARIA: +1 por día completado ──────────────────────────
         const { data: logs } = await client
             .from('habit_logs')
             .select('date')
@@ -680,9 +655,6 @@ export const useHabits = () => {
             .order('date', { ascending: false })
 
         const completedDates = new Set((logs || []).map(l => l.date))
-        // Un día perdonado por "Salvar racha" cuenta como completado para la racha,
-        // aunque no tenga un habit_log real (si no, un completado retroactivo del
-        // día siguiente "atropella" el día perdonado y resetea la racha a 1).
         if (typeof window !== 'undefined') {
             const forgivenDate = localStorage.getItem(`streakGraceForgiven_${habit.id}`)
             if (forgivenDate && forgivenDate <= dateStr) completedDates.add(forgivenDate)
@@ -691,9 +663,6 @@ export const useHabits = () => {
         const earliest = [...completedDates].sort()[0]
         const option = habit.frequency_option
 
-        // Híbrido "N veces por semana/mes": cuenta todos los completados hacia atrás,
-        // cortando en el primer período CERRADO que no alcanzó la cuota. El período en
-        // curso siempre aporta sus completados (todavía no falló).
         if (option === 'cantidad_dias_semana' || option === 'cantidad_dias_mes') {
             const { start: curStart, end: curEnd } = getPeriodBounds(habit, dateStr)
             const curEndCapped = curEnd < dateStr ? curEnd : dateStr
@@ -723,8 +692,6 @@ export const useHabits = () => {
             return streak
         }
 
-        // 'todos' o 'dias_especificos_*': días consecutivos programados completados.
-        // Los días NO programados se saltean sin contar ni cortar.
         const isSpecific = option === 'dias_especificos_semana' || option === 'dias_especificos_mes'
         let streak = 0
         let cur = dateStr
@@ -761,9 +728,6 @@ export const useHabits = () => {
             const mode = getGraceBreakMode(habit)
             const periodBased = mode === 'week' || mode === 'month'
 
-            // Determinar la "unidad recién cerrada" (día programado o período), si quedó
-            // satisfecha, y si el hueco es de exactamente 1 unidad (fix #5: no ofrecer
-            // gracia cuando hace varios días/períodos que no se completa).
             let unitDate = null
             let unitSatisfied = false
             let gapIsOne = false
@@ -772,7 +736,6 @@ export const useHabits = () => {
                 const pToday = getPeriodBounds(habit, todayStr)
                 const pYest = getPeriodBounds(habit, yesterday)
                 if (pToday.start !== pYest.start) {
-                    // El período de ayer ya cerró (hoy estamos en uno nuevo)
                     unitDate = yesterday
                     unitSatisfied = await isPeriodComplete(habit, pYest.start, pYest.end)
                     if (!unitSatisfied) {
@@ -782,7 +745,6 @@ export const useHabits = () => {
                     }
                 }
             } else {
-                // Basado en día programado ('todos' = todos los días son programados)
                 const lastScheduled = findScheduledOnOrBefore(habit, yesterday)
                 if (lastScheduled) {
                     unitDate = lastScheduled
@@ -798,32 +760,26 @@ export const useHabits = () => {
                 }
             }
 
-            // ── Manejo de una oferta de gracia pendiente ──
             const pendingRaw = readLS(pendingKey)
             if (pendingRaw) {
                 let offeredForDate = null
                 try { offeredForDate = JSON.parse(pendingRaw).offeredForDate } catch (e) { offeredForDate = null }
                 const stillMissed = offeredForDate ? await isPeriodStillMissed(habit, offeredForDate) : false
                 if (!stillMissed) {
-                    // El usuario completó lo que faltaba → la oferta se resuelve sola
                     removeLS(pendingKey)
                     removeLS(forgivenKey)
                     return
                 }
                 if (unitDate && unitDate !== offeredForDate) {
-                    // Cerró una unidad nueva sin que el usuario decidiera → la oferta caducó.
-                    // Recalcular la racha real desde los logs.
                     const fresh = await calculateStreakUpTo(habit, todayStr)
                     await updateHabit(habit.id, { streak: fresh })
                     removeLS(pendingKey)
                     removeLS(forgivenKey)
                 }
-                // Si no cerró unidad nueva (mismo día/período, o mitad de período): seguir esperando
                 return
             }
 
-            // ── Sin oferta pendiente: evaluar la unidad recién cerrada ──
-            if (!unitDate) return // todavía no cerró nada (mitad de período) o sin día programado
+            if (!unitDate) return
 
             if (unitSatisfied) {
                 const forgiven = readLS(forgivenKey)
@@ -831,10 +787,8 @@ export const useHabits = () => {
                 return
             }
 
-            // La unidad quedó sin cumplir
             const forgiven = readLS(forgivenKey)
             if (forgiven === unitDate) {
-                // Ya salvamos exactamente esta unidad con la gracia → no resetear
                 return
             }
 
@@ -856,7 +810,6 @@ export const useHabits = () => {
             const complete = await isPeriodComplete(habit, start, end)
             return !complete
         }
-        // Basado en día programado
         const log = await getHabitLogByDate(habit.id, offeredForDate)
         return !(log?.completed)
     }
@@ -865,13 +818,12 @@ export const useHabits = () => {
         const currentMonth = getArgentineDate().slice(0, 7)
         await updateHabit(habitId, { streak_grace_used_month: currentMonth })
         if (typeof window !== 'undefined') {
-            // "Sellar" la unidad salvada para que el próximo sync no la vuelva a resetear
             const pendingRaw = localStorage.getItem(`streakGracePending_${habitId}`)
             if (pendingRaw) {
                 try {
                     const { offeredForDate } = JSON.parse(pendingRaw)
                     if (offeredForDate) localStorage.setItem(`streakGraceForgiven_${habitId}`, offeredForDate)
-                } catch (e) { /* noop */ }
+                } catch (e) {}
             }
             localStorage.removeItem(`streakGracePending_${habitId}`)
         }
@@ -918,14 +870,10 @@ export const useHabits = () => {
         const today = getArgentineDate()
         const lastResetDate = localStorage.getItem('lastHabitResetDate')
 
-        // Esta sesión/dispositivo ya verificó hoy → no resetear
         if (lastResetDate === today) return false
 
-        // Marcar inmediatamente (sincrónico) para evitar doble reset en llamadas concurrentes
         localStorage.setItem('lastHabitResetDate', today)
 
-        // Si ya hay habit_logs para hoy, significa que otra sesión/dispositivo ya hizo el reset
-        // y el usuario completó hábitos → no pisar ese progreso
         try {
             const userId = await getUserId()
             const { data: userHabits } = await client
@@ -1080,10 +1028,6 @@ export const useHabits = () => {
         shouldShowHabitForDate,
         syncHabitsWithNewDay,
         getArgentineDate,
-        enrichHabitsWithCompletedDays,
-        getWeekCompletedDays,
-        getMonthCompletedDays,
-        getHabitLogByDate,
         applyStreakGrace,
         declineStreakGrace,
         isPeriodStillMissed

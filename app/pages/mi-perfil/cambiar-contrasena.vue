@@ -133,7 +133,6 @@ const handleChangePassword = async () => {
     passwordUpdateAttempted.value = true
 
     try {
-        // Primero obtener el email del usuario actual
         const { data: { user }, error: userError } = await client.auth.getUser()
 
         if (userError || !user?.email) {
@@ -143,7 +142,6 @@ const handleChangePassword = async () => {
             return
         }
 
-        // Validar la contraseña actual intentando hacer sign-in
         const { error: signInError } = await client.auth.signInWithPassword({
             email: user.email,
             password: form.currentPassword
@@ -156,7 +154,6 @@ const handleChangePassword = async () => {
             return
         }
 
-        // Si la contraseña actual es correcta, actualizar a la nueva
         const { error } = await client.auth.updateUser({
             password: form.password
         })

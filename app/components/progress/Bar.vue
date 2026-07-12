@@ -34,10 +34,6 @@ const percentage = computed(() => {
     return ((props.progressCount || 0) / (props.goalValue || 1)) * 100
 })
 
-const isMaxReached = computed(() => {
-    return (props.progressCount || 0) >= (props.goalValue || 1)
-})
-
 const backgroundColorClass = computed(() => {
     return props.backgroundColor
 })

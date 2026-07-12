@@ -120,7 +120,6 @@ const errors = ref({
   display_name: ''
 })
 
-// Cargar datos del usuario al montar el componente
 onMounted(async () => {
   await authStore.fetchUser()
   if (authStore.profile) {
@@ -132,7 +131,6 @@ onMounted(async () => {
   await checkSubscription()
 })
 
-// Sincronizar cambios en el perfil con el formulario
 watch(
   () => authStore.profile,
   (newProfile) => {
@@ -155,10 +153,8 @@ const handleFileUpload = async (event) => {
 
   if (!file) return
 
-  // Guardar el archivo para procesarlo después
   selectedFile.value = file
 
-  // Mostrar preview de la imagen
   const reader = new FileReader()
   reader.onload = (e) => {
     previewImage.value = e.target.result
@@ -172,42 +168,35 @@ const deleteAvatar = async () => {
   const supabase = useSupabaseClient()
 
   try {
-    // Extraer el nombre del archivo de la URL
     const urlParts = authStore.profile.avatar_url.split('/')
-    const fileName = urlParts[urlParts.length - 1]
+    const fileName = decodeURIComponent(urlParts[urlParts.length - 1].split('?')[0])
     const filePath = `${authStore.user.id}/${fileName}`
 
-    // Eliminar archivo del storage
-    await supabase.storage
+    const { error: removeError } = await supabase.storage
       .from('avatar')
       .remove([filePath])
 
-    // Actualizar perfil sin imagen
+    if (removeError) {
+      console.error('Error eliminando archivo del bucket:', removeError)
+    }
+
     await authStore.updateProfile({
       avatar_url: null
     })
 
-    // Limpiar preview y archivo seleccionado
     previewImage.value = null
     selectedFile.value = null
-
-    saveMessage.value = 'Foto de perfil eliminada'
-    setTimeout(() => {
-      saveMessage.value = ''
-    }, 3000)
   } catch (error) {
     authStore.error = `Error al eliminar: ${error.message}`
   }
 }
 
 const handleSave = async () => {
-  // Limpiar errores previos
   errors.value = {
     name: '',
     display_name: ''
   }
 
-  // Validar campos
   if (!formData.value.name) {
     errors.value.name = 'El nombre es requerido'
   }
@@ -223,7 +212,6 @@ const handleSave = async () => {
     const router = useRouter()
     const supabase = useSupabaseClient()
 
-    // Verificar que el display_name no exista (excepto el actual)
     if (formData.value.display_name !== authStore.profile?.display_name) {
       const { data } = await supabase
         .from('profiles')
@@ -242,12 +230,10 @@ const handleSave = async () => {
       display_name: formData.value.display_name
     }
 
-    // Si hay una imagen seleccionada, subirla
     if (selectedFile.value) {
       const fileName = selectedFile.value.name
       const filePath = `${authStore.user.id}/${fileName}`
 
-      // Subir archivo
       const { error: uploadError } = await supabase.storage
         .from('avatar')
         .upload(filePath, selectedFile.value, { upsert: true })
@@ -257,7 +243,20 @@ const handleSave = async () => {
         return
       }
 
-      // Obtener URL firmada
+      if (authStore.profile?.avatar_url) {
+        const oldParts = authStore.profile.avatar_url.split('/')
+        const oldFileName = decodeURIComponent(oldParts[oldParts.length - 1].split('?')[0])
+        const oldFilePath = `${authStore.user.id}/${oldFileName}`
+        if (oldFilePath !== filePath) {
+          const { error: removeError } = await supabase.storage
+            .from('avatar')
+            .remove([oldFilePath])
+          if (removeError) {
+            console.error('Error eliminando avatar anterior del bucket:', removeError)
+          }
+        }
+      }
+
       const { data: signedUrlData, error: signedError } = await supabase.storage
         .from('avatar')
         .createSignedUrl(filePath, 60 * 60 * 24 * 365)
@@ -272,13 +271,10 @@ const handleSave = async () => {
       previewImage.value = null
     }
 
-    // Actualizar perfil con todos los datos
     await authStore.updateProfile(updates)
 
-    // Recargar el perfil
     await authStore.fetchUser()
 
-    // Navegar a mi-perfil
     await router.push('/mi-perfil')
   } catch (error) {
     authStore.error = `Error al guardar: ${error.message}`

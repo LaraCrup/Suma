@@ -2,7 +2,7 @@
     <NuxtLink :to="`/progreso/beneficios/${benefit.id}`" class="block">
         <div>
             <NuxtImg
-                class="w-full h-20 rounded-t-lg object-cover"
+                class="w-full h-32 rounded-t-lg object-cover"
                 :src="benefit.image || '/images/placeholder.png'"
                 :alt="benefit.title"
             />

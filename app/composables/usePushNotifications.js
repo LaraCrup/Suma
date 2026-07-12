@@ -14,10 +14,6 @@ export const usePushNotifications = () => {
     'serviceWorker' in navigator
   )
 
-  // OJO: en Safari/Chrome de iOS (navegador) la API `Notification` NO existe.
-  // Acceder a `Notification.permission` sin chequear su existencia tira ReferenceError
-  // al hidratar (el plugin pushNotifications.client corre en cada página) → la app
-  // cae a error.vue ("Error 404"). Hay que guardar con `'Notification' in window`.
   const permission = ref(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
   )
@@ -38,7 +34,6 @@ export const usePushNotifications = () => {
       const subscription = await registration.pushManager.getSubscription()
       if (!subscription) { isSubscribed.value = false; return }
 
-      // Verificar que la suscripción también esté en la DB
       const { data } = await client
         .from('push_subscriptions')
         .select('id')
@@ -48,7 +43,6 @@ export const usePushNotifications = () => {
       if (data) {
         isSubscribed.value = true
       } else {
-        // El browser tiene suscripción pero la DB no — re-sincronizar
         const userId = await getUserId()
         if (!userId) { isSubscribed.value = false; return }
         const { endpoint, keys } = subscription.toJSON()
@@ -83,7 +77,6 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(config.public.vapidPublicKey),
       })
 
-      // Actualizar switch visualmente apenas el browser confirma
       isSubscribed.value = true
 
       const userId = await getUserId()

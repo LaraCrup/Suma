@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json()
-    // El webhook de Supabase envía el nuevo registro en payload.record
     const record = payload.record
     if (!record) return new Response('ok', { headers: corsHeaders })
 
@@ -22,7 +21,6 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Nombre de la comunidad y display_name del sender en paralelo
     const [communityRes, senderRes, membersRes] = await Promise.all([
       supabase.from('communities').select('name').eq('id', community_id).single(),
       supabase.from('profiles').select('display_name').eq('id', senderId).single(),

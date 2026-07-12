@@ -2,18 +2,6 @@ export const useCommunities = () => {
     const client = useSupabaseClient()
     const { grantXP, revokeXP } = useExperience()
 
-    const getArgentineDate = () => {
-        const formatter = new Intl.DateTimeFormat('es-AR', {
-            timeZone: 'America/Argentina/Buenos_Aires',
-            year: 'numeric', month: '2-digit', day: '2-digit'
-        })
-        const parts = formatter.formatToParts(new Date())
-        const y = parts.find(p => p.type === 'year').value
-        const m = parts.find(p => p.type === 'month').value
-        const d = parts.find(p => p.type === 'day').value
-        return `${y}-${m}-${d}`
-    }
-
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
         if (error || !session?.user?.id) {
@@ -22,14 +10,9 @@ export const useCommunities = () => {
         return session.user.id
     }
 
-    /**
-     * Crea una comunidad con su hábito compartido.
-     * El creador se agrega automáticamente como admin.
-     */
     const createCommunity = async (name, icon, memberIds, habitData) => {
         const userId = await getUserId()
 
-        // 1. Insertar la comunidad (sin .select() para evitar el RLS de SELECT antes de ser miembro)
         const { error: communityError } = await client
             .from('communities')
             .insert({ name, icon, created_by: userId })
@@ -39,7 +22,6 @@ export const useCommunities = () => {
             throw communityError
         }
 
-        // Obtener la comunidad recién creada
         const { data: community, error: getError } = await client
             .from('communities')
             .select('id, name, icon, created_at')
@@ -55,7 +37,6 @@ export const useCommunities = () => {
 
         const communityId = community.id
 
-        // 2. Insertar creador como admin + miembros invitados (sin duplicados)
         const uniqueMemberIds = [...new Set((memberIds || []).filter(id => id !== userId))]
         const membersToInsert = [
             { community_id: communityId, user_id: userId, role: 'admin' },
@@ -75,7 +56,6 @@ export const useCommunities = () => {
             throw membersError
         }
 
-        // 3. Insertar el hábito de la comunidad
         const habitRecord = {
             community_id: communityId,
             name: habitData.name,
@@ -101,9 +81,6 @@ export const useCommunities = () => {
         return community
     }
 
-    /**
-     * Obtiene las comunidades del usuario actual con cantidad de miembros y hábito.
-     */
     const getCommunities = async () => {
         const userId = await getUserId()
 
@@ -157,9 +134,6 @@ export const useCommunities = () => {
         return enriched
     }
 
-    /**
-     * Obtiene el detalle de una comunidad con sus miembros y sus perfiles.
-     */
     const getCommunityById = async (communityId) => {
         const { data: community, error: commError } = await client
             .from('communities')
@@ -191,9 +165,6 @@ export const useCommunities = () => {
         }
     }
 
-    /**
-     * Obtiene el hábito compartido de una comunidad, o null si no tiene.
-     */
     const getCommunityHabit = async (communityId) => {
         const { data, error } = await client
             .from('community_habits')
@@ -209,9 +180,6 @@ export const useCommunities = () => {
         return data
     }
 
-    /**
-     * Obtiene los mensajes del chat de una comunidad (últimos 100, orden cronológico).
-     */
     const getCommunityMessages = async (communityId) => {
         const { data, error } = await client
             .from('community_messages')
@@ -228,10 +196,6 @@ export const useCommunities = () => {
         return data || []
     }
 
-    /**
-     * Envía un mensaje al chat de una comunidad.
-     * Retorna el mensaje creado con los datos del sender.
-     */
     const sendMessage = async (communityId, content) => {
         const userId = await getUserId()
 
@@ -249,30 +213,6 @@ export const useCommunities = () => {
         return data
     }
 
-    /**
-     * Sale de una comunidad (elimina al usuario de community_members).
-     */
-    const leaveCommunity = async (communityId) => {
-        const userId = await getUserId()
-
-        const { error } = await client
-            .from('community_members')
-            .delete()
-            .eq('community_id', communityId)
-            .eq('user_id', userId)
-
-        if (error) {
-            console.error('Error saliendo de la comunidad:', error)
-            throw error
-        }
-
-        return true
-    }
-
-    /**
-     * Obtiene el estado de completación del hábito de comunidad para todos los miembros hoy.
-     * Retorna array de { id, display_name, avatar_url, progress_count, completed }
-     */
     const getCommunityHabitCompletions = async (habitId, date = null) => {
         const today = date || getArgentineDate()
 
@@ -305,11 +245,6 @@ export const useCommunities = () => {
         }))
     }
 
-    /**
-     * Registra progreso del usuario actual en el hábito de comunidad para hoy.
-     * Cuando todos los miembros completan, actualiza la racha comunitaria en community_habits.
-     * Retorna el log actualizado.
-     */
     const logCommunityHabitProgress = async (habitId, amount, goalValue = 1) => {
         const userId = await getUserId()
         const today = getArgentineDate()
@@ -339,7 +274,6 @@ export const useCommunities = () => {
 
         if (error) throw error
 
-        // Recalcular racha comunitaria si cambió el estado de completado
         const completedChanged = isCompleted !== (existing?.completed ?? false)
         if (completedChanged) {
             await updateCommunityStreak(habitId, today)
@@ -353,9 +287,6 @@ export const useCommunities = () => {
         return log
     }
 
-    /**
-     * Cuenta días consecutivos hacia atrás desde dateStr donde TODOS los miembros completaron.
-     */
     const calculateCommunityStreakUpTo = async (habitId, memberIds, dateStr) => {
         let streak = 0
         let current = dateStr
@@ -380,10 +311,6 @@ export const useCommunities = () => {
         return streak
     }
 
-    /**
-     * Recalcula y persiste la racha comunitaria contando desde los logs reales.
-     * Siempre recalcula desde la BD para evitar desincronizaciones.
-     */
     const updateCommunityStreak = async (habitId, today) => {
         const { data: habit } = await client
             .from('community_habits')
@@ -412,9 +339,6 @@ export const useCommunities = () => {
         }
     }
 
-    /**
-     * Obtiene el log del usuario actual para el hábito de comunidad hoy.
-     */
     const getCommunityHabitMyLog = async (habitId) => {
         const userId = await getUserId()
         const today = getArgentineDate()
@@ -430,9 +354,6 @@ export const useCommunities = () => {
         return data || null
     }
 
-    /**
-     * Actualiza el nombre de una comunidad.
-     */
     const updateCommunityName = async (communityId, name) => {
         const { error } = await client
             .from('communities')
@@ -447,10 +368,6 @@ export const useCommunities = () => {
         return true
     }
 
-    /**
-     * Elimina una comunidad completa (solo admin).
-     * Las eliminaciones en cascada del lado de la BD limpian miembros, hábitos, logs y mensajes.
-     */
     const deleteCommunity = async (communityId) => {
         const { error, count } = await client
             .from('communities')
@@ -469,9 +386,6 @@ export const useCommunities = () => {
         return true
     }
 
-    /**
-     * Elimina un miembro específico de una comunidad.
-     */
     const removeMemberFromCommunity = async (communityId, userId) => {
         const { error, count } = await client
             .from('community_members')
@@ -491,9 +405,6 @@ export const useCommunities = () => {
         return true
     }
 
-    /**
-     * Agrega nuevos miembros a una comunidad existente.
-     */
     const addMembersToExistingCommunity = async (communityId, memberIds) => {
         const currentUserId = await getUserId()
         const records = memberIds
@@ -528,7 +439,6 @@ export const useCommunities = () => {
         getCommunityHabit,
         getCommunityMessages,
         sendMessage,
-        leaveCommunity,
         getCommunityHabitCompletions,
         logCommunityHabitProgress,
         getCommunityHabitMyLog,

@@ -15,7 +15,7 @@
                     :error="errors.password" required @blur="validatePassword" />
             </FormFieldsContainer>
 
-            <NuxtLink :to="ROUTE_NAMES.FORGOT_PASSWORD" class="text-primary text-xs underline">
+            <NuxtLink :to="ROUTE_NAMES.RESET_PASSWORD" class="text-primary text-xs underline">
                 ¿Olvidaste tu contraseña?
             </NuxtLink>
 
@@ -125,7 +125,6 @@ const handleSignIn = async () => {
             return
         }
 
-        localStorage.setItem('lastLoginUsername', form.username)
         await router.push(ROUTE_NAMES.HOME)
 
     } catch (error) {

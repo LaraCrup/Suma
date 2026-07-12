@@ -84,8 +84,6 @@ const news = ref([])
 const activeCategory = ref(null)
 const loading = ref(true)
 
-// Caché de 5 min: las novedades de marcas no cambian tan seguido.
-// El pull-to-refresh siempre fuerza el reload (force = true).
 const CACHE_KEY = 'novedades_last_fetch'
 const CACHE_TTL = 5 * 60 * 1000
 
@@ -104,15 +102,26 @@ const selectCategory = async (categoryId) => {
 }
 
 const loadData = async (force = false) => {
-    if (typeof window !== 'undefined') {
-        const last = sessionStorage.getItem(CACHE_KEY)
-        if (!force && last && Date.now() - Number(last) < CACHE_TTL) return
+    if (!force && typeof window !== 'undefined') {
+        try {
+            const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY))
+            if (cached && Date.now() - cached.ts < CACHE_TTL) {
+                categories.value = cached.categories
+                news.value = cached.news
+                loading.value = false
+                return
+            }
+        } catch (e) {}
     }
     loading.value = true
     categories.value = await getCategories()
     news.value = await getNews(activeCategory.value)
-    if (typeof window !== 'undefined') {
-        sessionStorage.setItem(CACHE_KEY, String(Date.now()))
+    if (typeof window !== 'undefined' && !activeCategory.value) {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+            ts: Date.now(),
+            categories: categories.value,
+            news: news.value
+        }))
     }
     loading.value = false
 }

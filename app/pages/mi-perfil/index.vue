@@ -154,8 +154,6 @@ const levelInfo = ref({
     isMaxLevel: false
 })
 
-// loadData es reutilizado por onMounted y pull-to-refresh.
-// checkSubscription queda solo en onMounted (no tiene sentido re-verificarla en cada pull).
 const loadData = async () => {
     try {
         await authStore.fetchUser()
@@ -198,7 +196,6 @@ const handleLogout = async () => {
     try {
         await authStore.logout()
 
-        // Limpiar sessionStorage antes de redirigir
         if (typeof window !== 'undefined') {
             sessionStorage.removeItem('sessionPhrase')
             sessionStorage.removeItem('sessionTip')

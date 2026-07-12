@@ -1,4 +1,3 @@
-// https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: false },
@@ -49,6 +48,7 @@ export default defineNuxtConfig({
         '/restablecer-contrasena-confirmacion',
         '/confirmar-cuenta',
         '/nueva-contrasena',
+        '/contrasena-actualizada',
       ]
     },
     cookieOptions: {
@@ -95,13 +95,6 @@ export default defineNuxtConfig({
         'images/**/*.{png,jpg,jpeg,svg,webp}',
         '*.{ico,png}',
       ],
-      // App SSR en Vercel: cada ruta la sirve el servidor, no hay app shell estático que
-      // precachear. El default de @vite-pwa/nuxt (navigateFallback: '/') hace que el SW
-      // intente servir '/' desde el precache; como '/' no está precacheado, Workbox tira
-      // 'non-precached-url' y la navegación termina en 404 (se ve en iOS Safari donde el SW
-      // queda activo). Lo dejamos en `false` para desactivar el NavigationRoute por completo.
-      // OJO: hay que dejar la key presente — si se borra, el módulo la re-inyecta como '/'.
-      // Debe ser null (no false): workbox-build exige tipo null|string.
       navigateFallback: null,
       importScripts: ['/sw-push.js'],
       runtimeCaching: [
@@ -147,9 +140,6 @@ export default defineNuxtConfig({
       weights: [300, 400, 500, 600, 700, 800, 900],
     }
   },
-  // plugins: [
-  //   { src: '~/plugins/preload-data.js', mode: 'client' }
-  // ],
   vite: {
     optimizeDeps: {
       include: ['pinia']

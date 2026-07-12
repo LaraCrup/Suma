@@ -169,7 +169,6 @@ const handleTouchMove = (e) => {
     const dx = e.touches[0].clientX - touchStartX.value
     const dy = e.touches[0].clientY - touchStartY.value
 
-    // Si el gesto es claramente vertical, no interceptar
     if (!isHorizontalGesture.value && Math.abs(dy) > Math.abs(dx) + 5) return
 
     if (Math.abs(dx) > 8) {
@@ -195,7 +194,6 @@ const checkPendingStreakSave = async (habitOverride = null) => {
         hasPendingStreakSave.value = false
         return
     }
-    // Solo mostrar "racha en riesgo" si el período sigue incompleto y la racha no está en 0
     const stillMissed = await isPeriodStillMissed(habit, offeredForDate)
     if (!stillMissed || (habit.streak || 0) === 0) {
         localStorage.removeItem(key)
@@ -206,7 +204,6 @@ const checkPendingStreakSave = async (habitOverride = null) => {
 }
 
 onMounted(() => {
-    // Registrar el listener de swipe de forma síncrona ANTES de cualquier await
     cardRef.value?.addEventListener('touchmove', handleTouchMove, { passive: false })
     checkPendingStreakSave()
 })

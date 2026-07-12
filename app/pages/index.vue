@@ -184,7 +184,6 @@ watch(selectedDate, async (newDate) => {
     }
 })
 
-// Carga de datos — reutilizada por onMounted y pull-to-refresh
 const loadHabitsData = async () => {
     isLoading.value = true
     isCommunityLoading.value = true

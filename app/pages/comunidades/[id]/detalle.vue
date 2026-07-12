@@ -4,12 +4,10 @@
             <Loader color="primary" />
         </div>
         <template v-else>
-        <!-- Header con back arrow -->
         <div class="w-full">
             <NavigationBackArrow color="text-gray" />
         </div>
 
-        <!-- Info de la comunidad + edición de nombre -->
         <div class="w-full flex items-center gap-4">
             <div class="w-12 h-12 flex items-center justify-center bg-green-dark rounded-full flex-shrink-0">
                 <p class="text-3xl">{{ community?.icon }}</p>
@@ -32,12 +30,10 @@
             </div>
         </div>
 
-        <!-- Hábito compartido -->
         <div v-if="habit" class="w-full">
             <HabitsCommunityCard :habit="habit" :members="completions" />
         </div>
 
-        <!-- Sección de miembros -->
         <div class="w-full flex flex-col gap-2">
             <div class="flex justify-between items-center">
                 <p class="text-sm text-dark">Miembros: {{ community?.member_count }}</p>
@@ -51,21 +47,17 @@
             </div>
         </div>
 
-        <!-- Salir de la comunidad (todos los miembros) -->
         <ButtonSecondary @click="showLeaveCommunity = true" class="mt-2">
             Salir de la comunidad
         </ButtonSecondary>
 
-        <!-- Eliminar comunidad (solo admin) -->
         <button v-if="isAdmin" @click="showDeleteCommunity = true"
             class="flex items-center gap-2 text-sm text-red-500">
             <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="w-4" />
             Eliminar comunidad
         </button>
 
-        <!-- ===================== MODALS ===================== -->
 
-        <!-- 1. Editar miembros -->
         <Transition name="fade">
             <div v-if="showEditMembers" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showEditMembers = false"></div>
@@ -82,14 +74,12 @@
                     </button>
                     <p class="text-sm font-medium text-dark">Agregá o eliminá miembros</p>
 
-                    <!-- Botón agregar -->
                     <button @click="openAddMembers"
                         class="flex items-center gap-2 bg-primary text-light text-xs rounded-full px-4 py-2 w-fit">
                         <span class="text-base leading-none">+</span>
                         Agregar miembros
                     </button>
 
-                    <!-- Lista de miembros con papelera -->
                     <div class="flex flex-col gap-2">
                         <div v-for="member in editableMembers" :key="member.profile.id"
                             class="w-full flex items-center justify-between rounded-lg bg-midlight px-3 py-2">
@@ -118,7 +108,6 @@
             </div>
         </Transition>
 
-        <!-- 2. Agregar miembros (búsqueda) -->
         <Transition name="fade">
             <div v-if="showAddMembers" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showAddMembers = false">
             </div>
@@ -135,7 +124,6 @@
                     </button>
                     <p class="text-sm font-medium text-dark">Agregá miembros</p>
 
-                    <!-- Search -->
                     <div class="relative w-full">
                         <NuxtImg src="/images/icons/search.svg" alt="Buscar"
                             class="w-4 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -143,7 +131,6 @@
                             class="w-full h-10 bg-midlight text-xs text-dark focus:outline-none rounded-lg border-[1px] border-solid border-gray pl-9 pr-3" />
                     </div>
 
-                    <!-- Lista de todos los amigos (miembros actuales marcados en verde) -->
                     <div class="flex flex-col gap-2">
                         <CommunityFriendsCard v-for="friend in filteredFriendsToAdd" :key="friend.id" :friend="friend"
                             :selectable="true"
@@ -161,7 +148,6 @@
             </div>
         </Transition>
 
-        <!-- 3. Confirmar eliminar miembro -->
         <div v-if="memberToRemove" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="memberToRemove = null">
         </div>
         <div v-if="memberToRemove" class="fixed inset-0 z-50 flex items-end">
@@ -190,7 +176,6 @@
             </div>
         </div>
 
-        <!-- 4. Confirmar salir de la comunidad -->
         <Transition name="fade">
             <div v-if="showLeaveCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showLeaveCommunity = false"></div>
@@ -216,7 +201,6 @@
             </div>
         </Transition>
 
-        <!-- 5. Confirmar eliminar comunidad -->
         <Transition name="fade">
             <div v-if="showDeleteCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showDeleteCommunity = false"></div>
@@ -272,7 +256,6 @@ const isSaving = ref(false)
 const currentUserId = ref(null)
 const isLoading = ref(true)
 
-// Edición de nombre
 const isEditingName = ref(false)
 const editedName = ref('')
 
@@ -296,7 +279,6 @@ const saveName = async () => {
     }
 }
 
-// Modals
 const showEditMembers = ref(false)
 const showAddMembers = ref(false)
 const showDeleteCommunity = ref(false)
@@ -306,7 +288,6 @@ const removeError = ref('')
 const deleteCommunityError = ref('')
 const leaveCommunityError = ref('')
 
-// Add members state
 const searchQuery = ref('')
 const selectedToAdd = ref([])
 

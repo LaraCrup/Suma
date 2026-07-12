@@ -5,7 +5,6 @@
             <HeadingH1>Armá tu comunidad</HeadingH1>
         </div>
 
-        <!-- Step indicator -->
         <div class="w-full flex flex-col gap-1">
             <div class="w-full h-2 bg-green-dark rounded-full overflow-hidden">
                 <div class="h-full bg-gradient-secondary rounded-full" style="width: 5%" />
@@ -24,7 +23,6 @@
             </div>
         </div>
 
-        <!-- Search -->
         <div class="relative w-full">
             <input
                 v-model="query"
@@ -35,7 +33,6 @@
             <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" />
         </div>
 
-        <!-- Friends list -->
         <div class="w-full flex flex-col gap-2">
             <CommunityFriendsCard
                 v-for="friend in filteredFriends"

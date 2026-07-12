@@ -1,10 +1,6 @@
-/**
- * Plugin para sincronizar hábitos cuando la app vuelve del background
- */
 export default defineNuxtPlugin(async (nuxtApp) => {
     console.log('[HABIT SYNC] Plugin initializing...')
 
-    // Sincronizar cuando la app vuelve del background
     if (typeof window !== 'undefined') {
         const handleVisibilityChange = async () => {
             if (document.visibilityState !== 'visible') return
@@ -28,7 +24,6 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
         document.addEventListener('visibilitychange', handleVisibilityChange)
 
-        // Cleanup
         nuxtApp.hook('app:unmounted', () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         })

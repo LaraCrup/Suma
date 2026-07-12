@@ -1,7 +1,6 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="closeModal"></div>
 
-    <!-- Modal -->
     <div v-if="isOpen" class="fixed inset-0 z-50 flex items-end">
         <div class="relative w-full flex flex-col gap-3 items-center bg-light rounded-t-3xl p-5 pb-6 max-h-[90vh] overflow-y-auto">
             <button
@@ -26,7 +25,6 @@
                             {{ mainOption }}
                         </ButtonPrimary>
 
-                        <!-- Variantes del mainOption -->
                         <div v-if="isMainOptionSelected && currentVariants.length > 0" class="space-y-3 mt-3">
                             <FormOptionInput
                                 v-for="(variant, index) in currentVariants"
@@ -45,7 +43,6 @@
                         </div>
                     </div>
 
-                    <!-- Opciones secundarias -->
                     <div v-for="(option, index) in secondaryOptions" :key="`secondary-${index}`">
                         <ButtonPrimary
                             type="button"
@@ -57,7 +54,6 @@
                             {{ option }}
                         </ButtonPrimary>
 
-                        <!-- Variantes de la opción secundaria -->
                         <div v-if="selectedSecondaryIndex === index && currentVariants.length > 0" class="space-y-3 mt-3 ml-2">
                             <FormOptionInput
                                 v-for="(variant, variantIndex) in currentVariants"

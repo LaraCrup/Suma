@@ -5,7 +5,6 @@
             <HeadingH1>Nueva comunidad</HeadingH1>
         </div>
 
-        <!-- Step indicator (paso 3) -->
         <div class="w-full flex flex-col gap-1">
             <div class="w-full h-2 bg-green-dark rounded-full overflow-hidden">
                 <div class="h-full bg-gradient-secondary rounded-full" style="width: 95%" />
@@ -24,7 +23,6 @@
             </div>
         </div>
 
-        <!-- Habit form -->
         <form @submit.prevent="handleSubmit" class="w-full flex flex-col items-center gap-5">
             <div class="w-full flex flex-col gap-4">
                 <FormTextFieldSecondary
@@ -47,7 +45,6 @@
                 />
             </div>
 
-            <!-- Icono -->
             <div class="w-full flex flex-col gap-1">
                 <div class="w-full flex justify-between items-center">
                     <FormLabelSecondary for="community-habit-icon">Icono</FormLabelSecondary>
@@ -65,7 +62,6 @@
                 <FormError v-if="errors.habitIcon">{{ errors.habitIcon }}</FormError>
             </div>
 
-            <!-- Frecuencia -->
             <div class="w-full flex flex-col gap-1">
                 <FormLabelSecondary>Frecuencia</FormLabelSecondary>
                 <button
@@ -94,7 +90,6 @@
                 <FormError v-if="errors.frequencyVariant">{{ errors.frequencyVariant }}</FormError>
             </div>
 
-            <!-- Meta -->
             <fieldset class="w-full flex flex-col gap-1 border-none p-0">
                 <div class="w-full flex items-center justify-between">
                     <FormLabelSecondary>Meta</FormLabelSecondary>
@@ -120,7 +115,6 @@
                 <FormError v-if="errors.habitUnit">{{ errors.habitUnit }}</FormError>
             </fieldset>
 
-            <!-- Preview -->
             <div class="w-full bg-green-dark rounded p-1">
                 <p class="text-center text-xs text-light">
                     {{ formData.habitName || 'Hábito' }}: {{ formData.goalValue }} {{ formData.habitUnit }} {{ getFrequencyDescription() }}
@@ -235,6 +229,27 @@ const validateForm = () => {
     return true
 }
 
+const mapFrequencyOption = () => {
+    if (!formData.frequencyVariant) return 'todos'
+    const v = formData.frequencyVariant.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    if (v.includes('todos') || v.includes('toda') || v.includes('todo')) return 'todos'
+    if (v.includes('dias especificos de la semana')) return 'dias_especificos_semana'
+    if (v.includes('dias especificos del mes')) return 'dias_especificos_mes'
+    if (v.includes('cantidad de dias')) {
+        return v.includes('semana') ? 'cantidad_dias_semana' : 'cantidad_dias_mes'
+    }
+    return 'todos'
+}
+
+const buildFrequencyDetail = () => {
+    const detail = { variant: formData.frequencyVariant }
+    const { weekDays, monthDays, counter } = formData.frequencyVariantData || {}
+    if (weekDays?.length) detail.weekDays = weekDays
+    if (monthDays?.length) detail.monthDays = monthDays
+    if (counter > 0) detail.counter = counter
+    return Object.keys(detail).length > 1 ? detail : null
+}
+
 const handleSubmit = async () => {
     if (!validateForm()) return
     isLoading.value = true
@@ -248,10 +263,8 @@ const handleSubmit = async () => {
             unit: formData.habitUnit,
             goal_value: formData.goalValue,
             frequency_type: formData.frequencyType,
-            frequency_option: formData.frequencyVariant || null,
-            frequency_detail: Object.keys(formData.frequencyVariantData || {}).length
-                ? formData.frequencyVariantData
-                : null,
+            frequency_option: mapFrequencyOption(),
+            frequency_detail: buildFrequencyDetail(),
         }
 
         await createCommunity(

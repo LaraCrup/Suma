@@ -11,7 +11,7 @@
 
             <div class="flex-1 w-full flex flex-col justify-center items-center gap-5">
                 <NuxtImg
-                    class="w-full h-28 rounded-xl object-cover"
+                    class="w-full h-40 rounded-xl object-cover"
                     :src="benefit.image_url || '/images/placeholder.png'"
                     :alt="benefit.title"
                 />

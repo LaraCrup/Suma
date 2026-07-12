@@ -3,7 +3,6 @@
         <div v-if="store.visible && store.current"
             class="fixed top-8 right-4 z-[9999] w-64 rounded-2xl overflow-hidden shadow-2xl">
 
-            <!-- Level up -->
             <template v-if="store.current.type === 'level_up'">
                 <div class="bg-green-dark p-3 flex items-center gap-3">
                     <div class="w-6 h-6 flex justify-center items-center rounded-full border-gray border-[1px]">
@@ -20,7 +19,6 @@
                 </div>
             </template>
 
-            <!-- XP ganado -->
             <template v-else>
                 <div class="bg-green-dark p-3 flex items-center gap-3">
                     <div class="w-6 h-6 flex justify-center items-center rounded-full border-gray border-[1px]">

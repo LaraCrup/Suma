@@ -5,7 +5,6 @@
         <SkeletonProgresoDashboard v-if="loading" />
 
         <template v-else>
-            <!-- Progreso de hoy -->
             <div class="w-full flex flex-col gap-1">
                 <div class="w-full flex items-center justify-between">
                     <p class="text-xs">Progreso de hoy</p>
@@ -18,9 +17,7 @@
                 />
             </div>
 
-            <!-- Estadísticas -->
             <div class="w-full flex gap-3">
-                <!-- Hábito más constante -->
                 <div class="w-50% flex flex-col gap-1">
                     <p class="text-xs">Tu hábito más constante</p>
                     <div class="md:h-16 w-full bg-midlight rounded-lg p-3">
@@ -36,7 +33,6 @@
                     </div>
                 </div>
 
-                <!-- Porcentaje de constancia -->
                 <div class="w-50% flex flex-col gap-1">
                     <p class="text-xs">Tu porcentaje de constancia</p>
                     <div class="md:h-16 w-full bg-midlight rounded-lg p-3">
@@ -45,7 +41,6 @@
                 </div>
             </div>
 
-            <!-- Beneficios -->
             <h2 class="w-full font-montserrat text-xl font-medium text-primary">Tus beneficios</h2>
             <div class="w-full flex flex-col gap-1">
                 <div class="w-full flex items-center justify-between">
@@ -182,7 +177,6 @@ const calculateConsistencyPercentage = async () => {
     const [ty, tm, td] = today.split('-').map(Number)
     const todayDate = new Date(ty, tm - 1, td)
 
-    // Mapeo de letra a número de día JS (0=domingo)
     const DAY_LETTERS = { L: 1, M: 2, X: 3, J: 4, V: 5, S: 6, D: 0 }
 
     const countExpectedDays = (habit) => {
@@ -190,9 +184,7 @@ const calculateConsistencyPercentage = async () => {
         const startDate = new Date(created.getFullYear(), created.getMonth(), created.getDate())
         const totalDays = Math.max(1, Math.floor((todayDate - startDate) / (1000 * 60 * 60 * 24)) + 1)
 
-        // diario siempre aplica todos los días
         if (habit.frequency_type === 'diario' || !habit.frequency_type) return totalDays
-        // todos = aplica cada día del período
         if (habit.frequency_option === 'todos') return totalDays
 
         if (habit.frequency_option === 'dias_especificos_semana') {

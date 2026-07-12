@@ -69,7 +69,6 @@ const errors = reactive({
 })
 
 const loading = ref(false)
-const checkingPassword = ref(false)
 const errorMsg = ref('')
 const isPasswordCompromised = ref(false)
 const passwordCheckCache = reactive(new Map())
@@ -197,7 +196,6 @@ const checkPasswordCompromise = async () => {
     }
 
     try {
-        checkingPassword.value = true
         isPasswordCompromised.value = await checkPasswordLeak(form.password)
 
         passwordCheckCache.set(form.password, isPasswordCompromised.value)
@@ -207,8 +205,6 @@ const checkPasswordCompromise = async () => {
         }
     } catch (error) {
         console.error('Error al verificar contraseña:', error)
-    } finally {
-        checkingPassword.value = false
     }
 }
 

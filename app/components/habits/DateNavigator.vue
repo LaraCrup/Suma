@@ -23,7 +23,6 @@
                             :stroke-dasharray="CIRCUMFERENCE"
                             stroke-dashoffset="0"
                         />
-                        <!-- Arco de progreso encima, solo si hay completion -->
                         <circle
                             v-if="getCompletionRatio(day.dateStr) > 0"
                             cx="18"
@@ -73,19 +72,7 @@ const dayCompletions = ref({})
 
 const CIRCUMFERENCE = 2 * Math.PI * 15
 
-const TODAY = (() => {
-    const formatter = new Intl.DateTimeFormat('es-AR', {
-        timeZone: 'America/Argentina/Buenos_Aires',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    })
-    const parts = formatter.formatToParts(new Date())
-    const year = parts.find(p => p.type === 'year').value
-    const month = parts.find(p => p.type === 'month').value
-    const day = parts.find(p => p.type === 'day').value
-    return `${year}-${month}-${day}`
-})()
+const TODAY = getArgentineDate()
 
 const DAY_LABELS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
 
@@ -121,7 +108,6 @@ const isHabitApplicableForDate = (habit, dateStr) => {
     const dayOfMonth = dateObj.getDate()
     const fo = habit.frequency_option
 
-    // La opción define en qué días aplica, independientemente de la frecuencia (type).
     if (fo === 'dias_especificos_semana') {
         const selected = (habit.frequency_detail?.weekDays || []).map(l => DAY_LETTER_TO_NUM[l])
         return selected.includes(dayOfWeek)
@@ -130,7 +116,6 @@ const isHabitApplicableForDate = (habit, dateStr) => {
         return (habit.frequency_detail?.monthDays || []).includes(dayOfMonth)
     }
 
-    // todos / cantidad_dias_semana / cantidad_dias_mes / sin opción: aplica cualquier día del período
     return true
 }
 

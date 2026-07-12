@@ -5,7 +5,6 @@
             <HeadingH1>Nueva comunidad</HeadingH1>
         </div>
 
-        <!-- Step indicator (paso 2) -->
         <div class="w-full flex flex-col gap-1">
             <div class="w-full h-2 bg-green-dark rounded-full overflow-hidden">
                 <div class="h-full bg-gradient-secondary rounded-full" style="width: 50%" />

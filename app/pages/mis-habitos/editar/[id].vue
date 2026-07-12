@@ -14,7 +14,7 @@
                 @update="handleFormUpdate"
             />
         </div>
-        <div v-else="isLoading" class="mt-8 flex justify-center">
+        <div v-else class="mt-8 flex justify-center">
             <Loader />
         </div>
     </DefaultSection>
@@ -34,17 +34,17 @@ onMounted(async () => {
     try {
         const habitId = route.params.id
         if (!habitId) {
-            throw new Error('ID del h�bito no especificado')
+            throw new Error('ID del hábito no especificado')
         }
 
         habit.value = await getHabitById(habitId)
 
         if (!habit.value) {
-            throw new Error('H�bito no encontrado')
+            throw new Error('Hábito no encontrado')
         }
     } catch (error) {
-        console.error('Error cargando h�bito:', error)
-        navigateTo('/mis-habitos')
+        console.error('Error cargando hábito:', error)
+        navigateTo('/')
     } finally {
         isLoading.value = false
     }
@@ -55,7 +55,7 @@ const handleFormSuccess = (updatedHabit) => {
 }
 
 const handleFormError = (error) => {
-    console.error('Error actualizando h�bito:', error)
+    console.error('Error actualizando hábito:', error)
 }
 
 const handleFormUpdate = (data) => {
