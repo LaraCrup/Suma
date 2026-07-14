@@ -20,7 +20,7 @@
             <div class="w-full flex gap-3">
                 <div class="w-50% flex flex-col gap-1">
                     <p class="text-xs">Tu hábito más constante</p>
-                    <div class="md:h-16 w-full bg-midlight rounded-lg p-3">
+                    <div class="h-16 w-full bg-midlight rounded-lg p-3">
                         <template v-if="mostConsistentHabit">
                             <p class="text-xs truncate">{{ mostConsistentHabit.name }}</p>
                             <span class="text-xl font-bold text-primary">
@@ -35,7 +35,7 @@
 
                 <div class="w-50% flex flex-col gap-1">
                     <p class="text-xs">Tu porcentaje de constancia</p>
-                    <div class="md:h-16 w-full bg-midlight rounded-lg p-3">
+                    <div class="h-16 w-full bg-midlight rounded-lg p-3">
                         <span class="text-[1.75rem] font-bold text-primary">{{ consistencyPercentage }}%</span>
                     </div>
                 </div>
