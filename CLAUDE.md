@@ -7,7 +7,7 @@ Guía para Claude Code y futuros desarrolladores que trabajen en este proyecto. 
 **Suma** es una PWA mobile-only para formar hábitos, con gamificación (XP, niveles, rachas), comunidades con hábitos compartidos, sistema de amigos y un feed de novedades de marcas aliadas.
 
 - Idioma: español en rutas, UI y mensajes al usuario. Identificadores de código en inglés. **El código no lleva comentarios**: lo no obvio se documenta en este archivo.
-- Solo mobile: viewport ≤ 768px. En desktop se muestra una pantalla bloqueante — ver [app/components/MobileOnlyScreen.vue](app/components/MobileOnlyScreen.vue).
+- Mobile-first con soporte desktop (jul-2026): la app está diseñada para mobile pero es usable en cualquier viewport. En `lg` (≥660px) se agranda la tipografía base (`font-size: 106.25%` en `html`, ver [main.css](app/assets/css/main.css)); en `xl` (≥768px) el contenido de `<main>` se limita a 640px centrado; en `2xl` (≥992px) el grid pasa a layout desktop con el nav como sidebar izquierdo fijo (`w-64`) y el contenido vuelve a ancho completo (`max-w-none`). Ya **no** existe `MobileOnlyScreen` ni pantalla bloqueante en desktop.
 - Zona horaria del dominio: **Argentina**. Todas las fechas que se comparan con `habit_logs.date` deben obtenerse con `getArgentineDate()` (ver `useHabits`).
 
 ## 2. Stack
@@ -51,7 +51,7 @@ Crear `.env` en la raíz a partir de [.env.example](.env.example):
 
 ```
 app/
-├── app.vue                  # Root: MobileOnlyScreen > Splash > NuxtLayout > NuxtPage
+├── app.vue                  # Root: Splash > NuxtLayout > NuxtPage
 ├── error.vue                # Página 404
 ├── assets/css/main.css      # Reset CSS + grid layout (header / main / nav)
 ├── layouts/
@@ -202,7 +202,7 @@ Nuxt 4 autoimporta los componentes y los **prefija con el nombre de la carpeta**
 
 **Carpetas existentes**: `auth/`, `benefits/`, `button/` (Primary/Secondary/Terciary), `community/` (+ `chat/`, `friends/`), `default/` (Header/Main/Nav/Section), `form/`, `habits/`, `heading/`, `navigation/`, `progress/`, `skeleton/`.
 
-**Top-level**: `Avatar`, `Loader`, `MobileOnlyScreen`, `OfflineBanner`, `Splash`, `XpNotification`.
+**Top-level**: `Avatar`, `Loader`, `OfflineBanner`, `Splash`, `XpNotification`.
 
 `XpNotification` se monta en [layouts/default.vue](app/layouts/default.vue) (posición `fixed top-8 right-4 z-[9999]`). Lee del `xpNotificationStore` y se auto-descarta a los 5 segundos. Muestra `+ N XP` (batchea gains dentro de una ventana de 1.5 s) y toasts de level-up. Las revocaciones (`revokeXP`) NO encolan toast actualmente.
 
@@ -229,7 +229,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 
 **Fuente**: `font-montserrat` (Montserrat Alternates). El reset global en [main.css](app/assets/css/main.css) usa Quicksand como fallback.
 
-**Layout**: la app entera vive en un grid `header | main | nav` definido en [main.css](app/assets/css/main.css). Los layouts deben respetar la composición `DefaultHeader` + `DefaultMain` + `DefaultNav`.
+**Layout**: la app entera vive en un grid `header | main | nav` definido en [main.css](app/assets/css/main.css). Los layouts deben respetar la composición `DefaultHeader` + `DefaultMain` + `DefaultNav`. En `2xl` (≥992px) el mismo grid cambia a dos columnas (`"nav header" / "nav main"`): el nav ocupa la columna izquierda a toda altura y `DefaultNav` se estiliza como sidebar vertical con clases `2xl:`. El layout `auth` no tiene nav, así que la columna `auto` colapsa a 0 y sigue funcionando.
 
 ## 13. Convenciones del proyecto
 
@@ -241,7 +241,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 - **Fechas**: usar `getArgentineDate()` ([app/utils/getArgentineDate.js](app/utils/getArgentineDate.js), auto-importado) para cualquier fecha que se compare con `habit_logs.date`. **Nunca** usar `new Date()` ni `toISOString()` para fechas-calendario: `toISOString()` es UTC y en Argentina (UTC−3) corre el día a partir de las 21:00. Para formatear un `Date` local a `YYYY-MM-DD` usar componentes locales (`getFullYear/getMonth/getDate`), como hace `getDateString()` en `useHabits`.
 - **Fuente de verdad del progreso diario**: `habit_logs.value` (no `habits.progress_count`): nunca se pisa con el reset diario.
 - **Strings de variantes de frecuencia**: al comparar etiquetas como "Días específicos de la semana" hay que **normalizar acentos** (`.normalize('NFD').replace(/[̀-ͯ]/g, '')`) — ya hubo un bug donde los pickers de días no aparecían por comparar con/sin tilde (`OptionInput`, `habits/Form`, `crear/paso3`).
-- **Mobile-only**: si desarrollás UI, testeala en viewport ≤ 768px — en desktop la app muestra una pantalla bloqueante.
+- **Mobile-first**: si desarrollás UI, diseñala y testeala primero en viewport mobile (≤ 768px), que es el target principal; después verificá que no se rompa en desktop (≥ 992px, donde el nav es sidebar y el contenido va centrado con max-width). No usar `MobileOnlyScreen`: se eliminó en jul-2026.
 - **Skeletons**: usar los de [components/skeleton/](app/components/skeleton/) mientras `isLoading` para evitar layout shift.
 
 ## 14. Notas no obvias
@@ -270,7 +270,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 
 No hay test suite. Para validar:
 
-1. `npm run dev` y probar el flujo en el navegador con DevTools en viewport mobile (≤ 768 px).
+1. `npm run dev` y probar el flujo en el navegador con DevTools en viewport mobile (≤ 768 px). Para cambios de UI, chequear también un viewport ≥ 992 px (layout desktop con sidebar).
 2. Para cambios de auth, probar login + redirect + logout.
 3. Para cambios en hábitos, probar: crear, loggear progreso, completar, simular cambio de día (visibility change o esperar el interval), borrar.
 4. Revisar la consola del navegador — el código loguea bastante (`[HABIT SYNC]`, `[PAGE INDEX]`, `[XP]`, etc.).

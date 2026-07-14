@@ -1,7 +1,7 @@
 <template>
     <main
         ref="mainRef"
-        class="w-full flex flex-col items-center gap-5 bg-light text-dark p-5 pt-1 overflow-x-hidden"
+        class="w-full flex flex-col items-center gap-5 bg-light text-dark p-5 pt-1 overflow-x-hidden xl:max-w-[640px] xl:justify-self-center 2xl:max-w-none"
         style="overscroll-behavior-y: none"
         @touchstart.passive="onTouchStart"
         @touchend.passive="onTouchEnd"

@@ -37,3 +37,19 @@ main {
     grid-area: main;
     overflow-y: auto;
 }
+
+@media (min-width: 660px) {
+    html {
+        font-size: 106.25%;
+    }
+}
+
+@media (min-width: 992px) {
+    body>div:first-of-type {
+        grid-template-areas:
+            "nav header"
+            "nav main";
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto 1fr;
+    }
+}

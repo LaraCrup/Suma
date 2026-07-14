@@ -21,7 +21,7 @@
         </div>
         <ButtonPrimary @click="goToDetails" :disabled="!selectedHabit">Siguiente</ButtonPrimary>
     </DefaultSection>
-    <div class="fixed w-max flex gap-2 text-light bg-green-light px-5 py-2 rounded-full bottom-20 left-1/2 -translate-x-1/2 cursor-pointer" @click="startCustom">
+    <div class="fixed w-max flex gap-2 text-light bg-green-light px-5 py-2 rounded-full bottom-20 left-1/2 -translate-x-1/2 cursor-pointer 2xl:bottom-10 2xl:left-[calc(50%+8rem)]" @click="startCustom">
         <NuxtImg src="/images/brillo-blanco.svg" alt="Cerrar" class="w-3" />
         <p class="text-xs">Hábito personalizado</p>
     </div>
