@@ -5,7 +5,7 @@
             <h1 class="w-full text-sm font-bold text-center">{{ habit?.icon }} {{ habit?.name }}</h1>
             <div class="w-6"></div>
         </div>
-        <div v-if="habit">
+        <div v-if="habit" class="w-full">
             <HabitsForm
                 :initialData="habit"
                 :isEditing="true"

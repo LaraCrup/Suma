@@ -1,5 +1,5 @@
 <template>
-    <label :for="id" class="text-xs text-dark font-semibold">
+    <label :for="id" class="text-xs 2xl:text-sm text-dark font-semibold">
         <slot />
     </label>
 </template>

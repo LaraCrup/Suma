@@ -28,19 +28,19 @@
             <FormError v-if="errors.habitIcon" id="habit-icon-error">{{ errors.habitIcon }}</FormError>
         </div>
 
-        <div class="w-full flex flex-col gap-1">
+        <div class="w-full flex flex-col gap-1 2xl:gap-3">
             <FormLabelSecondary>Frecuencia</FormLabelSecondary>
             <button id="frequency-button" type="button"
-                class="w-full text-right text-xs text-dark font-bold bg-transparent border-b border-gray outline-none pb-1 cursor-pointer hover:opacity-70 transition-opacity"
+                class="w-full text-right text-xs 2xl:text-sm text-dark font-bold bg-transparent border-b border-gray outline-none pb-1 cursor-pointer hover:opacity-70 transition-opacity"
                 @click="openFrequencyModal" aria-haspopup="dialog" aria-controls="frequency-modal"
                 :aria-invalid="errors.frequencyVariant ? 'true' : 'false'"
                 :aria-describedby="errors.frequencyVariant ? 'frequency-error' : null">
                 <div class="flex justify-between gap-3">
-                    <span class="text-xs">
+                    <span class="text-xs 2xl:text-sm">
                         {{ formData.frequencyType === 'diario' ? 'Diario' : formData.frequencyType === 'semanal' ?
                         'Semanal' : 'Mensual' }}
                     </span>
-                    <span class="text-xs">
+                    <span class="text-xs 2xl:text-sm">
                         {{ formData.frequencyVariant ? formData.frequencyVariant : 'Todos los días' }}
                     </span>
                 </div>
@@ -65,7 +65,7 @@
                         placeholder="km" maxlength="20" required aria-required="true"
                         aria-invalid="errors.habitUnit ? 'true' : 'false'"
                         :aria-describedby="errors.habitUnit ? 'habit-unit-error' : null" />
-                    <p class="text-xs text-dark font-semibold ml-1">
+                    <p class="text-xs 2xl:text-sm text-dark font-semibold ml-1">
                         /{{ formData.frequencyType === 'diario' ? 'día' : formData.frequencyType === 'semanal' ?
                         'semana' : 'mes' }}
                     </p>
@@ -75,7 +75,7 @@
             <FormError v-if="errors.habitUnit" id="habit-unit-error">{{ errors.habitUnit }}</FormError>
         </fieldset>
         <div class="w-full bg-green-dark rounded p-1">
-            <p class="text-center text-xs text-light">
+            <p class="text-center text-xs 2xl:text-sm text-light">
                 {{ formData.habitName ? formData.habitName : 'Hábito' }}: {{ formData.goalValue }} {{ formData.habitUnit
                 }} {{ getFrequencyDescription() }}
             </p>

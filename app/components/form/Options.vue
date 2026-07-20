@@ -1,20 +1,20 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="closeModal"></div>
 
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-end">
-        <div class="relative w-full flex flex-col gap-3 items-center bg-light rounded-t-3xl p-5 pb-6 max-h-[90vh] overflow-y-auto">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+        <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-3 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6 max-h-[90vh] overflow-y-auto">
             <button
                 @click="closeModal"
                 class="absolute top-4 right-4 text-gray"
             >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-4 2xl:w-5 h-4 2xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
             <div class="w-full">
-                <h2 class="text-xs font-bold text-dark text-center mb-3">{{ title }}</h2>
-                <div class="w-full flex flex-col gap-3 px-3">
-                    <div v-if="mainOption">
+                <h2 class="text-xs 2xl:text-sm font-bold text-dark text-center mb-3">{{ title }}</h2>
+                <div class="w-full flex flex-col items-center gap-3 px-3">
+                    <div v-if="mainOption" class="w-full flex flex-col items-center">
                         <ButtonPrimary
                             type="button"
                             @click="selectMainOption"
@@ -25,7 +25,7 @@
                             {{ mainOption }}
                         </ButtonPrimary>
 
-                        <div v-if="isMainOptionSelected && currentVariants.length > 0" class="space-y-3 mt-3">
+                        <div v-if="isMainOptionSelected && currentVariants.length > 0" class="w-full space-y-3 mt-3">
                             <FormOptionInput
                                 v-for="(variant, index) in currentVariants"
                                 :key="`main-${index}`"
@@ -43,7 +43,7 @@
                         </div>
                     </div>
 
-                    <div v-for="(option, index) in secondaryOptions" :key="`secondary-${index}`">
+                    <div v-for="(option, index) in secondaryOptions" :key="`secondary-${index}`" class="w-full flex flex-col items-center">
                         <ButtonPrimary
                             type="button"
                             @click="selectSecondaryOption(index)"
@@ -54,7 +54,7 @@
                             {{ option }}
                         </ButtonPrimary>
 
-                        <div v-if="selectedSecondaryIndex === index && currentVariants.length > 0" class="space-y-3 mt-3 ml-2">
+                        <div v-if="selectedSecondaryIndex === index && currentVariants.length > 0" class="w-full space-y-3 mt-3 ml-2">
                             <FormOptionInput
                                 v-for="(variant, variantIndex) in currentVariants"
                                 :key="`variant-${variantIndex}`"

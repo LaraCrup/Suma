@@ -1,13 +1,13 @@
 <template>
     <div class="w-full flex flex-col gap-2">
-        <p v-if="hint" class="text-xs text-green-dark">{{ hint }}</p>
+        <p v-if="hint" class="text-xs 2xl:text-sm text-green-dark">{{ hint }}</p>
         <div class="w-full flex flex-col gap-1">
             <FormLabelSecondary :id="id" :required="required">{{ label }}</FormLabelSecondary>
 
             <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
                 :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
                 :autocomplete="autocomplete"
-                class="text-xs font-bold text-dark placeholder:text-gray placeholder:text-xs border border-gray outline-none bg-transparent rounded-full px-3 py-2" />
+                class="text-xs 2xl:text-sm font-bold text-dark placeholder:text-gray placeholder:text-xs placeholder:2xl:text-sm border border-gray outline-none bg-transparent rounded-full px-3 py-2" />
 
             <FormError v-if="error && showError">{{ error }}</FormError>
         </div>

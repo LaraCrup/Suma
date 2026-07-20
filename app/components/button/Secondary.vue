@@ -1,10 +1,10 @@
-<template>
+ 2xl:text-sm<template>
     <NuxtLink v-if="to" :to="to"
-        class="w-full max-w-[480px] flex justify-center bg-green-light text-center text-light text-xs rounded-full py-3 px-10">
+        class="w-full max-w-[480px] flex justify-center bg-green-light text-center text-light text-xs 2xl:text-sm rounded-full py-3 px-10">
         <slot />
     </NuxtLink>
     <button v-else type="button" :disabled="disabled"
-        :class="['w-full max-w-[480px] flex justify-center text-center text-light text-xs rounded-full py-3 px-10', disabled ? 'bg-gray' : 'bg-green-light']">
+        :class="['w-full max-w-[480px] flex justify-center text-center text-light text-xs 2xl:text-sm rounded-full py-3 px-10', disabled ? 'bg-gray' : 'bg-green-light']">
         <slot />
     </button>
 </template>

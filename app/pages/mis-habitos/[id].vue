@@ -15,14 +15,14 @@
                 class="h-1 cursor-pointer"
             />
             <div v-show="showMenu" class="absolute z-10 right-0 top-7">
-                <ul class="w-[138px] bg-midlight rounded-xl shadow-lg">
+                <ul class="w-[138px] 2xl:w-40 bg-midlight rounded-xl shadow-lg">
                     <li @click="editHabit" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
-                        <NuxtImg src="/images/icons/edit.svg" alt="Editar" class="h-[14px]" />
-                        <p class="text-xs">Editar hábito</p>
+                        <NuxtImg src="/images/icons/edit.svg" alt="Editar" class="h-[14px] 2xl:h-4" />
+                        <p class="text-xs 2xl:text-sm">Editar hábito</p>
                     </li>
                     <li @click="openDeleteModal" class="flex items-center gap-2 py-3 px-4 cursor-pointer">
-                        <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="h-[14px]" />
-                        <p class="text-xs text-error">Eliminar hábito</p>
+                        <NuxtImg src="/images/icons/delete.svg" alt="Eliminar" class="h-[14px] 2xl:h-4" />
+                        <p class="text-xs 2xl:text-sm text-error">Eliminar hábito</p>
                     </li>
                 </ul>
             </div>
@@ -34,25 +34,25 @@
         <div class="h-full flex flex-col justify-center gap-5">
             <HeadingH1 class="w-full hidden">{{ habit?.name }}</HeadingH1>
             <div class="flex flex-col items-center">
-                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-gradient-secondary text-2xl">
+                <div class="w-12 2xl:w-14 h-12 2xl:h-14 flex items-center justify-center rounded-full bg-gradient-secondary text-2xl 2xl:text-3xl">
                     {{ habit?.icon }}</div>
                 <div class="h-4 flex items-center gap-3 mt-2">
-                    <div v-if="hasSpecificFrequency" class="flex gap-[2px]">
+                    <div v-if="hasSpecificFrequency" class="flex gap-[2px] 2xl:gap-1">
                         <NuxtImg
                             v-for="i in brilloCount"
                             :key="i"
                             :src="i <= completedBrillos ? '/images/brillo-primary.svg' : '/images/brillo.svg'"
                             alt="Brillo"
-                            class="w-2 h-2"
+                            class="w-2 2xl:w-3 h-2 2xl:h-3"
                         />
                     </div>
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
-                        <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                        <p class="text-xs">{{ habit?.streak || 0 }}</p>
+                        <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
+                        <p class="text-xs 2xl:text-sm">{{ habit?.streak || 0 }}</p>
                     </div>
                 </div>
             </div>
-            <p class="text-center text-sm">Voy a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span> cuando <span
+            <p class="text-center text-sm 2xl:text-base">Voy a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span> cuando <span
                     class="font-bold">{{ habit?.when_where?.toLowerCase() || 'siempre' }}</span>, para ser <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejor persona' }}</span>.</p>
             <div>
                 <ProgressBar
@@ -69,12 +69,12 @@
                 </div>
             </div>
         </div>
-        <div v-if="hasStreakPending" class="w-full flex flex-col gap-3 bg-midlight rounded-2xl px-4 py-4">
+        <div v-if="hasStreakPending" class="max-w-[480px] w-[80%] flex flex-col gap-3 bg-midlight rounded-2xl px-4 py-4">
             <div class="flex items-center gap-2">
                 <span>🔥</span>
-                <p class="text-sm font-semibold text-dark">Tu racha está en riesgo</p>
+                <p class="text-sm 2xl:text-base font-semibold text-dark">Tu racha está en riesgo</p>
             </div>
-            <p class="text-xs text-gray">No completaste este hábito en el último período.</p>
+            <p class="text-xs 2xl:text-sm text-gray">No completaste este hábito en el último período.</p>
             <template v-if="graceAvailable">
                 <ButtonPrimary
                     type="button"
@@ -82,7 +82,7 @@
                     @click="saveStreak">
                     {{ streakSaveLoading ? 'Guardando...' : 'Salvar racha' }}
                 </ButtonPrimary>
-                <p class="text-xs text-gray italic">Podés salvar tu racha una vez por mes.</p>
+                <p class="text-xs 2xl:text-sm text-gray italic">Podés salvar tu racha una vez por mes.</p>
             </template>
             <p v-else class="text-xs text-gray italic">Ya usaste tu Salvar racha este mes</p>
             <ButtonTerciary

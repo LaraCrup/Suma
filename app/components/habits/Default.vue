@@ -1,13 +1,13 @@
 <template>
     <DefaultSection class="pb-12">
         <HeadingH1 class="w-full">Nuevo hábito</HeadingH1>
-        <div class="w-full flex flex-col items-center gap-2">
+        <div class="w-full flex flex-col items-center gap-2 2xl:gap-6">
             <div class="w-full flex justify-between items-center">
-                <div v-for="category in defaultHabits" :key="category.name" @click="selectedCategory = category" :class="['w-8 h-8 flex justify-center items-center rounded-full cursor-pointer', selectedCategory.name === category.name ? 'bg-accent' : 'bg-gradient-secondary']">
+                <div v-for="category in defaultHabits" :key="category.name" @click="selectedCategory = category" :class="['w-8 2xl:w-10 h-8 2xl:h-10 flex justify-center items-center rounded-full cursor-pointer', selectedCategory.name === category.name ? 'bg-accent' : 'bg-gradient-secondary']">
                     <NuxtImg :src="`/images/habitsCategories/${category.icon}${selectedCategory.name === category.name ? '-selected' : ''}.svg`" :alt="category.name" class="max-h-4 max-w-4 w-full h-full object-contain" />
                 </div>
             </div>
-            <p class="text-xs font-bold">{{ selectedCategory.name }}</p>
+            <p class="text-xs 2xl:text-base font-bold">{{ selectedCategory.name }}</p>
         </div>
         <div class="w-full flex flex-col gap-2">
             <HabitsNewDefault
@@ -23,7 +23,7 @@
     </DefaultSection>
     <div class="fixed w-max flex gap-2 text-light bg-green-light px-5 py-2 rounded-full bottom-20 left-1/2 -translate-x-1/2 cursor-pointer 2xl:bottom-10 2xl:left-[calc(50%+8rem)]" @click="startCustom">
         <NuxtImg src="/images/brillo-blanco.svg" alt="Cerrar" class="w-3" />
-        <p class="text-xs">Hábito personalizado</p>
+        <p class="text-xs 2xl:text-sm">Hábito personalizado</p>
     </div>
 </template>
 
