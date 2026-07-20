@@ -15,18 +15,18 @@
             :style="{ width: swipeFillPercent + '%' }"
         />
         <div class="relative flex gap-3 items-center min-w-0 flex-1">
-            <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm leading-3">{{ habit.icon }}</p></div>
+            <div class="w-8 2xl:w-9 h-8 2xl:h-9 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary"><p class="text-sm 2xl:text-base leading-3">{{ habit.icon }}</p></div>
             <div class="min-w-0">
-                <p class="text-xs text-start truncate">{{ habit.name }}</p>
+                <p class="text-xs 2xl:text-sm text-start truncate">{{ habit.name }}</p>
                 <div class="flex gap-2 items-center">
                     <p class="text-xs text-green-dark" :class="[isCompleted ? ' font-bold' : 'font-normal']">{{ effectiveProgress }}/{{ habit.goal_value || 1 }}</p>
-                    <div v-if="hasSpecificFrequency" class="flex flex-shrink-0 gap-[2px]">
+                    <div v-if="hasSpecificFrequency" class="flex flex-shrink-0 gap-[2px] 2xl:gap-1">
                         <NuxtImg
                             v-for="i in brilloCount"
                             :key="i"
                             :src="i <= completedBrillos ? '/images/brillo-primary.svg' : '/images/brillo.svg'"
                             alt="Brillo"
-                            class="w-2 h-2"
+                            class="w-2 2xl:w-3 h-2 2xl:h-3"
                         />
                     </div>
                 </div>
@@ -34,8 +34,8 @@
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
             <div v-if="habit.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
-                <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                <p class="text-xs">{{ habit.streak }}</p>
+                <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
+                <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
                 <span v-if="hasPendingStreakSave" class="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
             </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', isCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">

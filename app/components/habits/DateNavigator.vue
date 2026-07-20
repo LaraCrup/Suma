@@ -5,7 +5,10 @@
                 v-for="day in days"
                 :key="day.dateStr"
                 @click="selectDay(day.dateStr)"
-                class="flex flex-col items-center gap-1 flex-1"
+                :class="[
+                    'flex-col items-center gap-1 flex-1',
+                    day.isPreviousWeeks ? 'hidden 2xl:flex' : 'flex'
+                ]"
             >
                 <p class="text-xs text-gray">{{ day.label }}</p>
                 <div class="relative w-9 h-9 flex items-center justify-center">
@@ -85,16 +88,20 @@ const addDays = (dateStr, n) => {
     return `${year}-${month}-${day}`
 }
 
+const DAYS_MOBILE = 7
+const DAYS_DESKTOP = 14
+
 const days = computed(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-        const dateStr = addDays(TODAY, i - 6)
+    return Array.from({ length: DAYS_DESKTOP }, (_, i) => {
+        const dateStr = addDays(TODAY, i - (DAYS_DESKTOP - 1))
         const [, , dayNum] = dateStr.split('-').map(Number)
         const [year, month, day] = dateStr.split('-').map(Number)
         const dayOfWeek = new Date(year, month - 1, day).getDay()
         return {
             dateStr,
             label: DAY_LABELS[dayOfWeek],
-            number: dayNum
+            number: dayNum,
+            isPreviousWeeks: i < DAYS_DESKTOP - DAYS_MOBILE
         }
     })
 })

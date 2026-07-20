@@ -5,7 +5,7 @@
             <HeadingH1 class="w-full">Mis hábitos</HeadingH1>
             <NuxtLink :to="ROUTE_NAMES.HABITS_CREATE" class="w-7 h-7 flex-shrink-0 flex justify-center items-center bg-green-dark text-light rounded-full text-lg leading-none">+</NuxtLink>
         </div>
-        <div class="w-full flex flex-col gap-1">
+        <div class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-1 2xl:gap-3">
             <template v-if="isLoading">
                 <SkeletonHabitCard v-for="i in 3" :key="i" />
             </template>
@@ -17,7 +17,7 @@
                     :selectedDate="selectedDate"
                     @habitUpdated="handleHabitUpdated"
                 />
-                <p v-if="visibleHabits.length === 0" class="text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
+                <p v-if="visibleHabits.length === 0" class="w-full 2xl:col-span-2 text-sm text-gray text-center py-4">No hay hábitos para hoy. ¡Descansa!</p>
             </template>
         </div>
 
@@ -39,7 +39,7 @@
             </button>
 
             <transition name="expand">
-                <div v-if="showAllHabits" class="w-full flex flex-col gap-1">
+                <div v-if="showAllHabits" class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-1 2xl:gap-3">
                     <HabitsCard
                         v-for="habit in hiddenHabits"
                         :key="habit.id"
@@ -53,7 +53,7 @@
     </DefaultSection>
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Mis hábitos comunitarios</HeadingH1>
-        <div class="w-full flex flex-col gap-1">
+        <div class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-1 2xl:gap-3">
             <template v-if="isCommunityLoading">
                 <SkeletonCommunityHabitCard v-for="i in 2" :key="i" />
             </template>
@@ -65,18 +65,18 @@
                     :members="item.members"
                     @habitUpdated="handleCommunityHabitUpdated"
                 />
-                <p v-if="communityHabits.length === 0" class="text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
+                <p v-if="communityHabits.length === 0" class="w-full 2xl:col-span-2 text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
             </template>
         </div>
     </DefaultSection>
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Tip de hoy</HeadingH1>
         <SkeletonTipCard v-if="isTipLoading" />
-        <div v-else-if="currentTip" class="w-full flex flex-col">
-            <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full h-48 rounded-t-lg object-cover" />
-            <div class="w-full bg-midlight rounded-b-lg p-3">
-                <p class="text-primary text-sm font-semibold">{{ currentTip.title }}</p>
-                <p class="text-xs mt-1">{{ currentTip.description }}</p>
+        <div v-else-if="currentTip" class="w-full flex flex-col 2xl:flex-row">
+            <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full 2xl:w-1/3 h-48 2xl:h-32 rounded-t-lg 2xl:rounded-l-lg 2xl:rounded-r-none object-cover" />
+            <div class="w-full bg-midlight rounded-b-lg 2xl:rounded-r-lg 2xl:rounded-l-none p-3 2xl:px-5 2xl:my-auto">
+                <p class="text-primary text-sm 2xl:text-lg font-semibold">{{ currentTip.title }}</p>
+                <p class="text-xs 2xl:text-sm mt-1">{{ currentTip.description }}</p>
             </div>
         </div>
     </DefaultSection>

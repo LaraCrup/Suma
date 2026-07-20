@@ -15,15 +15,15 @@
             :style="{ width: swipeFillPercent + '%' }"
         />
         <div class="relative flex gap-3 items-center min-w-0 flex-1">
-            <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary">
-                <p class="text-sm leading-3">{{ habit?.icon ?? '✨' }}</p>
+            <div class="w-8 2xl:w-9 h-8 2xl:h-9 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary">
+                <p class="text-sm 2xl:text-base leading-3">{{ habit?.icon ?? '✨' }}</p>
             </div>
             <div class="min-w-0">
-                <p class="text-xs text-start truncate">{{ habit?.name ?? 'Hábito compartido' }}</p>
-                <div class="flex gap-1 items-center mt-1">
+                <p class="text-xs 2xl:text-sm text-start truncate">{{ habit?.name ?? 'Hábito compartido' }}</p>
+                <div class="flex gap-1 2xl:gap-1.5 items-center mt-1">
                     <template v-for="member in visibleMembers" :key="member.id">
                         <div
-                            class="w-3 h-3 rounded-full overflow-hidden flex items-center justify-center"
+                            class="w-3 2xl:w-4 h-3 2xl:h-4 rounded-full overflow-hidden flex items-center justify-center"
                             :class="member.completed ? 'bg-green-light' : 'bg-gray'">
                             <img
                                 v-if="member.completed && member.avatar_url"
@@ -33,23 +33,23 @@
                             />
                             <span
                                 v-else-if="member.completed"
-                                class="text-[0.5rem] text-light font-bold">
+                                class="text-[0.5rem] 2xl:text-xs text-light font-bold">
                                 {{ member.display_name?.[0] }}
                             </span>
                         </div>
                     </template>
                     <div
                         v-if="extraCount > 0"
-                        class="w-5 h-5 rounded-full bg-gray flex items-center justify-center">
-                        <span class="text-[0.5rem] text-light">+{{ extraCount }}</span>
+                        class="w-5 2xl:w-6 h-5 2xl:h-6 rounded-full bg-gray flex items-center justify-center">
+                        <span class="text-[0.5rem] 2xl:text-xs text-light">+{{ extraCount }}</span>
                     </div>
                 </div>
             </div>
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
             <div v-if="habit?.streak > 0 && effectiveCompleted" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
-                <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                <p class="text-xs">{{ habit.streak }}</p>
+                <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
+                <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
             </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', effectiveCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">
                 <NuxtImg

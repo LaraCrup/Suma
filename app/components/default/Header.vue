@@ -1,17 +1,17 @@
 <template>
     <header class="flex flex-col justify-center items-center relative bg-secondary">
-        <div class="w-full bg-green-light px-6 py-1">
-            <p class="text-xs text-center text-light">{{ dailyPhrase }}</p>
+        <div class="w-full bg-green-light px-6 py-1 2xl:py-2">
+            <p class="text-xs 2xl:text-sm text-center text-light">{{ dailyPhrase }}</p>
         </div>
         <div class="w-full flex justify-between bg-light px-6 pb-4 mt-4">
             <div class="flex gap-2 items-center">
                 <NuxtImg src="/images/isotipo.svg" alt="Logo Suma" class="w-5" />
-                <p class="text-xs">Hola, <span class="font-bold text-primary">{{ userName }}</span></p>
+                <p class="text-xs 2xl:text-sm">Hola, <span class="font-bold text-primary">{{ userName }}</span></p>
             </div>
             <div class="flex items-center gap-2">
-                <p class="text-xs">Nivel</p>
+                <p class="text-xs 2xl:text-sm">Nivel</p>
                 <div class="w-6 h-6 flex justify-center items-center bg-primary rounded-full">
-                    <p class="text-xs text-light font-bold">{{ userLevel }}</p>
+                    <p class="text-xs 2xl:text-sm text-light font-bold">{{ userLevel }}</p>
                 </div>
             </div>
         </div>
