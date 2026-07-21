@@ -2,7 +2,7 @@
     <DefaultSection>
         <div class="relative w-full flex items-center gap-3">
             <NavigationBackArrow class="!w-fit" color="text-gray" />
-            <h1 class="absolute top-0 left-1/2 -translate-x-1/2 text-sm font-bold">{{ profile?.display_name ?? '...' }}</h1>
+            <h1 class="absolute top-0 left-1/2 -translate-x-1/2 text-sm 2xl:text-base font-bold">{{ profile?.display_name ?? '...' }}</h1>
         </div>
 
         <Loader v-if="loading" color="primary" />
@@ -16,8 +16,8 @@
                 <Avatar :name="profile.display_name" :initial="profile.display_name?.charAt(0).toUpperCase()"
                     :image="profile.avatar_url" />
                 <div class="flex items-center gap-2">
-                    <p class="text-sm text-dark">Nivel</p><span
-                        class="w-5 h-5 flex justify-center items-center bg-green-dark text-light text-xs rounded-full">
+                    <p class="text-sm 2xl:text-base text-dark">Nivel</p><span
+                        class="w-5 2xl:w-7 h-5 2xl:h-7 flex justify-center items-center bg-green-dark text-light text-xs 2xl:text-base rounded-full">
                         {{ profile.current_level }}
                     </span>
                 </div>
@@ -25,20 +25,20 @@
 
             <div class="w-full grid grid-cols-2 gap-3">
                 <div>
-                    <p class="text-xs">Hábitos activos</p>
-                    <p class="text-base font-bold text-primary mt-1">{{ habitCount }}</p>
+                    <p class="text-xs 2xl:text-sm">Hábitos activos</p>
+                    <p class="text-base 2xl:text-xl font-bold text-primary mt-1">{{ habitCount }}</p>
                 </div>
                 <div>
-                    <p class="text-xs">Comunidades</p>
-                    <p class="text-base font-bold text-primary mt-1">{{ communityCount }}</p>
+                    <p class="text-xs 2xl:text-sm">Comunidades</p>
+                    <p class="text-base 2xl:text-xl font-bold text-primary mt-1">{{ communityCount }}</p>
                 </div>
                 <div>
-                    <p class="text-xs">Amigos</p>
-                    <p class="text-base font-bold text-primary mt-1">{{ friendCount }}</p>
+                    <p class="text-xs 2xl:text-sm">Amigos</p>
+                    <p class="text-base 2xl:text-xl font-bold text-primary mt-1">{{ friendCount }}</p>
                 </div>
             </div>
 
-            <div class="w-full flex flex-col gap-2">
+            <div class="w-full flex flex-col gap-2 items-center">
                 <ButtonTerciary v-if="isFriend" type="button" :disabled="actionLoading"
                     @click="showRemoveConfirmation = true">
                     Eliminar amigo
@@ -58,14 +58,14 @@
             @click="showRemoveConfirmation = false"></div>
     </Transition>
     <Transition name="slide-up">
-        <div v-if="showRemoveConfirmation" class="fixed inset-0 z-50 flex items-end">
-            <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+        <div v-if="showRemoveConfirmation" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+            <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
                 <button @click="showRemoveConfirmation = false" class="absolute top-4 right-4 text-gray">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                <p class="text-center text-sm">¿Estás seguro de que deseas eliminar a {{ profile?.display_name }} de tus
+                <p class="text-center text-sm 2xl:mt-4">¿Estás seguro de que deseas eliminar a {{ profile?.display_name }} de tus
                     amigos?
                 </p>
                 <div class="w-full flex flex-col items-center gap-2">

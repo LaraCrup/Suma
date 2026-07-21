@@ -1,5 +1,5 @@
 <template>
-    <label :for="id" class="text-sm text-primary">
+    <label :for="id" class="text-sm 2xl:text-base text-primary">
         <slot />
     </label>
 </template>

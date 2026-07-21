@@ -1,11 +1,11 @@
 <template>
-    <div class="w-full flex items-center justify-between bg-midlight rounded-lg p-3">
+    <div class="w-full flex items-center justify-between bg-midlight rounded-lg p-3 2xl:p-4">
         <NuxtLink :to="`/usuarios/${user?.id}`" class="flex gap-3 items-center">
-            <div class="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-green-light flex-shrink-0">
+            <div class="w-6 2xl:w-7 h-6 2xl:h-7 rounded-full overflow-hidden flex items-center justify-center bg-green-light flex-shrink-0">
                 <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user.display_name" class="w-full h-full object-cover" />
-                <span v-else class="text-[0.5rem] text-light font-bold">{{ user?.display_name?.charAt(0).toUpperCase() }}</span>
+                <span v-else class="text-[0.5rem] 2xl:text-sm text-light font-bold">{{ user?.display_name?.charAt(0).toUpperCase() }}</span>
             </div>
-            <p class="text-xs">{{ user?.display_name }}</p>
+            <p class="text-xs 2xl:text-sm">{{ user?.display_name }}</p>
         </NuxtLink>
         <div class="relative flex items-center justify-end" style="min-width: 2.5rem;">
             <NuxtImg v-if="isFriend" src="/images/brillo.svg" class="w-4 h-4 flex-shrink-0" />
@@ -14,15 +14,15 @@
                     v-if="!isPending"
                     key="add"
                     @click.prevent="handleSendRequest"
-                    class="absolute w-5 h-5 flex justify-center items-center rounded-full border-green-light border-[1px]"
+                    class="absolute w-5 2xl:w-6 h-5 2xl:h-6 flex justify-center items-center rounded-full border-green-light border-[1px]"
                 >
-                    <span class="text-green-light font-bold text-xs">+</span>
+                    <span class="text-green-light font-bold text-xs 2xl:text-sm">+</span>
                 </button>
                 <button
                     v-else
                     key="pending"
                     @click.prevent="handleCancelRequest"
-                    class="absolute right-0 text-xs text-green-dark font-medium border border-green-dark rounded-full px-2 py-[2px]"
+                    class="absolute right-0 text-xs 2xl:text-sm text-green-dark font-medium border border-green-dark rounded-full px-2 2xl:px-3 py-[2px]"
                 >Pendiente</button>
             </Transition>
         </div>
