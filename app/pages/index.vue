@@ -72,11 +72,11 @@
     <DefaultSection class="!gap-2">
         <HeadingH1 class="w-full">Tip de hoy</HeadingH1>
         <SkeletonTipCard v-if="isTipLoading" />
-        <div v-else-if="currentTip" class="w-full flex flex-col 2xl:flex-row">
-            <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full 2xl:w-1/3 h-48 2xl:h-32 rounded-t-lg 2xl:rounded-l-lg 2xl:rounded-r-none object-cover" />
-            <div class="w-full bg-midlight rounded-b-lg 2xl:rounded-r-lg 2xl:rounded-l-none p-3 2xl:px-5 2xl:my-auto">
+        <div v-else-if="currentTip" class="w-full flex flex-col xl:flex-row">
+            <NuxtImg :src="`/images/tips/${currentTip.image}.webp`" alt="Tip de hábito" class="w-full xl:w-1/3 h-48 xl:h-32 2xl:h-44 rounded-t-lg xl:rounded-l-lg xl:rounded-r-none object-cover" />
+            <div class="w-full xl:h-full flex flex-col gap-1 xl:justify-center bg-midlight rounded-b-lg xl:rounded-r-lg xl:rounded-l-none p-3 xl:px-5">
                 <p class="text-primary text-sm 2xl:text-lg font-semibold">{{ currentTip.title }}</p>
-                <p class="text-xs 2xl:text-sm mt-1">{{ currentTip.description }}</p>
+                <p class="text-xs 2xl:text-sm">{{ currentTip.description }}</p>
             </div>
         </div>
     </DefaultSection>

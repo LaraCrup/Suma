@@ -9,26 +9,26 @@
                 <NavigationBackArrow :url="ROUTE_NAMES.PROGRESS" />
             </div>
 
-            <div class="flex-1 w-full flex flex-col justify-center items-center gap-5">
+            <div class="2xl:max-w-[500px] flex-1 w-full flex flex-col justify-center items-center gap-5">
                 <NuxtImg
-                    class="w-full h-40 rounded-xl object-cover"
+                    class="w-full h-40 2xl:h-60 rounded-xl object-cover"
                     :src="benefit.image_url || '/images/placeholder.png'"
                     :alt="benefit.title"
                 />
-                <h1 v-if="benefit.description" class="w-full text-sm text-center">
+                <h1 v-if="benefit.description" class="w-full text-sm 2xl:text-base text-center">
                     {{ benefit.description }}
                 </h1>
                 <div v-if="benefit.discount_code" class="w-full flex flex-col gap-1">
-                    <p class="text-xs text-center text-dark">Tu código de descuento:</p>
+                    <p class="text-xs 2xl:text-sm text-center text-dark">Tu código de descuento:</p>
                     <div class="w-full flex justify-center bg-midlight rounded-lg p-3">
-                        <span class="font-montserrat font-bold text-primary tracking-wide">
+                        <span class="font-montserrat font-bold 2xl:text-xl text-primary tracking-wide">
                             {{ benefit.discount_code }}
                         </span>
                     </div>
                 </div>
                 <div v-if="benefit.terms_conditions" class="w-full">
                     <button
-                        class="w-full flex items-center justify-between text-xs"
+                        class="w-full flex items-center justify-between text-xs 2xl:text-sm"
                         @click="showTerms = !showTerms"
                     >
                         <span>*Términos y Condiciones</span>
@@ -46,7 +46,7 @@
                         leave-from-class="opacity-100 max-h-40"
                         leave-to-class="opacity-0 max-h-0"
                     >
-                        <p v-if="showTerms" class="mt-2 text-xs text-gray">
+                        <p v-if="showTerms" class="mt-2 text-xs 2xl:text-sm text-gray">
                             {{ benefit.terms_conditions }}
                         </p>
                     </Transition>

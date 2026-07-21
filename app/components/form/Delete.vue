@@ -1,8 +1,8 @@
 <template>
     <div v-if="isOpen" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="close"></div>
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-end">
+    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
         <div
-            class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+            class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
             <button @click="close" class="absolute top-4 right-4 text-gray">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />

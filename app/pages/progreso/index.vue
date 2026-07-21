@@ -7,8 +7,8 @@
         <template v-else>
             <div class="w-full flex flex-col gap-1">
                 <div class="w-full flex items-center justify-between">
-                    <p class="text-xs">Progreso de hoy</p>
-                    <p class="text-xs font-bold text-primary">{{ todayProgressPercentage }}%</p>
+                    <p class="text-xs 2xl:text-sm">Progreso de hoy</p>
+                    <p class="text-xs 2xl:text-sm font-bold text-primary">{{ todayProgressPercentage }}%</p>
                 </div>
                 <ProgressBar
                     :progress-count="todayStats.completed"
@@ -19,38 +19,38 @@
 
             <div class="w-full flex gap-3">
                 <div class="flex-1 min-w-0 flex flex-col gap-1">
-                    <p class="text-xs">Tu hábito más constante</p>
-                    <div class="h-16 w-full bg-midlight rounded-lg p-3">
+                    <p class="text-xs 2xl:text-sm">Tu hábito más constante</p>
+                    <div class="h-16 2xl:h-20 w-full flex flex-col justify-center bg-midlight rounded-lg p-3">
                         <template v-if="mostConsistentHabit">
-                            <p class="text-xs truncate">{{ mostConsistentHabit.name }}</p>
-                            <span class="text-xl font-bold text-primary">
+                            <p class="text-xs 2xl:text-sm truncate">{{ mostConsistentHabit.name }}</p>
+                            <span class="text-xl 2xl:text-2xl font-bold text-primary">
                                 {{ mostConsistentHabit.longest_streak }} {{ mostConsistentHabit.longest_streak === 1 ? 'día' : 'días' }}
                             </span>
                         </template>
                         <template v-else>
-                            <p class="text-xs text-gray">Sin datos aún</p>
+                            <p class="text-xs 2xl:text-sm text-gray">Sin datos aún</p>
                         </template>
                     </div>
                 </div>
 
                 <div class="flex-1 min-w-0 flex flex-col gap-1">
-                    <p class="text-xs">Tu porcentaje de constancia</p>
-                    <div class="h-16 w-full bg-midlight rounded-lg p-3">
-                        <span class="text-[1.75rem] font-bold text-primary">{{ consistencyPercentage }}%</span>
+                    <p class="text-xs 2xl:text-sm">Tu porcentaje de constancia</p>
+                    <div class="h-16 2xl:h-20 w-full flex flex-col justify-center bg-midlight rounded-lg p-3">
+                        <span class="text-[1.75rem] 2xl:text-4xl font-bold text-primary">{{ consistencyPercentage }}%</span>
                     </div>
                 </div>
             </div>
 
             <h2 class="w-full font-montserrat text-xl font-medium text-primary">Tus beneficios</h2>
-            <div class="w-full flex flex-col gap-1">
+            <div class="w-full flex flex-col gap-1 2xl:gap-3">
                 <div class="w-full flex items-center justify-between">
                     <span
-                        class="w-6 h-6 flex justify-center items-center bg-primary text-light text-xs font-bold rounded-full">
+                        class="w-6 2xl:w-8 h-6 2xl:h-8 flex justify-center items-center bg-primary text-light text-xs 2xl:text-sm font-bold rounded-full">
                         {{ levelInfo.currentLevel }}
                     </span>
                     <span
                         :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
-                        class="w-6 h-6 flex justify-center items-center text-light text-xs font-bold rounded-full">
+                        class="w-6 2xl:w-8 h-6 2xl:h-8 flex justify-center items-center text-light text-xs 2xl:text-sm font-bold rounded-full">
                         {{ levelInfo.isMaxLevel ? '👑' : levelInfo.nextLevel }}
                     </span>
                 </div>
@@ -60,14 +60,14 @@
                     bar-color="bg-gradient-secondary"
                 />
                 <div class="w-full flex items-center justify-between">
-                    <p class="text-xs text-gray">{{ userXP.experience_points }} XP</p>
-                    <p class="text-xs text-gray" v-if="!levelInfo.isMaxLevel">
+                    <p class="text-xs 2xl:text-sm text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-xs 2xl:text-sm text-gray" v-if="!levelInfo.isMaxLevel">
                         {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
                     </p>
-                    <p class="text-xs text-gray" v-else>¡Nivel máximo!</p>
+                    <p class="text-xs 2xl:text-sm text-gray" v-else>¡Nivel máximo!</p>
                 </div>
             </div>
-            <div class="w-full flex flex-col gap-2">
+            <div class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-2 2xl:gap-3">
                 <template v-if="benefits.length > 0">
                     <BenefitsCard
                         v-for="benefit in benefits"
@@ -75,7 +75,7 @@
                         :benefit="benefit"
                     />
                 </template>
-                <p v-else class="text-xs text-gray">Aún no desbloqueaste ningún beneficio.</p>
+                <p v-else class="w-full 2xl:col-span-2 text-xs text-gray">Aún no desbloqueaste ningún beneficio.</p>
             </div>
         </template>
     </DefaultSection>
