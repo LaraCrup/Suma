@@ -18,7 +18,7 @@
         />
         <div class="flex items-center gap-3">
           <button type="button" @click="triggerFileInput" class="cursor-pointer">
-            <NuxtImg src="images/icons/edit.svg" alt="Cambiar foto de perfil" class="h-4 text-green-dark" />
+            <NuxtImg src="images/icons/edit.svg" alt="Cambiar foto de perfil" class="h-4 2xl:h-5 text-green-dark" />
           </button>
           <button
             v-if="authStore.profile?.avatar_url"
@@ -26,7 +26,7 @@
             @click="deleteAvatar"
             class="cursor-pointer"
           >
-            <NuxtImg src="images/icons/delete.svg" alt="Eliminar foto de perfil" class="h-4 text-green-dark" />
+            <NuxtImg src="images/icons/delete.svg" alt="Eliminar foto de perfil" class="h-4 2xl:h-5 text-green-dark" />
           </button>
         </div>
         <input
@@ -57,7 +57,7 @@
       />
 
 
-      <ButtonPrimary type="submit" :disabled="authStore.loading">
+      <ButtonPrimary type="submit" :disabled="authStore.loading" class="self-center">
         {{ authStore.loading ? 'Guardando...' : 'Guardar cambios' }}
       </ButtonPrimary>
     </form>

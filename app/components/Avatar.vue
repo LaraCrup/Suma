@@ -11,6 +11,6 @@ defineProps({
   initial: String,
   image: String,
   preview: String,
-  sizeClass: { type: String, default: 'w-16 h-16' }
+  sizeClass: { type: String, default: 'w-16 2xl:w-20 h-16 2xl:h-20' }
 })
 </script>

@@ -1,10 +1,10 @@
 <template>
     <DefaultSection class="w-full flex flex-col items-center gap-2">
-        <div class="w-full flex gap-3">
+        <div class="w-full flex items-center gap-3">
             <NavigationBackArrow class="!w-fit text-gray" />
             <HeadingH1 class="w-full">Cambiar contraseña</HeadingH1>
         </div>
-        <p class="text-xs text-center">Elegí una nueva contraseña segura para tu cuenta.</p>
+        <p class="text-xs 2xl:text-base text-center">Elegí una nueva contraseña segura para tu cuenta.</p>
 
         <FormLayout @submit.prevent="handleChangePassword">
             <FormFieldsContainer>

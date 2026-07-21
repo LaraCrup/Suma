@@ -9,7 +9,7 @@
                 <Avatar :name="authStore.profile?.display_name"
                     :initial="authStore.profile?.name?.charAt(0).toUpperCase()"
                     :image="authStore.profile?.avatar_url" />
-                <div class="w-fit flex flex-col gap-1">
+                <div class="w-fit flex flex-col 2xl:justify-center gap-1">
                     <p class="text-sm font-bold">{{ authStore.profile?.name }}</p>
                     <p class="text-sm font-bold">{{ authStore.profile?.display_name }}</p>
                     <p class="text-xs">{{ authStore.user?.email }}</p>
@@ -19,57 +19,57 @@
                 <NuxtImg src="images/icons/edit.svg" alt="Editar perfil" class="h-5" />
             </NuxtLink>
         </div>
-        <p class="w-full text-xs text-gray font-bold">
+        <p class="w-full text-xs 2xl:text-sm text-gray font-bold">
             Desde el {{ formattedCreatedAt }}
         </p>
         <div class="w-full flex flex-col gap-3">
-            <div class="w-full flex flex-col items-center gap-1">
+            <div class="w-full flex flex-col items-center gap-1 2xl:gap-3">
                 <div class="w-full flex justify-between">
                     <div
-                        class="w-6 h-6 flex justify-center items-center bg-primary text-light font-bold text-xs rounded-full">
+                        class="w-6 2xl:w-8 h-6 2xl:h-8 flex justify-center items-center bg-primary text-light font-bold text-xs 2xl:text-sm rounded-full">
                         {{ levelInfo.currentLevel }}</div>
                     <div :class="levelInfo.isMaxLevel ? 'bg-primary' : 'bg-gray'"
-                        class="w-6 h-6 flex justify-center items-center text-light font-bold text-xs rounded-full">
+                        class="w-6 2xl:w-8 h-6 2xl:h-8 flex justify-center items-center text-light font-bold text-xs 2xl:text-sm rounded-full">
                         {{ levelInfo.isMaxLevel ? '👑' : levelInfo.nextLevel }}</div>
                 </div>
                 <ProgressBar :progress-count="levelInfo.xpInCurrentLevel" :goal-value="levelInfo.xpNeededForNextLevel"
                     bar-color="bg-gradient-secondary" background-color="bg-green-dark" />
                 <div class="w-full flex justify-between">
-                    <p class="text-xs text-gray">{{ userXP.experience_points }} XP</p>
-                    <p class="text-xs text-gray" v-if="!levelInfo.isMaxLevel">
+                    <p class="text-xs 2xl:text-sm text-gray">{{ userXP.experience_points }} XP</p>
+                    <p class="text-xs 2xl:text-sm text-gray" v-if="!levelInfo.isMaxLevel">
                         {{ levelInfo.nextLevelXP }} XP para nivel {{ levelInfo.nextLevel }}
                     </p>
-                    <p class="text-xs text-gray" v-else>¡Nivel máximo!</p>
+                    <p class="text-xs 2xl:text-sm text-gray" v-else>¡Nivel máximo!</p>
                 </div>
             </div>
             <div>
-                <NuxtLink :to="ROUTE_NAMES.PROGRESS" class="text-xs text-primary underline">Ver mi progreso
+                <NuxtLink :to="ROUTE_NAMES.PROGRESS" class="text-xs 2xl:text-base text-primary underline">Ver mi progreso
                 </NuxtLink>
             </div>
         </div>
         <div class="w-full grid grid-cols-2 gap-3">
             <div>
-                <p class="text-xs">Hábitos activos</p>
-                <p class="text-base font-bold text-primary mt-1">{{ habitCount }}</p>
+                <p class="text-xs 2xl:text-sm">Hábitos activos</p>
+                <p class="text-base 2xl:text-lg font-bold text-primary mt-1">{{ habitCount }}</p>
             </div>
             <div>
-                <p class="text-xs">Comunidades</p>
-                <p class="text-base font-bold text-primary mt-1">{{ communityCount }}</p>
+                <p class="text-xs 2xl:text-sm">Comunidades</p>
+                <p class="text-base 2xl:text-lg font-bold text-primary mt-1">{{ communityCount }}</p>
             </div>
             <div>
-                <p class="text-xs">Amigos</p>
-                <p class="text-base font-bold text-primary mt-1">{{ friendCount }}</p>
+                <p class="text-xs 2xl:text-sm">Amigos</p>
+                <p class="text-base 2xl:text-lg font-bold text-primary mt-1">{{ friendCount }}</p>
             </div>
         </div>
         <div class="w-full flex flex-col gap-1">
             <div v-if="pushSupported" class="w-full flex items-center justify-between gap-4 py-1">
                 <div class="flex flex-col gap-0.5">
-                    <p class="text-sm font-bold">Notificaciones</p>
+                    <p class="text-sm 2xl:text-base font-bold">Notificaciones</p>
                 </div>
                 <FormSwitch id="push-toggle" :model-value="pushSubscribed" @update:model-value="handlePushToggle"
                     class="flex-shrink-0" />
             </div>
-            <p v-if="pushPermission === 'denied'" class="text-xs text-error">
+            <p v-if="pushPermission === 'denied'" class="text-xs 2xl:text-sm text-error">
                 Bloqueadas en el navegador. Habilitarlas desde Configuración.
             </p>
             <p v-else class="text-xs text-gray">
@@ -77,9 +77,9 @@
             </p>
         </div>
 
-        <div class="w-full flex flex-col gap-2">
+        <div class="2xl:max-w-[640px] w-full flex flex-col 2xl:grid 2xl:grid-cols-2 gap-2 2xl:gap-4">
             <ButtonTerciary :to="ROUTE_NAMES.CHANGE_PASSWORD">Cambiar contraseña</ButtonTerciary>
-            <form @submit.prevent="confirmLogout">
+            <form @submit.prevent="confirmLogout" class="2xl:w-full">
                 <ButtonPrimary type="submit">Cerrar sesión</ButtonPrimary>
             </form>
         </div>
@@ -87,8 +87,8 @@
 
     <div v-if="showConfirmation" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showConfirmation = false">
     </div>
-    <div v-if="showConfirmation" class="fixed inset-0 z-50 flex items-end">
-        <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+    <div v-if="showConfirmation" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+        <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
             <button @click="showConfirmation = false" class="absolute top-4 right-4 text-gray">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
