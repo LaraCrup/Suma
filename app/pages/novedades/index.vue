@@ -3,13 +3,13 @@
         <div class="w-full flex flex-col gap-3">
             <HeadingH1 class="w-full">Novedades</HeadingH1>
     
-            <div class="w-full flex gap-1 overflow-x-auto" style="-ms-overflow-style:none;scrollbar-width:none">
+            <div class="w-full flex gap-1 2xl:gap-2 overflow-x-auto" style="-ms-overflow-style:none;scrollbar-width:none">
                 <button
                     v-for="cat in categories"
                     :key="cat.id"
                     @click="selectCategory(cat.id)"
                     :class="[
-                        'flex-shrink-0 text-xs px-3 py-2 rounded-lg border border-green-light transition-colors',
+                        'flex-shrink-0 text-xs 2xl:text-base px-3 2xl:px-5 py-2 rounded-lg border border-green-light transition-colors',
                         activeCategory === cat.id
                             ? 'bg-green-light text-light'
                             : 'bg-light text-dark'
@@ -20,55 +20,55 @@
             </div>
         </div>
 
-        <div v-if="loading" class="w-full flex flex-col gap-3">
+        <div v-if="loading" class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-3">
             <SkeletonNewsCard v-for="i in 3" :key="i" />
         </div>
 
-        <div v-else class="w-full flex flex-col gap-3">
+        <div v-else class="w-full grid grid-cols-1 2xl:grid-cols-2 gap-3">
             <NuxtLink
                 v-for="item in news"
                 :key="item.id"
                 :to="`/novedades/${item.id}`"
                 class="block w-full rounded-lg overflow-hidden"
             >
-                <div class="relative h-32 bg-midlight flex items-end p-3">
+                <div class="relative h-32 2xl:h-44 bg-midlight flex items-end p-3">
                     <NuxtImg
                         v-if="item.image_url"
                         :src="item.image_url"
                         :alt="item.title"
-                        class="absolute inset-0 w-full h-32 object-cover rounded-lg"
+                        class="absolute inset-0 w-full h-32 2xl:h-44 object-cover rounded-lg"
                     />
-                    <span class="relative z-10 text-xs bg-accent text-green-dark px-2 py-1 rounded-full">
+                    <span class="relative z-10 text-xs 2xl:text-sm bg-accent text-green-dark px-2 2xl:px-3 py-1 rounded-full">
                         {{ item.category?.name }}
                     </span>
                 </div>
 
                 <div class="bg-midlight p-3 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 2xl:gap-4">
                             <NuxtImg
                                 :src="item.brand.image_url"
                                 :alt="item.brand?.name"
-                                class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                                class="w-6 2xl:w-7 h-6 2xl:h-7 rounded-full object-cover flex-shrink-0"
                             />
-                            <span class="text-xs text-dark">Por {{ item.brand?.name }}</span>
+                            <span class="text-xs 2xl:text-sm text-dark">Por {{ item.brand?.name }}</span>
                         </div>
-                        <span class="text-xs text-gray">{{ formatDate(item.publication_date) }}</span>
+                        <span class="text-xs 2xl:text-sm text-gray">{{ formatDate(item.publication_date) }}</span>
                     </div>
                     <div class="w-full flex flex-col gap-2">
-                        <p class="text-sm font-bold text-dark leading-tight">{{ item.title }}</p>
+                        <p class="text-sm 2xl:text-base font-bold text-dark leading-tight">{{ item.title }}</p>
     
-                        <p class="text-xs text-dark line-clamp-3">{{ item.content }}</p>
+                        <p class="text-xs 2xl:text-sm text-dark line-clamp-3">{{ item.content }}</p>
                     </div>
                     <div class="flex justify-end">
-                        <span class="bg-green-light text-xs text-light rounded-full px-4 py-1">
+                        <span class="bg-green-light text-xs 2xl:text-sm text-light rounded-full px-4 py-1">
                             Ver más
                         </span>
                     </div>
                 </div>
             </NuxtLink>
 
-            <p v-if="news.length === 0" class="text-xs text-gray text-center py-4">
+            <p v-if="news.length === 0" class="w-full 2xl:col-span-2 text-xs text-gray text-center py-4">
                 No hay novedades en esta categoría.
             </p>
         </div>

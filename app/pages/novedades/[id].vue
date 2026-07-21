@@ -7,35 +7,35 @@
         </div>
 
         <template v-else-if="item">
-            <div class="relative w-full h-32 rounded-lg overflow-hidden flex items-end p-3">
+            <div class="relative w-full h-32 2xl:h-52 rounded-lg overflow-hidden flex items-end p-3">
                 <NuxtImg
                     v-if="item.image_url"
                     :src="item.image_url"
                     :alt="item.title"
                     class="absolute inset-0 w-full h-full object-cover"
                 />
-                <span class="relative z-10 text-xs bg-accent text-green-dark px-2 py-1 rounded-full">
+                <span class="relative z-10 text-xs 2xl:text-sm bg-accent text-green-dark px-2 2xl:px-3 py-1 rounded-full">
                     {{ item.category?.name }}
                 </span>
             </div>
 
             <div class="w-full flex flex-col gap-3 px-3">
                 <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 2xl:gap-4">
                         <NuxtImg
                             v-if="item.brand?.image_url"
                             :src="item.brand.image_url"
                             :alt="item.brand?.name"
-                            class="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                            class="w-6 2xl:w-8 h-6 2xl:h-8 rounded-full object-cover flex-shrink-0"
                         />
-                        <span class="text-xs text-dark">Por {{ item.brand?.name }}</span>
+                        <span class="text-x 2xl:text-sm text-dark">Por {{ item.brand?.name }}</span>
                     </div>
-                    <span class="text-xs text-gray">{{ formatDate(item.publication_date) }}</span>
+                    <span class="text-xs 2xl:text-sm text-gray">{{ formatDate(item.publication_date) }}</span>
                 </div>
                 <div class="w-full flex flex-col gap-2">
-                    <HeadingH1 class="!text-base !leading-tight">{{ item.title }}</HeadingH1>
+                    <HeadingH1 class="!text-base 2xl:!text-lg !leading-tight">{{ item.title }}</HeadingH1>
     
-                    <p class="text-xs text-dark whitespace-pre-line">{{ item.content }}</p>
+                    <p class="text-xs 2xl:text-sm text-dark whitespace-pre-line">{{ item.content }}</p>
                 </div>
 
             </div>
