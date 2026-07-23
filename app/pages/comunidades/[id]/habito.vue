@@ -4,19 +4,19 @@
 
         <div class="h-full flex flex-col justify-center gap-5">
             <div class="flex flex-col items-center">
-                <div class="w-12 h-12 flex items-center justify-center rounded-full bg-green-dark text-2xl">
+                <div class="w-12 2xl:w-14 h-12 2xl:h-14 flex items-center justify-center rounded-full bg-green-dark text-2xl 2xl:text-3xl">
                     {{ habit?.icon }}
                 </div>
                 <div class="h-4 flex items-center gap-3 mt-2">
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
-                        <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2" />
-                        <p class="text-xs">{{ habit.streak }}</p>
+                        <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
+                        <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
                     </div>
                 </div>
                 <div class="flex gap-1 items-center">
                     <template v-for="member in completions" :key="member.id">
                         <div
-                            class="w-4 h-4 rounded-full overflow-hidden flex items-center justify-center"
+                            class="w-4 2xl:w-5 h-4 2xl:h-5 rounded-full overflow-hidden flex items-center justify-center"
                             :class="member.completed ? 'bg-green-dark' : 'bg-gray'">
                             <img
                                 v-if="member.completed && member.avatar_url"
@@ -29,7 +29,7 @@
                 </div>
             </div>
 
-            <p class="text-center text-sm">
+            <p class="text-center text-sm 2xl:text-base">
                 Vamos a <span class="font-bold">{{ habit?.name?.toLowerCase() }}</span>
                 para convertirnos en <span class="font-bold">{{ habit?.identity?.toLowerCase() || 'mejores personas' }}</span>.
             </p>

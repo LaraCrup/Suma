@@ -2,10 +2,15 @@
     <div class="w-full flex flex-col gap-2">
         <FormLabel :id="id" :required="required">{{ label }}</FormLabel>
 
-        <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
-            :required="required" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
-            :autocomplete="autocomplete"
-            class="bg-light border border-primary rounded-full outline-none text-dark text-xs placeholder:text-gray placeholder:text-xs py-3 px-5" />
+        <div class="relative w-full">
+            <slot name="icon" />
+            <input ref="inputElement" :id="inputId" :type="type" :placeholder="placeholder" :value="modelValue"
+                :required="required" :readonly="readonly" @input="handleInput" @blur="handleBlur" @focus="handleFocus"
+                @keyup.enter="$emit('keyup-enter', $event)" @keyup.escape="$emit('keyup-escape', $event)"
+                :autocomplete="autocomplete"
+                class="w-full bg-light border border-primary rounded-full outline-none text-dark text-xs placeholder:text-gray placeholder:text-xs py-3 px-5"
+                :class="{ 'pl-11': $slots.icon }" />
+        </div>
 
         <FormError v-if="error && showError">{{ error }}</FormError>
     </div>
@@ -44,10 +49,14 @@ const props = defineProps({
     autocomplete: {
         type: String,
         default: 'off'
+    },
+    readonly: {
+        type: Boolean,
+        default: false
     }
 })
 
-const emit = defineEmits(['update:modelValue', 'blur', 'focus'])
+const emit = defineEmits(['update:modelValue', 'blur', 'focus', 'keyup-enter', 'keyup-escape'])
 
 const inputElement = ref(null)
 const showError = ref(false)

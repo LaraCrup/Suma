@@ -8,25 +8,26 @@
             <NavigationBackArrow color="text-gray" />
         </div>
 
-        <div class="w-full flex items-center gap-4">
-            <div class="w-12 h-12 flex items-center justify-center bg-green-dark rounded-full flex-shrink-0">
-                <p class="text-3xl">{{ community?.icon }}</p>
+        <div class="w-full flex gap-4">
+            <div class="w-12 2xl:w-16 h-12 2xl:h-16 flex items-center justify-center bg-green-dark rounded-full flex-shrink-0">
+                <p class="text-3xl 2xl:text-4xl">{{ community?.icon }}</p>
             </div>
-            <div class="w-full flex flex-col gap-1 border-b border-gray pb-1">
-                <p class="text-xs text-dark">Nombre de la comunidad</p>
-                <div class="flex items-center gap-2">
-                    <NuxtImg v-if="isAdmin" src="/images/icons/edit.svg" alt="Editar nombre" class="w-4 flex-shrink-0" />
-                    <input
-                        v-model="editedName"
-                        :readonly="!isAdmin"
-                        @focus="isEditingName = true"
-                        @blur="saveName"
-                        @keyup.enter="$event.target.blur()"
-                        @keyup.escape="cancelEditName"
-                        class="text-sm font-semibold bg-transparent focus:outline-none w-full transition-colors"
-                        :class="isEditingName ? 'text-dark' : 'text-gray'"
-                    />
-                </div>
+            <div class="w-full">
+                <FormTextField
+                    id="community-name"
+                    v-model="editedName"
+                    label="Nombre de la comunidad"
+                    :readonly="!isAdmin"
+                    @focus="isEditingName = true"
+                    @blur="saveName"
+                    @keyup-enter="$event.target.blur()"
+                    @keyup-escape="cancelEditName"
+                >
+                    <template v-if="isAdmin" #icon>
+                        <NuxtImg src="/images/icons/edit.svg" alt="Editar nombre"
+                            class="w-4 absolute left-4 top-1/2 -translate-y-1/2" />
+                    </template>
+                </FormTextField>
             </div>
         </div>
 
@@ -38,7 +39,7 @@
             <div class="flex justify-between items-center">
                 <p class="text-sm text-dark">Miembros: {{ community?.member_count }}</p>
                 <button v-if="isAdmin" @click="showEditMembers = true" class="w-6 h-6 flex items-center justify-center">
-                    <NuxtImg src="/images/icons/edit.svg" alt="Editar miembros" class="w-4" />
+                    <NuxtImg src="/images/icons/edit.svg" alt="Editar miembros" class="w-4 2xl:w-6" />
                 </button>
             </div>
             <div class="w-full flex flex-col gap-2">
@@ -62,10 +63,10 @@
             <div v-if="showEditMembers" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showEditMembers = false"></div>
         </Transition>
-        <Transition name="slide-up">
-            <div v-if="showEditMembers" class="fixed inset-0 z-50 flex items-end">
+        <Transition name="pop-up">
+            <div v-if="showEditMembers" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
                 <div
-                    class="relative w-full flex flex-col gap-4 bg-light rounded-t-3xl p-5 pb-6 max-h-[80vh] overflow-y-auto">
+                    class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6 max-h-[80vh] overflow-y-auto">
                     <button @click="showEditMembers = false" class="absolute top-4 right-4 text-gray">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -103,7 +104,7 @@
                         </div>
                     </div>
 
-                    <ButtonPrimary @click="showEditMembers = false">Guardar</ButtonPrimary>
+                    <ButtonPrimary @click="showEditMembers = false" class="self-center">Guardar</ButtonPrimary>
                 </div>
             </div>
         </Transition>
@@ -112,10 +113,10 @@
             <div v-if="showAddMembers" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="showAddMembers = false">
             </div>
         </Transition>
-        <Transition name="slide-up">
-            <div v-if="showAddMembers" class="fixed inset-0 z-50 flex items-end">
+        <Transition name="pop-up">
+            <div v-if="showAddMembers" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
                 <div
-                    class="relative w-full flex flex-col gap-4 bg-light rounded-t-3xl p-5 pb-6 max-h-[80vh] overflow-y-auto">
+                    class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6 max-h-[80vh] overflow-y-auto">
                     <button @click="showAddMembers = false" class="absolute top-4 right-4 text-gray">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -142,47 +143,51 @@
                         </p>
                     </div>
 
-                    <ButtonPrimary :disabled="selectedToAdd.length === 0 || isSaving" @click="saveNewMembers">Guardar
+                    <ButtonPrimary :disabled="selectedToAdd.length === 0 || isSaving" @click="saveNewMembers"  class="self-center">Guardar
                     </ButtonPrimary>
                 </div>
             </div>
         </Transition>
 
-        <div v-if="memberToRemove" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="memberToRemove = null">
-        </div>
-        <div v-if="memberToRemove" class="fixed inset-0 z-50 flex items-end">
-            <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
-                <button @click="memberToRemove = null" class="absolute top-4 right-4 text-gray">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-                <div class="w-full flex flex-col items-center gap-3">
-                    <div class="w-9 h-9 flex justify-center items-center bg-gradient-secondary rounded-full">
-                        <NuxtImg src="/images/icons/delete-accent.svg" alt="Icono Borrar" class="w-3" />
+        <Transition name="fade">
+            <div v-if="memberToRemove" class="fixed inset-0 z-40 bg-dark bg-opacity-50" @click="memberToRemove = null">
+            </div>
+        </Transition>
+        <Transition name="pop-up">
+            <div v-if="memberToRemove" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+                <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
+                    <button @click="memberToRemove = null" class="absolute top-4 right-4 text-gray">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <div class="w-full flex flex-col items-center gap-3">
+                        <div class="w-9 h-9 flex justify-center items-center bg-gradient-secondary rounded-full">
+                            <NuxtImg src="/images/icons/delete-accent.svg" alt="Icono Borrar" class="w-3" />
+                        </div>
+                        <p class="text-center text-sm">
+                            ¿Estás seguro de que querés eliminar a
+                            <strong>{{ memberToRemove?.profile?.display_name }}</strong>
+                            de esta comunidad?
+                        </p>
                     </div>
-                    <p class="text-center text-sm">
-                        ¿Estás seguro de que querés eliminar a
-                        <strong>{{ memberToRemove?.profile?.display_name }}</strong>
-                        de esta comunidad?
-                    </p>
-                </div>
-                <p v-if="removeError" class="text-xs text-red-500 text-center">{{ removeError }}</p>
-                <div class="w-full flex flex-col items-center gap-2">
-                    <ButtonPrimary :disabled="isSaving" @click="confirmRemoveMember">Sí, eliminar</ButtonPrimary>
-                    <ButtonTerciary @click="memberToRemove = null">Cancelar</ButtonTerciary>
+                    <p v-if="removeError" class="text-xs text-red-500 text-center">{{ removeError }}</p>
+                    <div class="w-full flex flex-col items-center gap-2">
+                        <ButtonPrimary :disabled="isSaving" @click="confirmRemoveMember">Sí, eliminar</ButtonPrimary>
+                        <ButtonTerciary @click="memberToRemove = null">Cancelar</ButtonTerciary>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Transition>
 
         <Transition name="fade">
             <div v-if="showLeaveCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showLeaveCommunity = false"></div>
         </Transition>
-        <Transition name="slide-up">
-            <div v-if="showLeaveCommunity" class="fixed inset-0 z-50 flex items-end">
-                <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+        <Transition name="pop-up">
+            <div v-if="showLeaveCommunity" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+                <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
                     <button @click="showLeaveCommunity = false" class="absolute top-4 right-4 text-gray">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -205,9 +210,9 @@
             <div v-if="showDeleteCommunity" class="fixed inset-0 z-40 bg-dark bg-opacity-50"
                 @click="showDeleteCommunity = false"></div>
         </Transition>
-        <Transition name="slide-up">
-            <div v-if="showDeleteCommunity" class="fixed inset-0 z-50 flex items-end">
-                <div class="relative w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl p-5 pb-6">
+        <Transition name="pop-up">
+            <div v-if="showDeleteCommunity" class="fixed inset-0 z-50 flex items-end 2xl:items-center justify-center">
+                <div class="relative 2xl:max-w-[480px] w-full flex flex-col gap-4 items-center bg-light rounded-t-3xl 2xl:rounded-3xl p-5 pb-6">
                     <button @click="showDeleteCommunity = false" class="absolute top-4 right-4 text-gray">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -428,13 +433,26 @@ onMounted(loadData)
     opacity: 0;
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
+.pop-up-enter-active,
+.pop-up-leave-active {
     transition: transform 0.3s ease;
 }
 
-.slide-up-enter-from,
-.slide-up-leave-to {
+.pop-up-enter-from,
+.pop-up-leave-to {
     transform: translateY(100%);
+}
+
+@media (min-width: 992px) {
+    .pop-up-enter-active,
+    .pop-up-leave-active {
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .pop-up-enter-from,
+    .pop-up-leave-to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
 }
 </style>

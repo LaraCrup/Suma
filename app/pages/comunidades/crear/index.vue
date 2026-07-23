@@ -28,7 +28,7 @@
                 v-model="query"
                 type="text"
                 placeholder="Escribí acá..."
-                class="w-full bg-midlight border border-gray rounded-lg outline-none text-dark text-xs placeholder:text-gray placeholder:text-xs py-3 pr-3 pl-9"
+                class="w-full bg-midlight border border-gray rounded-lg outline-none text-dark text-xs 2xl:text-sm placeholder:text-gray placeholder:text-xs placeholder:2xl:text-sm py-3 pr-3 pl-9"
             />
             <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" />
         </div>
