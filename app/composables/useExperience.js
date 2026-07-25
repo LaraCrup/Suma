@@ -344,6 +344,8 @@ export const useExperience = () => {
             const xpToRevoke = customAmount !== null ? customAmount : await getXPForAction(actionKey)
             if (xpToRevoke <= 0) return null
 
+            xpNotificationStore.cancelPending(xpToRevoke, actionKey)
+
             const currentExp = await getUserExperience()
             const newXP = Math.max(0, currentExp.experience_points - xpToRevoke)
             const newLevel = await calculateLevel(newXP)

@@ -31,7 +31,14 @@
             </div>
         </div>
 
-        <div v-if="habit" class="w-full">
+        <div v-if="habit" class="w-full flex flex-col gap-2">
+            <div v-if="isAdmin" class="flex justify-between items-center">
+                <p class="text-sm text-dark">Hábito de la comunidad</p>
+                <button @click="navigateTo(`/comunidades/${route.params.id}/editar-habito`)"
+                    class="w-6 h-6 flex items-center justify-center">
+                    <NuxtImg src="/images/icons/edit.svg" alt="Editar hábito" class="w-4 2xl:w-6" />
+                </button>
+            </div>
             <HabitsCommunityCard :habit="habit" :members="completions" />
         </div>
 

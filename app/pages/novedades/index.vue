@@ -49,7 +49,7 @@
                             <NuxtImg
                                 :src="item.brand.image_url"
                                 :alt="item.brand?.name"
-                                class="w-6 2xl:w-7 h-6 2xl:h-7 rounded-full object-cover flex-shrink-0"
+                                class="w-6 2xl:w-7 h-6 2xl:h-7 bg-light rounded-full object-contain flex-shrink-0"
                             />
                             <span class="text-xs 2xl:text-sm text-dark">Por {{ item.brand?.name }}</span>
                         </div>

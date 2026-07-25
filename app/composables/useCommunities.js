@@ -180,6 +180,47 @@ export const useCommunities = () => {
         return data
     }
 
+    const isCommunityAdmin = async (communityId) => {
+        const userId = await getUserId()
+
+        const { data } = await client
+            .from('community_members')
+            .select('role')
+            .eq('community_id', communityId)
+            .eq('user_id', userId)
+            .maybeSingle()
+
+        return data?.role === 'admin'
+    }
+
+    const updateCommunityHabit = async (habitId, habitData) => {
+        const { data, error } = await client
+            .from('community_habits')
+            .update({
+                name: habitData.name,
+                icon: habitData.icon,
+                identity: habitData.identity || null,
+                unit: habitData.unit || null,
+                goal_value: habitData.goal_value || 1,
+                frequency_type: habitData.frequency_type || 'diario',
+                frequency_option: habitData.frequency_option || null,
+                frequency_detail: habitData.frequency_detail || null,
+            })
+            .eq('id', habitId)
+            .select()
+
+        if (error) {
+            console.error('Error actualizando hábito de comunidad:', error)
+            throw error
+        }
+
+        if (!data || data.length === 0) {
+            throw new Error('No se pudo actualizar el hábito. Verificá que tenés permisos de administrador.')
+        }
+
+        return data[0]
+    }
+
     const getCommunityMessages = async (communityId) => {
         const { data, error } = await client
             .from('community_messages')
@@ -426,9 +467,19 @@ export const useCommunities = () => {
     }
 
     const recordCommunityJoin = async (communityId) => {
-        const key = `joined_community_${communityId}`
+        const userId = await getUserId()
+        const key = `joined_community_${userId}_${communityId}`
         if (localStorage.getItem(key)) return null
         localStorage.setItem(key, '1')
+
+        const { data: community } = await client
+            .from('communities')
+            .select('created_by')
+            .eq('id', communityId)
+            .maybeSingle()
+
+        if (community?.created_by === userId) return null
+
         return await grantXP('join_community')
     }
 
@@ -437,6 +488,8 @@ export const useCommunities = () => {
         getCommunities,
         getCommunityById,
         getCommunityHabit,
+        updateCommunityHabit,
+        isCommunityAdmin,
         getCommunityMessages,
         sendMessage,
         getCommunityHabitCompletions,

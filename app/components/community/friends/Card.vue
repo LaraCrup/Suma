@@ -1,8 +1,9 @@
 <template>
     <component
-        :is="selectable ? 'div' : NuxtLink"
-        v-bind="selectable ? {} : { to: `/usuarios/${friend?.id}` }"
-        class="w-full flex items-center justify-between bg-midlight rounded-lg p-3"
+        :is="selectable ? 'button' : NuxtLink"
+        v-bind="selectable ? { type: 'button' } : { to: `/usuarios/${friend?.id}` }"
+        @click="handleRowClick"
+        class="w-full flex items-center justify-between text-left bg-midlight rounded-lg p-3"
     >
         <div class="flex gap-3 items-center">
             <div class="w-6 2xl:w-8 h-6 2xl:h-8 rounded-full overflow-hidden flex items-center justify-center bg-green-light flex-shrink-0">
@@ -14,15 +15,13 @@
                 <span v-if="badge" class="text-xs 2xl:text-sm text-primary font-semibold">({{ badge }})</span>
             </div>
         </div>
-        <button
+        <div
             v-if="selectable"
-            type="button"
-            @click="!disabled && emit('toggle', friend?.id)"
             :class="['w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0', selected ? 'bg-primary border border-primary' : 'border border-gray']"
         >
             <NuxtImg v-if="selected" src="/images/brillo-blanco.svg" class="w-3 h-3" />
             <NuxtImg v-else src="/images/brillo.svg" class="w-3 h-3" />
-        </button>
+        </div>
     </component>
 </template>
 
@@ -53,4 +52,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle'])
+
+const handleRowClick = () => {
+    if (!props.selectable || props.disabled) return
+    emit('toggle', props.friend?.id)
+}
 </script>

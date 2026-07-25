@@ -1,6 +1,15 @@
 <template>
     <DefaultSection class="h-full">
-        <CommunityHeader :community="community" />
+        <div class="w-full flex items-center gap-2">
+            <CommunityHeader :community="community" />
+            <button
+                v-if="isAdmin && habit"
+                @click="navigateTo(`/comunidades/${route.params.id}/editar-habito`)"
+                class="w-6 h-6 flex flex-shrink-0 items-center justify-center"
+            >
+                <NuxtImg src="/images/icons/edit.svg" alt="Editar hábito" class="w-4 2xl:w-5" />
+            </button>
+        </div>
 
         <div class="h-full flex flex-col justify-center gap-5">
             <div class="flex flex-col items-center">
@@ -75,6 +84,12 @@ const habit = ref(null)
 const myLog = ref(null)
 const completions = ref([])
 const currentUserId = ref(null)
+
+const isAdmin = computed(() =>
+    community.value?.members?.some(
+        m => m.profile.id === currentUserId.value && m.role === 'admin'
+    )
+)
 
 let realtimeChannel = null
 
