@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+type Subscription = { endpoint: string; p256dh: string; auth: string; user_id: string }
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -37,12 +39,26 @@ Deno.serve(async (req) => {
 
     if (!memberIds.length) return new Response('ok', { headers: corsHeaders })
 
-    const { data: subscriptions } = await supabase
-      .from('push_subscriptions')
-      .select('endpoint, p256dh, auth')
-      .in('user_id', memberIds)
+    const [recipientsRes, senderSubsRes] = await Promise.all([
+      supabase
+        .from('push_subscriptions')
+        .select('endpoint, p256dh, auth, user_id')
+        .in('user_id', memberIds),
+      supabase.from('push_subscriptions').select('endpoint').eq('user_id', senderId),
+    ])
 
-    if (!subscriptions?.length) return new Response('ok', { headers: corsHeaders })
+    const senderEndpoints = new Set(
+      (senderSubsRes.data ?? []).map((s: { endpoint: string }) => s.endpoint)
+    )
+
+    const byEndpoint = new Map<string, Subscription>()
+    for (const sub of (recipientsRes.data ?? []) as Subscription[]) {
+      if (senderEndpoints.has(sub.endpoint)) continue
+      if (!byEndpoint.has(sub.endpoint)) byEndpoint.set(sub.endpoint, sub)
+    }
+
+    const subscriptions = [...byEndpoint.values()]
+    if (!subscriptions.length) return new Response('ok', { headers: corsHeaders })
 
     webPush.setVapidDetails(
       Deno.env.get('VAPID_SUBJECT')!,
@@ -54,10 +70,11 @@ Deno.serve(async (req) => {
       title: communityName,
       body: `${senderName}: ${content.slice(0, 80)}`,
       url: `/comunidades/${community_id}`,
+      tag: `community-${community_id}`,
     })
 
-    await Promise.allSettled(
-      subscriptions.map((sub: { endpoint: string; p256dh: string; auth: string }) =>
+    const results = await Promise.allSettled(
+      subscriptions.map((sub) =>
         webPush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           notificationPayload
@@ -65,7 +82,22 @@ Deno.serve(async (req) => {
       )
     )
 
-    return new Response('ok', { headers: corsHeaders })
+    const goneEndpoints = results
+      .map((result, i) =>
+        result.status === 'rejected' && [404, 410].includes(result.reason?.statusCode)
+          ? subscriptions[i].endpoint
+          : null
+      )
+      .filter((endpoint): endpoint is string => endpoint !== null)
+
+    if (goneEndpoints.length) {
+      await supabase.from('push_subscriptions').delete().in('endpoint', goneEndpoints)
+    }
+
+    return new Response(
+      JSON.stringify({ sent: subscriptions.length - goneEndpoints.length, pruned: goneEndpoints.length }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     return new Response(
       JSON.stringify({ error: (error as Error).message }),

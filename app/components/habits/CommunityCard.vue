@@ -47,7 +47,7 @@
             </div>
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
-            <div v-if="habit?.streak > 0 && effectiveCompleted" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
+            <div v-if="habit?.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
                 <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
             </div>
@@ -76,6 +76,10 @@ const props = defineProps({
     members: {
         type: Array,
         default: () => []
+    },
+    selectedDate: {
+        type: String,
+        default: null
     }
 })
 
@@ -212,7 +216,8 @@ const handleClick = () => {
 
 const goToHabit = () => {
     if (props.habit?.community_id) {
-        router.push(`/comunidades/${props.habit.community_id}/habito`)
+        const dateParam = props.selectedDate ? `?date=${props.selectedDate}` : ''
+        router.push(`/comunidades/${props.habit.community_id}/habito${dateParam}`)
     }
 }
 
@@ -227,7 +232,7 @@ const completeHabit = async () => {
 
     localOverrideCompleted.value = true
     try {
-        await logCommunityHabitProgress(props.habit.id, progressNeeded, goalValue)
+        await logCommunityHabitProgress(props.habit.id, progressNeeded, goalValue, props.selectedDate)
         emit('habitUpdated', props.habit.id)
     } catch (error) {
         console.error('Error completando hábito comunitario:', error)
@@ -243,7 +248,7 @@ const resetHabit = async () => {
 
     localOverrideCompleted.value = false
     try {
-        await logCommunityHabitProgress(props.habit.id, -currentProgress, props.habit.goal_value || 1)
+        await logCommunityHabitProgress(props.habit.id, -currentProgress, props.habit.goal_value || 1, props.selectedDate)
         emit('habitUpdated', props.habit.id)
     } catch (error) {
         console.error('Error reiniciando hábito comunitario:', error)

@@ -10,10 +10,13 @@ export default defineNuxtPlugin(async (nuxtApp) => {
             try {
                 const { useHabits } = await import('~/composables/useHabits')
                 const { useExperience } = await import('~/composables/useExperience')
+                const { useCommunities } = await import('~/composables/useCommunities')
                 const { syncHabitsWithNewDay } = useHabits()
                 const { checkComeback } = useExperience()
+                const { syncCommunityStreaks } = useCommunities()
 
                 await syncHabitsWithNewDay()
+                await syncCommunityStreaks()
                 await checkComeback()
 
                 console.log('[HABIT SYNC] Background sync completed')

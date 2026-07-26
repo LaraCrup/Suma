@@ -118,7 +118,7 @@ export const useCommunities = () => {
 
                 const { data: habit } = await client
                     .from('community_habits')
-                    .select('id, name, icon, streak, longest_streak')
+                    .select('*')
                     .eq('community_id', community.id)
                     .maybeSingle()
 
@@ -271,7 +271,7 @@ export const useCommunities = () => {
 
         const { data: logs } = await client
             .from('community_habit_logs')
-            .select('user_id, progress_count, completed, streak, longest_streak')
+            .select('user_id, progress_count, completed')
             .eq('community_habit_id', habitId)
             .eq('date', today)
 
@@ -281,21 +281,19 @@ export const useCommunities = () => {
             ...m.profile,
             progress_count: logsMap[m.profile.id]?.progress_count || 0,
             completed: logsMap[m.profile.id]?.completed || false,
-            streak: logsMap[m.profile.id]?.streak || 0,
-            longest_streak: logsMap[m.profile.id]?.longest_streak || 0,
         }))
     }
 
-    const logCommunityHabitProgress = async (habitId, amount, goalValue = 1) => {
+    const logCommunityHabitProgress = async (habitId, amount, goalValue = 1, date = null) => {
         const userId = await getUserId()
-        const today = getArgentineDate()
+        const targetDate = date || getArgentineDate()
 
         const { data: existing } = await client
             .from('community_habit_logs')
             .select('progress_count, completed')
             .eq('community_habit_id', habitId)
             .eq('user_id', userId)
-            .eq('date', today)
+            .eq('date', targetDate)
             .maybeSingle()
 
         const newCount = Math.max(0, Math.min((existing?.progress_count || 0) + amount, goalValue))
@@ -306,7 +304,7 @@ export const useCommunities = () => {
             .upsert({
                 community_habit_id: habitId,
                 user_id: userId,
-                date: today,
+                date: targetDate,
                 progress_count: newCount,
                 completed: isCompleted,
             }, { onConflict: 'community_habit_id,user_id,date' })
@@ -317,7 +315,7 @@ export const useCommunities = () => {
 
         const completedChanged = isCompleted !== (existing?.completed ?? false)
         if (completedChanged) {
-            await updateCommunityStreak(habitId, today)
+            await updateCommunityStreak(habitId)
             if (isCompleted) {
                 await grantXP('community_habit_completed')
             } else {
@@ -328,48 +326,172 @@ export const useCommunities = () => {
         return log
     }
 
-    const calculateCommunityStreakUpTo = async (habitId, memberIds, dateStr) => {
-        let streak = 0
-        let current = dateStr
+    const getCommunityMembersFor = async (communityId) => {
+        const { data } = await client
+            .from('community_members')
+            .select('user_id, joined_at')
+            .eq('community_id', communityId)
 
-        while (streak < 500) {
-            const { data: logs } = await client
-                .from('community_habit_logs')
-                .select('user_id, completed')
-                .eq('community_habit_id', habitId)
-                .eq('date', current)
-                .in('user_id', memberIds)
+        return data || []
+    }
 
-            const allCompleted = logs?.length === memberIds.length && logs.every(l => l.completed)
-            if (!allCompleted) break
+    const requiredMembersOn = (members, dateStr) => members
+        .filter(m => !m.joined_at || timestampToArgentineDateStr(m.joined_at) <= dateStr)
+        .map(m => m.user_id)
 
-            streak++
-            const [y, m, d] = current.split('-').map(Number)
-            const prev = new Date(y, m - 1, d - 1)
-            current = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}-${String(prev.getDate()).padStart(2, '0')}`
+    const buildCommunityCompletedDays = async (habitId, members) => {
+        const { data: logs } = await client
+            .from('community_habit_logs')
+            .select('user_id, date')
+            .eq('community_habit_id', habitId)
+            .eq('completed', true)
+
+        const usersByDate = {}
+        for (const log of logs || []) {
+            if (!usersByDate[log.date]) usersByDate[log.date] = new Set()
+            usersByDate[log.date].add(log.user_id)
         }
 
+        const completedDays = new Set()
+        for (const [date, userIds] of Object.entries(usersByDate)) {
+            const required = requiredMembersOn(members, date)
+            if (required.length === 0) continue
+            if (required.every(id => userIds.has(id))) completedDays.add(date)
+        }
+
+        return completedDays
+    }
+
+    const countCompletedDaysInRange = (completedDays, start, end) => {
+        let count = 0
+        for (const date of completedDays) {
+            if (date >= start && date <= end) count++
+        }
+        return count
+    }
+
+    const isCommunityPeriodComplete = (habit, completedDays, start, end) => {
+        const quota = getPeriodQuota(habit, start)
+        return quota > 0 && countCompletedDaysInRange(completedDays, start, end) >= quota
+    }
+
+    const calculateCommunityStreakUpTo = (habit, completedDays, dateStr) => {
+        const cadence = getStreakCadence(habit)
+
+        if (cadence === 'weekly') {
+            let cursor = dateStr
+            let streak = 0
+            while (streak < 500) {
+                const wStart = getWeekStart(dateStrToDate(cursor))
+                const wEnd = getWeekEnd(dateStrToDate(cursor))
+                if (!isCommunityPeriodComplete(habit, completedDays, wStart, wEnd)) break
+                streak++
+                cursor = addDaysToDateStr(wStart, -1)
+            }
+            return streak
+        }
+
+        if (cadence === 'monthly') {
+            let [yr, mo] = dateStr.split('-').map(Number)
+            let streak = 0
+            while (streak < 500) {
+                const mStart = `${yr}-${String(mo).padStart(2, '0')}-01`
+                const lastDay = new Date(yr, mo, 0).getDate()
+                const mEnd = `${yr}-${String(mo).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+                if (!isCommunityPeriodComplete(habit, completedDays, mStart, mEnd)) break
+                streak++
+                mo--
+                if (mo === 0) { mo = 12; yr-- }
+            }
+            return streak
+        }
+
+        if (completedDays.size === 0) return 0
+        const earliest = [...completedDays].sort()[0]
+        const option = habit.frequency_option
+
+        if (option === 'cantidad_dias_semana' || option === 'cantidad_dias_mes') {
+            const { start: curStart, end: curEnd } = getPeriodBounds(habit, dateStr)
+            const curEndCapped = curEnd < dateStr ? curEnd : dateStr
+            let streak = countCompletedDaysInRange(completedDays, curStart, curEndCapped)
+            let cursor = getPrevPeriodEndDate(habit, dateStr)
+            let guard = 0
+            while (streak < 500 && guard < 250) {
+                guard++
+                const { start: pStart, end: pEnd } = getPeriodBounds(habit, cursor)
+                if (pEnd < earliest) break
+                const completedInPeriod = countCompletedDaysInRange(completedDays, pStart, pEnd)
+                const quota = getPeriodQuota(habit, pStart)
+                if (quota > 0 && completedInPeriod >= quota) {
+                    streak += completedInPeriod
+                    cursor = addDaysToDateStr(pStart, -1)
+                } else {
+                    break
+                }
+            }
+            return streak
+        }
+
+        const isSpecific = option === 'dias_especificos_semana' || option === 'dias_especificos_mes'
+        let streak = 0
+        let cur = dateStr
+        let guard = 0
+        while (guard < 1000) {
+            guard++
+            if (!isSpecific || isHabitScheduledOn(habit, cur)) {
+                if (completedDays.has(cur)) {
+                    streak++
+                } else {
+                    break
+                }
+            }
+            cur = addDaysToDateStr(cur, -1)
+            if (cur < earliest) break
+        }
         return streak
     }
 
-    const updateCommunityStreak = async (habitId, today) => {
+    const resolveCommunityStreakAnchor = (habit, completedDays, today) => {
+        const cadence = getStreakCadence(habit)
+
+        if (cadence === 'weekly' || cadence === 'monthly') {
+            const current = getPeriodBounds(habit, today)
+            if (isCommunityPeriodComplete(habit, completedDays, current.start, current.end)) return today
+            const prevEnd = getPrevPeriodEndDate(habit, today)
+            const previous = getPeriodBounds(habit, prevEnd)
+            return isCommunityPeriodComplete(habit, completedDays, previous.start, previous.end) ? prevEnd : null
+        }
+
+        const option = habit.frequency_option
+        if (option === 'cantidad_dias_semana' || option === 'cantidad_dias_mes') return today
+
+        const lastScheduled = findScheduledOnOrBefore(habit, today)
+        if (lastScheduled && completedDays.has(lastScheduled)) return lastScheduled
+
+        if (lastScheduled === today) {
+            const prevScheduled = findScheduledBefore(habit, today)
+            if (prevScheduled && completedDays.has(prevScheduled)) return prevScheduled
+        }
+
+        return null
+    }
+
+    const updateCommunityStreak = async (habitId) => {
         const { data: habit } = await client
             .from('community_habits')
-            .select('id, community_id, streak, longest_streak')
+            .select('*')
             .eq('id', habitId)
             .single()
 
         if (!habit) return
 
-        const { data: allMembers } = await client
-            .from('community_members')
-            .select('user_id')
-            .eq('community_id', habit.community_id)
+        const members = await getCommunityMembersFor(habit.community_id)
+        if (members.length === 0) return
 
-        const memberIds = (allMembers || []).map(m => m.user_id)
-        if (memberIds.length === 0) return
-
-        const newStreak = await calculateCommunityStreakUpTo(habitId, memberIds, today)
+        const completedDays = await buildCommunityCompletedDays(habitId, members)
+        const today = getArgentineDate()
+        const anchor = resolveCommunityStreakAnchor(habit, completedDays, today)
+        const newStreak = anchor ? calculateCommunityStreakUpTo(habit, completedDays, anchor) : 0
         const newLongest = Math.max(newStreak, habit.longest_streak || 0)
 
         if (newStreak !== habit.streak || newLongest !== habit.longest_streak) {
@@ -378,18 +500,61 @@ export const useCommunities = () => {
                 .update({ streak: newStreak, longest_streak: newLongest })
                 .eq('id', habitId)
         }
+
+        return newStreak
     }
 
-    const getCommunityHabitMyLog = async (habitId) => {
-        const userId = await getUserId()
+    const syncCommunityStreaks = async () => {
+        if (typeof window === 'undefined') return
+
         const today = getArgentineDate()
+        if (localStorage.getItem('lastCommunityStreakSync') === today) return
+        localStorage.setItem('lastCommunityStreakSync', today)
+
+        try {
+            const userId = await getUserId()
+
+            const { data: memberships } = await client
+                .from('community_members')
+                .select('community_id')
+                .eq('user_id', userId)
+
+            const communityIds = (memberships || []).map(m => m.community_id)
+            if (communityIds.length === 0) return
+
+            const { data: habits } = await client
+                .from('community_habits')
+                .select('id')
+                .in('community_id', communityIds)
+
+            for (const habit of habits || []) {
+                await updateCommunityStreak(habit.id)
+            }
+        } catch (error) {
+            console.error('[COMMUNITY SYNC] Error recalculando rachas comunitarias:', error)
+        }
+    }
+
+    const shouldShowCommunityHabitForDate = async (habit, dateStr) => {
+        if (!habit?.community_id) return true
+
+        const members = await getCommunityMembersFor(habit.community_id)
+        const completedDays = await buildCommunityCompletedDays(habit.id, members)
+
+        return await shouldShowHabitForDateWith(habit, dateStr, async (start, end) =>
+            countCompletedDaysInRange(completedDays, start, end))
+    }
+
+    const getCommunityHabitMyLog = async (habitId, date = null) => {
+        const userId = await getUserId()
+        const targetDate = date || getArgentineDate()
 
         const { data } = await client
             .from('community_habit_logs')
             .select('*')
             .eq('community_habit_id', habitId)
             .eq('user_id', userId)
-            .eq('date', today)
+            .eq('date', targetDate)
             .maybeSingle()
 
         return data || null
@@ -495,6 +660,9 @@ export const useCommunities = () => {
         getCommunityHabitCompletions,
         logCommunityHabitProgress,
         getCommunityHabitMyLog,
+        shouldShowCommunityHabitForDate,
+        syncCommunityStreaks,
+        updateCommunityStreak,
         updateCommunityName,
         deleteCommunity,
         removeMemberFromCommunity,

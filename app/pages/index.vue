@@ -59,13 +59,15 @@
             </template>
             <template v-else>
                 <HabitsCommunityCard
-                    v-for="item in communityHabits"
+                    v-for="item in visibleCommunityHabits"
                     :key="item.habit.id"
                     :habit="item.habit"
                     :members="item.members"
+                    :selectedDate="selectedDate"
                     @habitUpdated="handleCommunityHabitUpdated"
                 />
                 <p v-if="communityHabits.length === 0" class="w-full 2xl:col-span-2 text-sm text-gray text-center py-4">Todavía no pertenecés a ninguna comunidad.</p>
+                <p v-else-if="visibleCommunityHabits.length === 0" class="w-full 2xl:col-span-2 text-sm text-gray text-center py-4">No hay hábitos comunitarios para este día.</p>
             </template>
         </div>
     </DefaultSection>
@@ -88,7 +90,7 @@ import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'
 
 const { getHabitsForDate, shouldShowHabitForDate, syncHabitsWithNewDay, getArgentineDate } = useHabits()
-const { getCommunities, getCommunityHabitCompletions } = useCommunities()
+const { getCommunities, getCommunityHabit, getCommunityHabitCompletions, shouldShowCommunityHabitForDate, syncCommunityStreaks } = useCommunities()
 const { registerRefresh } = usePullToRefresh()
 const authStore = useAuthStore()
 const habits = ref([])
@@ -122,6 +124,19 @@ const tips = [
 const currentTip = ref(null)
 const visibleHabits = ref([])
 const hiddenHabits = ref([])
+const visibleCommunityHabits = ref([])
+
+const filterCommunityHabitsByVisibility = async () => {
+    const visible = []
+
+    for (const item of communityHabits.value) {
+        if (await shouldShowCommunityHabitForDate(item.habit, selectedDate.value)) {
+            visible.push(item)
+        }
+    }
+
+    visibleCommunityHabits.value = visible
+}
 
 const filterHabitsByVisibility = async () => {
     const visible = []
@@ -161,8 +176,16 @@ const handleCommunityHabitUpdated = async (habitId) => {
     const index = communityHabits.value.findIndex(item => item.habit.id === habitId)
     if (index === -1) return
     try {
-        const freshMembers = await getCommunityHabitCompletions(habitId, selectedDate.value)
-        communityHabits.value[index] = { ...communityHabits.value[index], members: freshMembers }
+        const [freshMembers, freshHabit] = await Promise.all([
+            getCommunityHabitCompletions(habitId, selectedDate.value),
+            getCommunityHabit(communityHabits.value[index].habit.community_id),
+        ])
+        communityHabits.value[index] = {
+            habit: { ...communityHabits.value[index].habit, ...(freshHabit || {}) },
+            members: freshMembers,
+        }
+        await filterCommunityHabitsByVisibility()
+        await dateNavigatorRef.value?.refreshCompletions()
     } catch (error) {
         console.error('Error refrescando miembros del hábito comunitario:', error)
     }
@@ -179,6 +202,7 @@ watch(selectedDate, async (newDate) => {
             updatedItems.push({ ...item, members })
         }
         communityHabits.value = updatedItems
+        await filterCommunityHabitsByVisibility()
     } catch (error) {
         console.error('Error cargando hábitos para fecha:', error)
     }
@@ -198,15 +222,18 @@ const loadHabitsData = async () => {
         await filterHabitsByVisibility()
         isLoading.value = false
 
+        await syncCommunityStreaks()
+
         const communities = await getCommunities()
         const items = []
         for (const community of communities) {
             if (!community.habit) continue
             const habit = { ...community.habit, community_id: community.id }
-            const members = await getCommunityHabitCompletions(community.habit.id)
+            const members = await getCommunityHabitCompletions(community.habit.id, selectedDate.value)
             items.push({ habit, members })
         }
         communityHabits.value = items
+        await filterCommunityHabitsByVisibility()
         isCommunityLoading.value = false
     } catch (error) {
         console.error('Error cargando hábitos:', error)

@@ -85,6 +85,8 @@ export const useAuthStore = defineStore('auth', () => {
   const logout = async () => {
     const supabase = useSupabaseClient()
     try {
+      const { removeSubscriptionForCurrentUser } = usePushNotifications()
+      await removeSubscriptionForCurrentUser()
       await supabase.auth.signOut()
       user.value = null
       profile.value = null

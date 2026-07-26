@@ -34,17 +34,19 @@ export const usePushNotifications = () => {
       const subscription = await registration.pushManager.getSubscription()
       if (!subscription) { isSubscribed.value = false; return }
 
+      const userId = await getUserId()
+      if (!userId) { isSubscribed.value = false; return }
+
       const { data } = await client
         .from('push_subscriptions')
         .select('id')
         .eq('endpoint', subscription.endpoint)
+        .eq('user_id', userId)
         .maybeSingle()
 
       if (data) {
         isSubscribed.value = true
       } else {
-        const userId = await getUserId()
-        if (!userId) { isSubscribed.value = false; return }
         const { endpoint, keys } = subscription.toJSON()
         const { error } = await client.from('push_subscriptions').upsert(
           { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
@@ -113,8 +115,10 @@ export const usePushNotifications = () => {
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
+      const userId = await getUserId()
       if (subscription) {
-        await client.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint)
+        const query = client.from('push_subscriptions').delete().eq('endpoint', subscription.endpoint)
+        await (userId ? query.eq('user_id', userId) : query)
         await subscription.unsubscribe()
       }
       isSubscribed.value = false
@@ -122,6 +126,28 @@ export const usePushNotifications = () => {
       console.error('[PUSH] Error al desuscribir:', e)
     } finally {
       isLoading.value = false
+    }
+  }
+
+  const removeSubscriptionForCurrentUser = async () => {
+    if (!isSupported.value) return
+    try {
+      const userId = await getUserId()
+      if (!userId) return
+
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      if (!subscription) return
+
+      await client
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('endpoint', subscription.endpoint)
+
+      isSubscribed.value = false
+    } catch (e) {
+      console.error('[PUSH] Error limpiando suscripción al cerrar sesión:', e)
     }
   }
 
@@ -133,5 +159,6 @@ export const usePushNotifications = () => {
     subscribe,
     unsubscribe,
     checkSubscription,
+    removeSubscriptionForCurrentUser,
   }
 }

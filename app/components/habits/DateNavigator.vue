@@ -79,21 +79,12 @@ const TODAY = getArgentineDate()
 
 const DAY_LABELS = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá']
 
-const addDays = (dateStr, n) => {
-    const [y, m, d] = dateStr.split('-').map(Number)
-    const date = new Date(y, m - 1, d + n)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-}
-
 const DAYS_MOBILE = 7
 const DAYS_DESKTOP = 14
 
 const days = computed(() => {
     return Array.from({ length: DAYS_DESKTOP }, (_, i) => {
-        const dateStr = addDays(TODAY, i - (DAYS_DESKTOP - 1))
+        const dateStr = addDaysToDateStr(TODAY, i - (DAYS_DESKTOP - 1))
         const [, , dayNum] = dateStr.split('-').map(Number)
         const [year, month, day] = dateStr.split('-').map(Number)
         const dayOfWeek = new Date(year, month - 1, day).getDay()
@@ -106,24 +97,31 @@ const days = computed(() => {
     })
 })
 
-const DAY_LETTER_TO_NUM = { D: 0, L: 1, M: 2, X: 3, J: 4, V: 5, S: 6 }
+const fetchCommunityHabits = async (userId, dates) => {
+    const { data: memberships } = await client
+        .from('community_members')
+        .select('community_id')
+        .eq('user_id', userId)
 
-const isHabitApplicableForDate = (habit, dateStr) => {
-    const [year, month, day] = dateStr.split('-').map(Number)
-    const dateObj = new Date(year, month - 1, day)
-    const dayOfWeek = dateObj.getDay()
-    const dayOfMonth = dateObj.getDate()
-    const fo = habit.frequency_option
+    const communityIds = (memberships || []).map(m => m.community_id)
+    if (communityIds.length === 0) return { habits: [], logs: [] }
 
-    if (fo === 'dias_especificos_semana') {
-        const selected = (habit.frequency_detail?.weekDays || []).map(l => DAY_LETTER_TO_NUM[l])
-        return selected.includes(dayOfWeek)
-    }
-    if (fo === 'dias_especificos_mes') {
-        return (habit.frequency_detail?.monthDays || []).includes(dayOfMonth)
-    }
+    const { data: habits } = await client
+        .from('community_habits')
+        .select('id, frequency_type, frequency_option, frequency_detail')
+        .in('community_id', communityIds)
 
-    return true
+    if (!habits || habits.length === 0) return { habits: [], logs: [] }
+
+    const { data: logs } = await client
+        .from('community_habit_logs')
+        .select('date, community_habit_id')
+        .in('date', dates)
+        .in('community_habit_id', habits.map(h => h.id))
+        .eq('user_id', userId)
+        .eq('completed', true)
+
+    return { habits, logs: logs || [] }
 }
 
 const fetchWeekCompletions = async () => {
@@ -142,25 +140,31 @@ const fetchWeekCompletions = async () => {
         .select('id, frequency_type, frequency_option, frequency_detail')
         .eq('user_id', userId)
 
-    if (!habits || habits.length === 0) return
+    const personalHabits = habits || []
 
-    const habitIds = habits.map(h => h.id)
+    const { data: logs } = personalHabits.length > 0
+        ? await client
+            .from('habit_logs')
+            .select('date, habit_id')
+            .in('date', pastAndTodayDates)
+            .in('habit_id', personalHabits.map(h => h.id))
+            .eq('completed', true)
+        : { data: [] }
 
-    const { data: logs } = await client
-        .from('habit_logs')
-        .select('date, habit_id')
-        .in('date', pastAndTodayDates)
-        .in('habit_id', habitIds)
-        .eq('completed', true)
+    const { habits: communityHabits, logs: communityLogs } = await fetchCommunityHabits(userId, pastAndTodayDates)
+
+    if (personalHabits.length === 0 && communityHabits.length === 0) return
 
     const countPerDay = {}
-    logs?.forEach(log => {
+    for (const log of [...(logs || []), ...communityLogs]) {
         countPerDay[log.date] = (countPerDay[log.date] || 0) + 1
-    })
+    }
+
+    const allHabits = [...personalHabits, ...communityHabits]
 
     const result = {}
     pastAndTodayDates.forEach(date => {
-        const total = habits.filter(h => isHabitApplicableForDate(h, date)).length
+        const total = allHabits.filter(h => isHabitScheduledOn(h, date)).length
         result[date] = { completed: countPerDay[date] || 0, total }
     })
     dayCompletions.value = result

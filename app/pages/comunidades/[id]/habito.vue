@@ -84,6 +84,7 @@ const habit = ref(null)
 const myLog = ref(null)
 const completions = ref([])
 const currentUserId = ref(null)
+const selectedDate = ref(null)
 
 const isAdmin = computed(() =>
     community.value?.members?.some(
@@ -95,6 +96,7 @@ let realtimeChannel = null
 
 const loadData = async () => {
     const communityId = route.params.id
+    selectedDate.value = route.query.date || null
     const { data: { session } } = await client.auth.getSession()
     currentUserId.value = session?.user?.id ?? null
 
@@ -107,8 +109,8 @@ const loadData = async () => {
     if (!habitData) return
 
     const [logData, completionsData] = await Promise.all([
-        getCommunityHabitMyLog(habitData.id),
-        getCommunityHabitCompletions(habitData.id),
+        getCommunityHabitMyLog(habitData.id, selectedDate.value),
+        getCommunityHabitCompletions(habitData.id, selectedDate.value),
     ])
     myLog.value = logData
     completions.value = completionsData
@@ -125,9 +127,9 @@ const setupRealtime = (habitId) => {
         table: 'community_habit_logs',
         filter: `community_habit_id=eq.${habitId}`,
     }, async (payload) => {
-        completions.value = await getCommunityHabitCompletions(habitId)
+        completions.value = await getCommunityHabitCompletions(habitId, selectedDate.value)
         if (payload.new?.user_id && payload.new.user_id !== currentUserId.value) {
-            myLog.value = await getCommunityHabitMyLog(habitId)
+            myLog.value = await getCommunityHabitMyLog(habitId, selectedDate.value)
         }
     })
 
@@ -152,9 +154,9 @@ const refreshHabitStreak = async () => {
 
 const increaseProgress = async () => {
     try {
-        myLog.value = await logCommunityHabitProgress(habit.value.id, 1, habit.value.goal_value)
+        myLog.value = await logCommunityHabitProgress(habit.value.id, 1, habit.value.goal_value, selectedDate.value)
         const [completionsData] = await Promise.all([
-            getCommunityHabitCompletions(habit.value.id),
+            getCommunityHabitCompletions(habit.value.id, selectedDate.value),
             refreshHabitStreak(),
         ])
         completions.value = completionsData
@@ -165,9 +167,9 @@ const increaseProgress = async () => {
 
 const decreaseProgress = async () => {
     try {
-        myLog.value = await logCommunityHabitProgress(habit.value.id, -1, habit.value.goal_value)
+        myLog.value = await logCommunityHabitProgress(habit.value.id, -1, habit.value.goal_value, selectedDate.value)
         const [completionsData] = await Promise.all([
-            getCommunityHabitCompletions(habit.value.id),
+            getCommunityHabitCompletions(habit.value.id, selectedDate.value),
             refreshHabitStreak(),
         ])
         completions.value = completionsData
@@ -180,9 +182,9 @@ const resetProgress = async () => {
     try {
         const current = myLog.value?.progress_count || 0
         if (current > 0) {
-            myLog.value = await logCommunityHabitProgress(habit.value.id, -current, habit.value.goal_value)
+            myLog.value = await logCommunityHabitProgress(habit.value.id, -current, habit.value.goal_value, selectedDate.value)
             const [completionsData] = await Promise.all([
-                getCommunityHabitCompletions(habit.value.id),
+                getCommunityHabitCompletions(habit.value.id, selectedDate.value),
                 refreshHabitStreak(),
             ])
             completions.value = completionsData
@@ -198,9 +200,9 @@ const completeHabit = async () => {
         const goal = habit.value.goal_value || 1
         const needed = goal - current
         if (needed > 0) {
-            myLog.value = await logCommunityHabitProgress(habit.value.id, needed, goal)
+            myLog.value = await logCommunityHabitProgress(habit.value.id, needed, goal, selectedDate.value)
             const [completionsData] = await Promise.all([
-                getCommunityHabitCompletions(habit.value.id),
+                getCommunityHabitCompletions(habit.value.id, selectedDate.value),
                 refreshHabitStreak(),
             ])
             completions.value = completionsData
