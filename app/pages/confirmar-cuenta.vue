@@ -23,6 +23,11 @@
         layout: "auth",
     });
 
+    useSeoTags({
+        title: 'Confirmá tu cuenta',
+        description: 'Verificá tu correo para activar tu cuenta y empezar a sumar hábitos.',
+    })
+
     const client = useSupabaseClient()
 
     const userEmail = ref('')

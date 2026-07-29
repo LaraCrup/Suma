@@ -20,12 +20,18 @@ export default defineNuxtConfig({
     head: {
       charset: 'utf-8',
       viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
+      title: 'Suma — Hábitos que suman',
       htmlAttrs: {
-        lang: 'es'
+        lang: 'es-AR'
       },
       meta: [
+        { name: 'description', content: 'Formá hábitos que duran: seguí tu progreso día a día, ganá XP y niveles, sumate a comunidades con hábitos compartidos y descubrí beneficios de marcas aliadas.' },
+        { name: 'robots', content: 'noindex, nofollow' },
+        { name: 'application-name', content: 'Suma' },
+        { name: 'apple-mobile-web-app-title', content: 'Suma' },
         { name: 'format-detection', content: 'telephone=no' },
         { name: 'theme-color', content: '#157A6E' },
+        { name: 'color-scheme', content: 'light' },
         { name: 'mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' }

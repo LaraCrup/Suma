@@ -18,4 +18,9 @@ definePageMeta({
     layout: "auth",
 });
 
+useSeoTags({
+    title: 'Contraseña actualizada',
+    description: 'Tu contraseña se actualizó correctamente. Ya podés volver a iniciar sesión.',
+})
+
 </script>

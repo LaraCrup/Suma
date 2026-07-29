@@ -4,6 +4,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Crear hábito',
+    description: 'Elegí un hábito sugerido o creá el tuyo: definí frecuencia, meta y recordatorio.',
+})
 import { computed } from 'vue'
 import { useHabitStore } from '~/stores/habitStore'
 

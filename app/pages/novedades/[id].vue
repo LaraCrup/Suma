@@ -50,6 +50,14 @@ const { getNews } = useNovedades()
 const item = ref(null)
 const loading = ref(true)
 
+useSeoTags({
+    title: () => item.value?.title || 'Novedad',
+    description: () => item.value?.content?.replace(/\s+/g, ' ').trim().slice(0, 155) || 'Novedades y beneficios de las marcas aliadas de Suma.',
+    image: () => item.value?.image_url,
+    imageAlt: () => item.value?.title,
+    type: 'article',
+})
+
 const formatDate = (date) => {
     if (!date) return ''
     const [year, month, day] = date.split('-')

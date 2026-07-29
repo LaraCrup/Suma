@@ -34,6 +34,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Cambiar contraseña',
+    description: 'Elegí una contraseña nueva para mantener tu cuenta segura.',
+})
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES.js'
 
 const client = useSupabaseClient()

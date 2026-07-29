@@ -22,6 +22,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Editar hábito comunitario',
+    description: 'Actualizá el hábito compartido de la comunidad que administrás.',
+})
 const route = useRoute()
 const { getCommunityHabit, updateCommunityHabit, isCommunityAdmin } = useCommunities()
 

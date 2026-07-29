@@ -28,6 +28,11 @@
         layout: "auth",
     });
 
+    useSeoTags({
+        title: 'Revisá tu correo',
+        description: 'Te enviamos un enlace para restablecer la contraseña de tu cuenta de Suma.',
+    })
+
     const client = useSupabaseClient()
     const router = useRouter()
     const { success } = useNotification()

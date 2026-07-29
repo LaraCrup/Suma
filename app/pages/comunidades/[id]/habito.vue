@@ -75,6 +75,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Hábito comunitario',
+    description: 'Registrá tu progreso en el hábito compartido y mirá cómo va el resto del grupo.',
+})
 const route = useRoute()
 const client = useSupabaseClient()
 const { getCommunityById, getCommunityHabit, getCommunityHabitMyLog, getCommunityHabitCompletions, logCommunityHabitProgress } = useCommunities()

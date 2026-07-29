@@ -10,15 +10,15 @@
                 <div class="h-full bg-gradient-secondary rounded-full" style="width: 50%" />
             </div>
             <div class="w-full flex justify-between items-center">
-                <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
+                <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
                 <div class="flex gap-0.5">
-                    <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" />
+                    <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" alt="" />
                 </div>
                 <div class="flex gap-0.5">
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
                 </div>
             </div>
         </div>
@@ -74,6 +74,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Nueva comunidad · Nombre',
+    description: 'Ponele nombre e ícono a tu comunidad para que todos la reconozcan.',
+})
 const route = useRoute()
 const router = useRouter()
 const { getProfileById } = useFriends()

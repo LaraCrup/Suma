@@ -76,6 +76,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Novedades',
+    description: 'Descubrí las últimas novedades y beneficios de las marcas aliadas de Suma.',
+})
 const { getNews, getCategories } = useNovedades()
 const { registerRefresh } = usePullToRefresh()
 

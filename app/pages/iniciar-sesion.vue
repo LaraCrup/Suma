@@ -42,6 +42,39 @@ definePageMeta({
     layout: "auth",
 });
 
+useSeoTags({
+    title: 'Iniciar sesión',
+    description: 'Entrá a Suma y seguí sumando: tus hábitos, tus rachas y tu progreso te esperan.',
+    indexable: true,
+})
+
+const requestUrl = useRequestURL()
+
+useHead({
+    script: [
+        {
+            type: 'application/ld+json',
+            innerHTML: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'WebApplication',
+                name: SITE_NAME,
+                alternateName: `${SITE_NAME} — ${SITE_TAGLINE}`,
+                url: requestUrl.origin,
+                description: SITE_DESCRIPTION,
+                applicationCategory: 'HealthApplication',
+                operatingSystem: 'Web, iOS, Android',
+                inLanguage: 'es-AR',
+                image: new URL(SITE_IMAGE, requestUrl.origin).href,
+                offers: {
+                    '@type': 'Offer',
+                    price: '0',
+                    priceCurrency: 'ARS',
+                },
+            }),
+        },
+    ],
+})
+
 const client = useSupabaseClient();
 const router = useRouter();
 

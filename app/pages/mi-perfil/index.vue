@@ -104,6 +104,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Mi perfil',
+    description: 'Consultá tu nivel, tus estadísticas y ajustá las notificaciones de Suma.',
+})
 import { ref, computed, onMounted } from 'vue'
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useAuthStore } from '~/stores/authStore'

@@ -247,6 +247,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Detalle de la comunidad',
+    description: 'Administrá los miembros, el nombre y el hábito compartido de tu comunidad.',
+})
 const route = useRoute()
 const supabase = useSupabaseClient()
 const {

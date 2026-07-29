@@ -48,6 +48,11 @@ definePageMeta({
     layout: "auth",
 });
 
+useSeoTags({
+    title: 'Nueva contraseña',
+    description: 'Definí una contraseña nueva para volver a entrar a tu cuenta.',
+})
+
 const client = useSupabaseClient()
 const router = useRouter()
 const { success } = useNotification()

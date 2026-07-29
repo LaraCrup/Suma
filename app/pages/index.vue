@@ -85,6 +85,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Mis hábitos',
+    description: 'Seguí tus hábitos del día, marcá tu progreso y mantené viva tu racha.',
+})
 import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'

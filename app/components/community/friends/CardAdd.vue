@@ -8,7 +8,7 @@
             <p class="text-xs 2xl:text-sm">{{ user?.display_name }}</p>
         </div>
         <div class="relative flex items-center justify-end" style="min-width: 2.5rem;">
-            <NuxtImg v-if="isFriend" src="/images/brillo.svg" class="w-4 h-4 flex-shrink-0" />
+            <NuxtImg v-if="isFriend" src="/images/brillo.svg" class="w-4 h-4 flex-shrink-0" alt="" />
             <Transition v-else name="toggle">
                 <button
                     v-if="!isPending"

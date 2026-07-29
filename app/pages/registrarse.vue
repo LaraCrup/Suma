@@ -48,6 +48,12 @@ definePageMeta({
     layout: "auth",
 });
 
+useSeoTags({
+    title: 'Crear cuenta',
+    description: 'Creá tu cuenta gratis en Suma y empezá hoy a construir hábitos que duran.',
+    indexable: true,
+})
+
 const client = useSupabaseClient()
 const router = useRouter()
 const { success } = useNotification()

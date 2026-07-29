@@ -32,6 +32,11 @@ definePageMeta({
     layout: "auth",
 });
 
+useSeoTags({
+    title: 'Restablecer contraseña',
+    description: 'Ingresá tu correo y te enviamos un enlace para recuperar el acceso a tu cuenta.',
+})
+
 const client = useSupabaseClient()
 const router = useRouter()
 const { success } = useNotification()

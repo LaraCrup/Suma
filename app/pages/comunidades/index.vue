@@ -70,6 +70,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Comunidades',
+    description: 'Entrá a tus comunidades, gestioná tus amistades y compartí hábitos con tu gente.',
+})
 const { getPendingRequests, getFriends } = useFriends()
 const { getCommunities } = useCommunities()
 const { registerRefresh } = usePullToRefresh()

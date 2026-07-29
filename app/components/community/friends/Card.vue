@@ -19,8 +19,8 @@
             v-if="selectable"
             :class="['w-6 h-6 rounded-full flex items-center justify-center transition-colors flex-shrink-0', selected ? 'bg-primary border border-primary' : 'border border-gray']"
         >
-            <NuxtImg v-if="selected" src="/images/brillo-blanco.svg" class="w-3 h-3" />
-            <NuxtImg v-else src="/images/brillo.svg" class="w-3 h-3" />
+            <NuxtImg v-if="selected" src="/images/brillo-blanco.svg" class="w-3 h-3" alt="" />
+            <NuxtImg v-else src="/images/brillo.svg" class="w-3 h-3" alt="" />
         </div>
     </component>
 </template>

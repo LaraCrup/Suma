@@ -16,7 +16,7 @@
                     placeholder="Buscá por nombre de usuario"
                     class="w-full bg-light border border-primary rounded-full outline-none text-dark text-xs 2xl:text-sm placeholder:text-gray placeholder:text-xs py-3 px-5 pl-9"
                 />
-                <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" />
+                <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" alt="" />
             </div>
         </form>
         <div v-if="loading && query.length > 0 && results.length === 0" class="w-full flex justify-center py-4">
@@ -40,6 +40,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Amigos',
+    description: 'Buscá usuarios, enviá solicitudes y sumá amigos a tus comunidades.',
+})
 const { searchUsers, getSentPendingIds, getFriendIds } = useFriends()
 const { registerRefresh } = usePullToRefresh()
 

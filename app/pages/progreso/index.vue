@@ -82,6 +82,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Mi progreso',
+    description: 'Mirá tu nivel, tu XP acumulada, tus rachas y los beneficios que desbloqueaste.',
+})
 const { getHabits, shouldShowHabitToday, getArgentineDate } = useHabits()
 const { getUserExperience, getLevelInfo } = useExperience()
 const { registerRefresh } = usePullToRefresh()

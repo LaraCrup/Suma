@@ -100,6 +100,11 @@ const friendCount = ref(0)
 const communityCount = ref(0)
 const isFriend = ref(false)
 const isPending = ref(false)
+
+useSeoTags({
+    title: () => profile.value?.display_name || profile.value?.name || 'Perfil de usuario',
+    description: () => `Mirá el perfil de ${profile.value?.display_name || 'este usuario'} en Suma: sus hábitos, sus amigos y sus comunidades.`,
+})
 onMounted(async () => {
     const targetId = route.params.id
 

@@ -83,6 +83,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Editar perfil',
+    description: 'Actualizá tu nombre, tu nombre de usuario y tu foto de perfil.',
+})
 import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '~/stores/authStore'
 

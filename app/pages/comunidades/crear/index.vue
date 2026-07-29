@@ -10,15 +10,15 @@
                 <div class="h-full bg-gradient-secondary rounded-full" style="width: 5%" />
             </div>
             <div class="w-full flex justify-between items-center">
-                <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" />
+                <NuxtImg src="/images/brillo-primary.svg" class="w-3 h-3" alt="" />
                 <div class="flex gap-0.5">
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
                 </div>
                 <div class="flex gap-0.5">
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
-                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
+                    <NuxtImg src="/images/brillo-dark-green.svg" class="w-3 h-3" alt="" />
                 </div>
             </div>
         </div>
@@ -30,7 +30,7 @@
                 placeholder="Escribí acá..."
                 class="w-full bg-midlight border border-gray rounded-lg outline-none text-dark text-xs 2xl:text-sm placeholder:text-gray placeholder:text-xs placeholder:2xl:text-sm py-3 pr-3 pl-9"
             />
-            <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" />
+            <NuxtImg src="/images/icons/search.svg" class="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3" alt="" />
         </div>
 
         <div class="w-full flex flex-col gap-2">
@@ -53,6 +53,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Nueva comunidad · Amigos',
+    description: 'Elegí a los amigos que van a formar parte de tu nueva comunidad.',
+})
 const route = useRoute()
 const { getFriends } = useFriends()
 

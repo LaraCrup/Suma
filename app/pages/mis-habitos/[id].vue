@@ -112,6 +112,11 @@ const route = useRoute()
 const { getHabitById, deleteHabit: deleteHabitAPI, logHabitProgress, applyStreakGrace, declineStreakGrace, getArgentineDate, isPeriodStillMissed } = useHabits()
 const habit = ref(null)
 const selectedDate = ref(null)
+
+useSeoTags({
+    title: () => habit.value?.name || 'Detalle del hábito',
+    description: () => `Seguí el detalle de tu hábito${habit.value?.name ? ` "${habit.value.name}"` : ''}: progreso, racha e historial de días completados.`,
+})
 const showMenu = ref(false)
 const showDeleteModal = ref(false)
 const isLoading = ref(true)

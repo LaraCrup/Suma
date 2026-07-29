@@ -74,6 +74,13 @@ const loading = ref(true)
 const benefit = ref(null)
 const showTerms = ref(false)
 
+useSeoTags({
+    title: () => benefit.value?.title || 'Beneficio',
+    description: () => benefit.value?.description?.replace(/\s+/g, ' ').trim().slice(0, 155) || 'Beneficios exclusivos que desbloqueás sumando hábitos en Suma.',
+    image: () => benefit.value?.image_url,
+    imageAlt: () => benefit.value?.title,
+})
+
 const loadBenefit = async () => {
     try {
         const { data, error } = await client

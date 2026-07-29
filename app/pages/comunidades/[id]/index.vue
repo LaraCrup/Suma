@@ -47,6 +47,11 @@ const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, 
 const community = ref(null)
 const habit = ref(null)
 const completions = ref([])
+
+useSeoTags({
+    title: () => community.value?.name || 'Comunidad',
+    description: () => `Chateá con tu comunidad${community.value?.name ? ` "${community.value.name}"` : ''} y seguí el hábito compartido del grupo.`,
+})
 const messages = ref([])
 const newMessage = ref('')
 const isSending = ref(false)

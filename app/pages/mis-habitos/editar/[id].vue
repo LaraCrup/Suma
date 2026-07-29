@@ -21,6 +21,11 @@
 </template>
 
 <script setup>
+
+useSeoTags({
+    title: 'Editar hábito',
+    description: 'Actualizá el nombre, la frecuencia, la meta y el recordatorio de tu hábito.',
+})
 import { ref, onMounted } from 'vue'
 import { useHabits } from '~/composables/useHabits'
 

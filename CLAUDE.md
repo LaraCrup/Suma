@@ -52,7 +52,7 @@ Crear `.env` en la raíz a partir de [.env.example](.env.example):
 ```
 app/
 ├── app.vue                  # Root: Splash > NuxtLayout > NuxtPage
-├── error.vue                # Página 404
+├── error.vue                # Página de error (usa el statusCode real, no solo 404)
 ├── assets/css/main.css      # Reset CSS + grid layout (header / main / nav)
 ├── layouts/
 │   ├── default.vue          # DefaultHeader + DefaultMain + DefaultNav (pantallas con sesión)
@@ -67,6 +67,8 @@ app/
 public/
 ├── favicon.ico, apple-touch-icon.png
 └── images/                  # isotipo, logos, íconos de nav, tips, habitsCategories, etc.
+server/
+└── routes/                  # robots.txt.js y sitemap.xml.js (Nitro, origin-aware — ver §18)
 supabase/
 ├── functions/               # Edge Functions (Deno): daily-habit-reminder, community-habit-reminder, notify-community-message
 └── migrations/              # SQL: push_subscriptions + cron de recordatorios (pg_cron)
@@ -99,7 +101,7 @@ El módulo `@nuxtjs/supabase` redirige a `/iniciar-sesion` cualquier ruta no exc
 
 ## 7. Capa de datos (Supabase)
 
-Toda la lógica de datos vive en **composables** ([app/composables/](app/composables/)). No hay `server/api/` ni endpoints propios en Nuxt; lo único server-side son dos **Edge Functions** de Supabase (ver §17).
+Toda la lógica de datos vive en **composables** ([app/composables/](app/composables/)). No hay `server/api/` ni endpoints de datos propios en Nuxt (lo único en `server/routes/` son `robots.txt` y `sitemap.xml`, que no tocan Supabase — ver §18); lo server-side de datos son las **Edge Functions** de Supabase (ver §17).
 
 **Tablas usadas** (inferidas del código):
 
@@ -133,6 +135,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
 - [usePullToRefresh.js](app/composables/usePullToRefresh.js) — singleton a nivel de módulo para el pull-to-refresh. Cada página registra su recarga con `registerRefresh(fn)` en `onMounted`; `DefaultMain` maneja el gesto táctil y llama `triggerRefresh()`. Al navegar, la página nueva pisa el callback anterior.
 - [useOnlineStatus.js](app/composables/useOnlineStatus.js) — expone `isOnline` (ref reactivo) usando `navigator.onLine` y los eventos `online`/`offline` de `window`. Usado por `OfflineBanner`.
+- [useSeo.js](app/composables/useSeo.js) — `useSeoTags({ title, description, image, imageAlt, type, indexable })` centraliza title/description/canonical/Open Graph/Twitter de cada página. Exporta además las constantes `SITE_NAME`, `SITE_TAGLINE`, `SITE_DESCRIPTION`, `SITE_IMAGE`. Ver §18.
 - [usePushNotifications.js](app/composables/usePushNotifications.js) — gestiona suscripciones Web Push. Expone `isSupported`, `permission`, `isSubscribed`, `isLoading`, `subscribe()`, `unsubscribe()`, `checkSubscription()`, `removeSubscriptionForCurrentUser()`. Persiste las suscripciones en la tabla `push_subscriptions` de Supabase. Usa `config.public.vapidPublicKey` para la clave del applicationServerKey.
 
 **Patrón**: cada composable llama a `useSupabaseClient()` adentro y expone funciones `async`. Los que requieren sesión definen un helper interno `getUserId()` que tira si no hay sesión.
@@ -320,3 +323,43 @@ No hay test suite. Para validar:
 - Ambas usan las vars `VAPID_*` y `SUPABASE_SERVICE_ROLE_KEY` como secrets de la función (no van en el `.env` del front).
 - [supabase/functions/community-habit-reminder](supabase/functions/community-habit-reminder/index.ts) — a las 23:00 ARG manda push **solo a los miembros que todavía no completaron** el hábito comunitario de hoy (respeta `frequency_option`: saltea el hábito si hoy no está programado y usa la cuota del período para `cantidad_dias_*`). La dispara el cron `community-habit-reminder` (`0 2 * * *` UTC) — ver [supabase/migrations/20260727_community_habit_reminder.sql](supabase/migrations/20260727_community_habit_reminder.sql), que además le sube el `timeout_milliseconds` al job viejo (el default de 5 s de `pg_net` cortaba la request aunque la función terminara bien).
 - [supabase/migrations/20260524_push_subscriptions.sql](supabase/migrations/20260524_push_subscriptions.sql) — tabla `push_subscriptions` con RLS (cada usuario ve/inserta/borra solo las suyas).
+
+## 18. SEO
+
+La app es **privada casi por completo**: salvo `/iniciar-sesion` y `/registrarse`, toda ruta sin sesión la redirige el módulo de Supabase. Por eso la estrategia es "dos páginas indexables, el resto `noindex`", no "indexar todo".
+
+### `useSeoTags` (obligatorio en cada página)
+
+Toda página en [app/pages/](app/pages/) llama a `useSeoTags()` ([useSeo.js](app/composables/useSeo.js)). Emite en un solo lugar: `<title>`, `description`, `robots`, `canonical`, Open Graph (`og:title/description/image/image:alt/url/type/site_name/locale`) y Twitter Card (`summary_large_image`).
+
+```js
+useSeoTags({
+    title: 'Mis hábitos',
+    description: 'Seguí tus hábitos del día, marcá tu progreso y mantené viva tu racha.',
+})
+```
+
+- **`title` se compone solo**: el composable arma `"{title} · Suma"`. Nunca escribir el sufijo a mano. Sin `title` cae en `"Suma — Hábitos que suman"`.
+- **`indexable` es opt-in y por defecto `false`** ⇒ `robots: noindex, nofollow`. Solo `/iniciar-sesion` y `/registrarse` pasan `indexable: true`. **Al crear una página nueva no hay que hacer nada para protegerla**: si te olvidás de `useSeoTags`, el default de `app.head.meta` en [nuxt.config.ts](nuxt.config.ts) ya es `noindex, nofollow`.
+- **Títulos dinámicos**: pasar **funciones** (getters), no valores. El composable las envuelve en `computed`, así el título se actualiza cuando llega el fetch. Ver [novedades/[id].vue](app/pages/novedades/[id].vue), [mis-habitos/[id].vue](app/pages/mis-habitos/[id].vue), [usuarios/[id].vue](app/pages/usuarios/[id].vue), [comunidades/[id]/index.vue](app/pages/comunidades/[id]/index.vue), [progreso/beneficios/[id].vue](app/pages/progreso/beneficios/[id].vue).
+- **`canonical` y `og:url` salen de `useRequestURL()`**, no de una constante de dominio: funcionan igual en localhost, en preview de Vercel y en producción sin configurar nada. **No** introducir una var `SITE_URL`.
+- **`og:image` por defecto es `/pwa-512x512.png`** (`SITE_IMAGE`). Es cuadrado: sirve, pero **falta un asset OG real de 1200×630**. Cuando exista, cambiar `SITE_IMAGE`. Las páginas con imagen propia (novedad, beneficio) ya pasan la suya por `image`.
+
+### `robots.txt` y `sitemap.xml`
+
+Son **rutas Nitro** ([server/routes/](server/routes/)), no archivos en `public/`, porque el `Sitemap:` y los `<loc>` necesitan el origin absoluto y se derivan de `getRequestURL(event)`. No volver a poner un `public/robots.txt`: los estáticos ganan sobre las rutas y romperían el sitemap.
+
+- `robots.txt` deniega todas las secciones privadas y las transaccionales de auth. **Al agregar una sección nueva hay que sumarla al array `DISALLOWED`.**
+- `sitemap.xml` lista solo `/iniciar-sesion` y `/registrarse` (array `PUBLIC_ROUTES`). No incluir `/`: para un crawler anónimo devuelve 302.
+
+### Otras piezas
+
+- **JSON-LD**: [iniciar-sesion.vue](app/pages/iniciar-sesion.vue) emite un `WebApplication` de schema.org. Es la landing efectiva del sitio; si algún día se agrega una landing pública real, mover el bloque ahí.
+- **`app/error.vue`**: usa el `statusCode` real del error (ya no hardcodea 404), tiene `noindex` vía `useSeoTags` y un botón que hace `clearError({ redirect: HOME })`.
+- **`lang="es-AR"`** en `htmlAttrs` y `og:locale: es_AR` — el dominio de la app es Argentina (ver la zona horaria en §1).
+- **`alt` en todas las imágenes**: los íconos decorativos (pasos `brillo-*.svg`, lupa de búsqueda) llevan `alt=""` a propósito para que los lectores de pantalla los salteen; los avatares llevan alt descriptivo. **No dejar imágenes sin ningún `alt`.**
+
+### Deuda conocida
+
+- **`user-scalable=no` en el viewport** ([nuxt.config.ts](nuxt.config.ts)) es una decisión deliberada de PWA (§14), pero Lighthouse lo marca en Accessibility. Si alguna vez se prioriza ese score, la salida es sacar `maximum-scale=1, user-scalable=no`; cambia el gesto de zoom en mobile, así que es decisión de producto.
+- **Soft 404 para anónimos**: una URL inexistente sin sesión devuelve 302 a `/iniciar-sesion` en vez de 404, porque el middleware de Supabase corre antes. Impacto bajo (esas rutas están en `Disallow`), pero es la razón por la que `error.vue` en la práctica solo se ve logueado.
