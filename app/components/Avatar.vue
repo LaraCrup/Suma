@@ -1,6 +1,6 @@
 <template>
   <div :class="[sizeClass, 'flex items-center justify-center bg-green-light rounded-full overflow-hidden']">
-    <img v-if="preview || image" :src="preview || image" :alt="`Avatar de ${name}`" class="w-full h-full bg-cover" />
+    <img v-if="preview || image" :src="preview || image" :alt="`Avatar de ${name}`" class="w-full h-full object-cover object-center" />
     <div v-else class="w-full h-full flex items-center justify-center text-2xl text-light font-bold">{{ initial }}</div>
   </div>
 </template>

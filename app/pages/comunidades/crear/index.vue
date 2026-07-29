@@ -88,7 +88,10 @@ const siguiente = () => {
         return
     }
     showError.value = false
-    navigateTo({ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_2, query: { members: selectedIds.value.join(',') } })
+    const query = { members: selectedIds.value.join(',') }
+    if (route.query.name) query.name = route.query.name
+    if (route.query.icon) query.icon = route.query.icon
+    navigateTo({ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_2, query })
 }
 
 onMounted(async () => {

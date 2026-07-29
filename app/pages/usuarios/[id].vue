@@ -122,27 +122,20 @@ onMounted(async () => {
         }
         profile.value = profileData
 
-        const [habitsResult, friendsResult, communitiesResult, friendIds, pendingIds] = await Promise.all([
-            client
-                .from('habits')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', targetId),
-            client
-                .from('friend_requests')
-                .select('id', { count: 'exact', head: true })
-                .eq('status', 'accepted')
-                .or(`sender_id.eq.${targetId},receiver_id.eq.${targetId}`),
-            client
-                .from('community_members')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', targetId),
+        const [statsResult, friendIds, pendingIds] = await Promise.all([
+            client.rpc('public_profile_stats', { p_user_id: targetId }),
             getFriendIds(),
             getSentPendingIds()
         ])
 
-        habitCount.value = habitsResult.count ?? 0
-        friendCount.value = friendsResult.count ?? 0
-        communityCount.value = communitiesResult.count ?? 0
+        if (statsResult.error) {
+            console.error('Error cargando estadísticas del perfil:', statsResult.error)
+        }
+
+        const stats = statsResult.data?.[0]
+        habitCount.value = stats?.habit_count ?? 0
+        friendCount.value = stats?.friend_count ?? 0
+        communityCount.value = stats?.community_count ?? 0
         isFriend.value = friendIds.includes(targetId)
         isPending.value = pendingIds.includes(targetId)
 

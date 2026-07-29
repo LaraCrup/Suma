@@ -7,7 +7,7 @@
         @touchend.passive="onTouchEnd"
     >
         <div
-            v-if="showIndicator"
+            v-if="pullToRefresh && showIndicator"
             class="w-full flex items-center justify-center overflow-hidden"
             :class="{ 'transition-[height] duration-200 ease-out': isTransitioning }"
             :style="{ height: displayHeight + 'px' }"
@@ -35,6 +35,10 @@
 </template>
 
 <script setup>
+const props = defineProps({
+    pullToRefresh: { type: Boolean, default: true }
+})
+
 const mainRef = ref(null)
 const { isRefreshing, triggerRefresh } = usePullToRefresh()
 
@@ -53,7 +57,7 @@ const showIndicator = computed(() =>
 )
 
 const onTouchStart = (e) => {
-    if (isRefreshing.value) return
+    if (!props.pullToRefresh || isRefreshing.value) return
     const el = mainRef.value
     if (!el || el.scrollTop > 0) return
     startY = e.touches[0].clientY
@@ -62,7 +66,7 @@ const onTouchStart = (e) => {
 }
 
 const onTouchMove = (e) => {
-    if (!startY) return
+    if (!props.pullToRefresh || !startY) return
     const delta = e.touches[0].clientY - startY
     if (delta <= 0) {
         startY = 0
@@ -94,6 +98,7 @@ const onTouchEnd = async () => {
 }
 
 onMounted(() => {
+    if (!props.pullToRefresh) return
     const el = mainRef.value
     if (el) el.addEventListener('touchmove', onTouchMove, { passive: false })
 })

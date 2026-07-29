@@ -155,9 +155,7 @@ const submitLabel = computed(() => {
 })
 
 const validateEmojiInput = () => {
-    formData.habitIcon = [...formData.habitIcon]
-        .filter(char => /\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(char))
-        .join('')
+    formData.habitIcon = keepEmojiGraphemes(formData.habitIcon)
 }
 
 const getPreviousFrequencySelection = () => {

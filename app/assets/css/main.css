@@ -38,6 +38,15 @@ main {
     overflow-y: auto;
 }
 
+body>div:first-of-type:has(>main.auth-screen) {
+    height: 100vh;
+    height: 100dvh;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 @media (min-width: 660px) {
     html {
         font-size: 106.25%;

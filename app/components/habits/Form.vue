@@ -163,9 +163,7 @@ const openFrequencyModal = () => {
 }
 
 const validateEmojiInput = () => {
-    formData.habitIcon = [...formData.habitIcon]
-        .filter(char => /\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(char))
-        .join('')
+    formData.habitIcon = keepEmojiGraphemes(formData.habitIcon)
 }
 
 const getPreviousFrequencySelection = () => {
@@ -296,7 +294,7 @@ const validateForm = () => {
         return false
     }
 
-    const iconLength = Array.from(formData.habitIcon.trim()).length
+    const iconLength = graphemeLength(formData.habitIcon.trim())
     if (iconLength > 3) {
         errors.value.habitIcon = 'El icono debe ser un emoji o carácter simple'
         return false

@@ -234,7 +234,8 @@ const handleSave = async () => {
     }
 
     if (selectedFile.value) {
-      const fileName = selectedFile.value.name
+      const extension = selectedFile.value.name.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+      const fileName = `${crypto.randomUUID()}.${extension}`
       const filePath = `${authStore.user.id}/${fileName}`
 
       const { error: uploadError } = await supabase.storage

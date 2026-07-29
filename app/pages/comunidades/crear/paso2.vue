@@ -42,7 +42,7 @@
         <div class="w-full flex flex-col gap-3">
             <p class="text-xs font-medium text-dark">Miembros: {{ members.length + 1 }}</p>
             <div class="flex flex-wrap gap-5">
-                <NuxtLink :to="{ path: ROUTE_NAMES.COMMUNITY_CREATE, query: { members: members.map(m => m.id).join(',') } }" class="flex flex-col items-center gap-1">
+                <NuxtLink :to="{ path: ROUTE_NAMES.COMMUNITY_CREATE, query: { members: members.map(m => m.id).join(','), name, icon } }" class="flex flex-col items-center gap-1">
                     <div class="w-10 h-10 rounded-full bg-green-dark flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                             viewBox="0 0 24 24">
@@ -92,9 +92,7 @@ const currentProfile = computed(() => authStore.profile)
 const errors = ref({ name: null, icon: null, members: null })
 
 const filterEmojiIcon = () => {
-    icon.value = [...icon.value]
-        .filter(char => /\p{Emoji_Presentation}|\p{Extended_Pictographic}/u.test(char))
-        .join('')
+    icon.value = keepEmojiGraphemes(icon.value)
 }
 
 const removeMember = (id) => {
@@ -119,7 +117,7 @@ const siguiente = () => {
     if (errors.value.name || errors.value.icon) return
 
     const currentMembers = members.value.map(m => m.id).join(',')
-    router.replace({ query: { members: currentMembers } })
+    router.replace({ query: { members: currentMembers, name: name.value, icon: icon.value } })
     navigateTo({ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_3, query: { members: currentMembers, name: name.value, icon: icon.value } })
 }
 

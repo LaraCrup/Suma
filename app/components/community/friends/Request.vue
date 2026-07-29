@@ -7,7 +7,7 @@
             </div>
             <p class="text-xs">{{ request?.sender?.display_name }}</p>
         </div>
-        <div class="flex gap-1">
+        <div class="flex gap-3">
             <button @click="handleAccept" class="w-5 h-5 flex justify-center items-center rounded-full bg-green-light">
                 <NuxtImg src="/images/icons/check.svg" alt="Aceptar" class="h-2" />
             </button>
