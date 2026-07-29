@@ -27,11 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       user.value = session.user
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
+      const { data: profileData, error: profileError } = await supabase.rpc('my_profile')
 
       if (profileError) {
         console.error('Error fetching profile:', profileError)
@@ -59,16 +55,21 @@ export const useAuthStore = defineStore('auth', () => {
         return null
       }
 
-      const { data, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update(updates)
         .eq('id', user.value.id)
-        .select()
-        .single()
 
       if (updateError) {
         error.value = updateError.message
         throw updateError
+      }
+
+      const { data, error: refreshError } = await supabase.rpc('my_profile')
+
+      if (refreshError) {
+        error.value = refreshError.message
+        throw refreshError
       }
 
       profile.value = data

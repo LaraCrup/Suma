@@ -287,10 +287,7 @@ const signUp = async () => {
 
     try {
         const { data: existingEmail, error: emailError } = await client
-            .from('profiles')
-            .select('id')
-            .eq('email', form.email)
-            .maybeSingle()
+            .rpc('email_taken', { p_email: form.email })
 
         if (emailError) {
             errorMsg.value = handleSupabaseError(emailError)
@@ -305,10 +302,7 @@ const signUp = async () => {
         }
 
         const { data: existingDisplayName, error: displayNameError } = await client
-            .from('profiles')
-            .select('id')
-            .eq('display_name', form.displayName)
-            .maybeSingle()
+            .rpc('display_name_taken', { p_display_name: form.displayName })
 
         if (displayNameError) {
             errorMsg.value = handleSupabaseError(displayNameError)

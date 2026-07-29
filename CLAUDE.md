@@ -251,7 +251,8 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 
 ## 14. Notas no obvias
 
-- **Login por username, no por email**: el formulario de [iniciar-sesion.vue](app/pages/iniciar-sesion.vue) pide `username`, busca el `email` correspondiente en `profiles.display_name` y luego hace `signInWithPassword` con ese email. Cuando agregues flujos de auth recordá este indirect.
+- **Login por username, no por email**: el formulario de [iniciar-sesion.vue](app/pages/iniciar-sesion.vue) pide `username`, resuelve el `email` correspondiente con el RPC `email_for_username(p_display_name)` y luego hace `signInWithPassword` con ese email. Cuando agregues flujos de auth recordá este indirect.
+- **`profiles` no se lee directo si el usuario no tiene sesión ni si necesitás columnas privadas**: la RLS/GRANTs de `profiles` (ver §19) sólo dejan leer 5 columnas públicas (`id`, `display_name`, `avatar_url`, `experience_points`, `current_level`) y sólo a `authenticated`. Todo lo demás pasa por RPCs `SECURITY DEFINER`: `my_profile()` (fila propia completa, incluye `name`/`email`/`role`), `email_for_username`, `display_name_taken`, `email_taken`. **Nunca hagas `select('*')` sobre `profiles`**: tira `permission denied for column email`.
 - **Re-sync de hábitos**: la home corre `syncHabitsWithNewDay()` al montarse, en cada `visibilitychange` y en un `setInterval` que detecta cambio de día — ver el `onMounted` de [pages/index.vue](app/pages/index.vue). No remover sin entender por qué está.
 - **Sin tipos de Supabase**: `supabase.types: false` en [nuxt.config.ts](nuxt.config.ts). El proyecto es JS puro; no asumir tipos generados del esquema.
 - **PWA con soporte offline**: la app usa `@vite-pwa/nuxt` con workbox para cachear assets y respuestas de red. `OfflineBanner` informa al usuario cuando pierde conexión. El manifest y los shortcuts de app están configurados en [nuxt.config.ts](nuxt.config.ts). El viewport está bloqueado a `user-scalable=no` y declara `apple-mobile-web-app-capable`.
@@ -363,3 +364,36 @@ Son **rutas Nitro** ([server/routes/](server/routes/)), no archivos en `public/`
 
 - **`user-scalable=no` en el viewport** ([nuxt.config.ts](nuxt.config.ts)) es una decisión deliberada de PWA (§14), pero Lighthouse lo marca en Accessibility. Si alguna vez se prioriza ese score, la salida es sacar `maximum-scale=1, user-scalable=no`; cambia el gesto de zoom en mobile, así que es decisión de producto.
 - **Soft 404 para anónimos**: una URL inexistente sin sesión devuelve 302 a `/iniciar-sesion` en vez de 404, porque el middleware de Supabase corre antes. Impacto bajo (esas rutas están en `Disallow`), pero es la razón por la que `error.vue` en la práctica solo se ve logueado.
+
+## 19. Modelo de acceso a `profiles`
+
+Hasta jul-2026 `profiles` tenía una policy de SELECT `Enable read access for all users` (`TO public USING (true)`) que dejaba a **cualquiera con la anon key**, sin sesión, hacer `select id, email, name from profiles` y llevarse la tabla entera. Las migraciones `20260729_profiles_public_rpcs.sql` y `20260729_profiles_column_privileges.sql` la reemplazan.
+
+**Modelo resultante**: la RLS deja leer cualquier fila (`profiles_select_public`, `TO authenticated USING (true)`), y lo que acota el daño son los **GRANTs a nivel columna**, que son la única protección por columna real de Postgres:
+
+- `authenticated` tiene `SELECT` sólo sobre `id`, `display_name`, `avatar_url`, `experience_points`, `current_level`.
+- `anon` no tiene `SELECT` sobre `profiles`.
+- `email`, `name` y `role` no son legibles vía PostgREST por ningún rol de cliente.
+
+**Los GRANTs de columna son por rol, no por fila**: el usuario tampoco puede leer su propio `email`/`name`/`role` desde la tabla. Por eso existe `my_profile()`.
+
+### RPCs (`SECURITY DEFINER`, `row_security = off`)
+
+| RPC | Rol | Para qué |
+|---|---|---|
+| `my_profile()` | `authenticated` | Fila propia completa (incluye `email`, `name`, `role`). Lo usan `authStore.fetchUser`, el refresh de `updateProfile` y el panel externo. |
+| `email_for_username(p_display_name)` | `anon`, `authenticated` | Login por username. |
+| `display_name_taken(p_display_name)` | `anon`, `authenticated` | Unicidad en registro y en `mi-perfil/editar`. |
+| `email_taken(p_email)` | `anon`, `authenticated` | Unicidad de email en registro. |
+
+Siguen permitiendo enumerar de a un valor por vez, pero no el dump masivo que habilitaba la policy vieja.
+
+### Al tocar este código
+
+- **Nunca `select('*')` sobre `profiles`** — tira `permission denied for column email`. Usá la lista explícita de columnas públicas, o `my_profile()` si necesitás la fila propia entera.
+- **`update().select()` sobre `profiles` también rompe** si el returning incluye columnas no otorgadas. Por eso `authStore.updateProfile` hace el `update` pelado y después llama `my_profile()`.
+- **Los embeds de PostgREST (`sender:sender_id(…)`, `profile:user_id(…)`) aplican la RLS de `profiles`**. Funcionan porque `profiles_select_public` es `USING (true)`; si alguna vez se restringe a la fila propia, se rompen 7 lugares (chat de comunidades, miembros, amigos, solicitudes, completions) y dos tiran TypeError (`row.sender.id` en `useFriends.getFriends`, `m.profile.id` en `useCommunities.getCommunityHabitCompletions`).
+- **Hay un segundo consumidor de `profiles`: el panel de administración `PanelAdminSuma`** (repo aparte). Sus lecturas de `email`/`role` viven en `server/api/` y usan la `SERVICE_ROLE_KEY`, así que son inmunes a los GRANTs de columna; la única lectura desde el cliente es la que resuelve si el usuario es superadmin (`app/stores/auth.js`), y usa `my_profile()`. Sin ese RPC, el `REVOKE` sobre `role`/`name` dejaba a `profileData` en `null`, `isSuperAdmin` nunca daba `true` y el middleware del panel hacía `signOut()`: el superadmin quedaba permanentemente afuera. **Si cambiás los GRANTs de columna de `profiles`, revisá también ese repo.**
+- **`revoke execute … from public` NO le saca el permiso a `anon`**: Supabase tiene default privileges que otorgan `EXECUTE` **directo** a `anon`, `authenticated` y `service_role` sobre toda función nueva del schema `public`. Si querés que un RPC sea sólo para logueados hay que revocarlo explícitamente (`from public, anon`), como hace `my_profile()`. Con el `revoke from public` solo, la función queda ejecutable por cualquiera con la anon key.
+- **Orden de despliegue**: (1) migración de RPCs, (2) deploy del cliente Suma, (3) deploy de `PanelAdminSuma`, (4) migración de privilegios. Los RPCs son aditivos y no rompen nada; la de privilegios es la que corta. Aplicar (4) antes de (2) tira el login de Suma, y antes de (3) deja al superadmin sin acceso al panel.
+- **`anon` ya no tiene `INSERT` sobre `profiles`**: el `GRANT` existía pero era redundante — la fila la crea el trigger `on_auth_user_created` → `handle_new_user()` (SECURITY DEFINER) sobre `auth.users`, y la policy de INSERT tiene `WITH CHECK (auth.uid() = id)`, que para `anon` evalúa `NULL` y rechaza la fila. Ningún cliente inserta en `profiles`.

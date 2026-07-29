@@ -218,13 +218,10 @@ const handleSave = async () => {
     const supabase = useSupabaseClient()
 
     if (formData.value.display_name !== authStore.profile?.display_name) {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('display_name', formData.value.display_name)
-        .single()
+      const { data: taken } = await supabase
+        .rpc('display_name_taken', { p_display_name: formData.value.display_name })
 
-      if (data && data.id !== authStore.user.id) {
+      if (taken) {
         errors.value.display_name = 'Este nombre de usuario ya existe'
         return
       }

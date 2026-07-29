@@ -130,11 +130,8 @@ const handleSignIn = async () => {
     }
 
     try {
-        const { data: profile, error: profileError } = await client
-            .from('profiles')
-            .select('email')
-            .eq('display_name', form.username)
-            .maybeSingle()
+        const { data: email, error: profileError } = await client
+            .rpc('email_for_username', { p_display_name: form.username })
 
         if (profileError) {
             errorMsg.value = handleSupabaseError(profileError)
@@ -142,14 +139,14 @@ const handleSignIn = async () => {
             return
         }
 
-        if (!profile?.email) {
+        if (!email) {
             errorMsg.value = 'Usuario no encontrado. Volvé a intentarlo.'
             isLoading.value = false
             return
         }
 
         const { error } = await client.auth.signInWithPassword({
-            email: profile.email,
+            email,
             password: form.password
         })
 
