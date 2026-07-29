@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection class="gap-6">
+    <DefaultSection class="gap-6 lg:h-[80dvh]">
         <div class="flex flex-col items-center gap-6">
             <HeadingH1 class="text-center">¡Contraseña actualizada!</HeadingH1>
             <p class="text-xs text-center">Tu contraseña se cambió correctamente. Ya podés iniciar sesión con la nueva.</p>

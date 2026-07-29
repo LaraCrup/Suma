@@ -12,11 +12,11 @@
         </div>
 
         <div class="h-full flex flex-col justify-center gap-5">
-            <div class="flex flex-col items-center">
+            <div class="flex flex-col items-center gap-3">
                 <div class="w-12 2xl:w-14 h-12 2xl:h-14 flex items-center justify-center rounded-full bg-green-dark text-2xl 2xl:text-3xl">
                     {{ habit?.icon }}
                 </div>
-                <div class="h-4 flex items-center gap-3 mt-2">
+                <div class="h-4 flex items-center gap-3">
                     <div v-if="habit?.streak > 0" class="flex items-center gap-1">
                         <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
                         <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
@@ -48,7 +48,7 @@
                     :progress-count="myLog?.progress_count"
                     :goal-value="habit?.goal_value"
                 />
-                <div class="w-full flex justify-center items-center gap-3 mt-3">
+                <div v-if="canLog" class="w-full flex justify-center items-center gap-3 mt-3">
                     <button @click="decreaseProgress" class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg">-</button>
                     <div class="flex items-end gap-1">
                         <p class="text-xl">{{ myLog?.progress_count || 0 }}</p>
@@ -60,10 +60,17 @@
                         :class="{ 'opacity-50 cursor-not-allowed': (myLog?.progress_count || 0) >= (habit?.goal_value || 1) }"
                         class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg">+</button>
                 </div>
+                <div v-else class="w-full flex flex-col items-center gap-1 mt-3">
+                    <div class="flex items-end gap-1">
+                        <p class="text-xl">{{ myLog?.progress_count || 0 }}</p>
+                        <p class="text-xs/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
+                    </div>
+                    <p class="text-center text-xs text-gray">{{ blockedReason }}</p>
+                </div>
             </div>
         </div>
 
-        <div class="w-full flex justify-between items-center">
+        <div v-if="canLog" class="w-full flex justify-between items-center">
             <button @click="resetProgress" class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
                 <NuxtImg src="/images/icons/restart.svg" alt="Restablecer" class="w-4" />
             </button>
@@ -91,11 +98,26 @@ const completions = ref([])
 const currentUserId = ref(null)
 const selectedDate = ref(null)
 
+const { isOnline } = useOnlineStatus()
+
 const isAdmin = computed(() =>
     community.value?.members?.some(
         m => m.profile.id === currentUserId.value && m.role === 'admin'
     )
 )
+
+const targetDate = computed(() => selectedDate.value || getArgentineDate())
+
+const isScheduledDay = computed(() =>
+    habit.value ? isHabitScheduledOn(habit.value, targetDate.value) : true
+)
+
+const canLog = computed(() => isOnline.value && isScheduledDay.value)
+
+const blockedReason = computed(() => {
+    if (!isOnline.value) return 'Sin conexión: no podés registrar progreso.'
+    return 'Este hábito no está programado para este día.'
+})
 
 let realtimeChannel = null
 

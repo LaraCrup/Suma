@@ -4,15 +4,17 @@
         @click="handleClick"
         @touchstart="handleTouchStart"
         @touchend="handleTouchEnd"
-        :class="['w-full relative overflow-hidden flex justify-between rounded-lg p-3 transition-colors', effectiveCompleted ? 'bg-accent' : 'bg-midlight']">
+        @touchcancel="handleTouchCancel"
+        :class="['w-full relative overflow-hidden flex justify-between rounded-lg p-3 transition-[background-color,transform] duration-150', effectiveCompleted ? 'bg-accent' : 'bg-midlight', isPressed ? 'scale-[0.98]' : 'scale-100']">
         <div
             v-if="showSwipeFill"
             class="absolute inset-y-0 pointer-events-none"
-            :class="[
-                swipeDirection === 'right' ? 'left-0 bg-accent' : 'right-0 bg-midlight',
-                pendingDirection ? 'transition-[width] duration-150' : ''
-            ]"
-            :style="{ width: swipeFillPercent + '%' }"
+            :class="swipeDirection === 'right' ? 'left-0 bg-accent' : 'right-0 bg-midlight'"
+            :style="{
+                width: swipeFillWidth + 'px',
+                opacity: swipePastThreshold ? 1 : 0.5,
+                transition: pendingDirection ? 'width 150ms ease-out' : 'opacity 120ms linear'
+            }"
         />
         <div class="relative flex gap-3 items-center min-w-0 flex-1">
             <div class="w-8 2xl:w-9 h-8 2xl:h-9 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary">
@@ -34,7 +36,7 @@
                             <span
                                 v-else-if="member.completed"
                                 class="text-[0.5rem] 2xl:text-xs text-light font-bold">
-                                {{ member.display_name?.[0] }}
+                                {{ member.display_name?.[0].toUpperCase() }}
                             </span>
                         </div>
                     </template>
@@ -92,6 +94,8 @@ const visibleMembers = computed(() => props.members.slice(0, MAX_VISIBLE))
 const extraCount = computed(() => Math.max(0, props.members.length - MAX_VISIBLE))
 const myMember = computed(() => props.members.find(m => m.id === currentUserId.value))
 
+const { isOnline } = useOnlineStatus()
+
 const cardRef = ref(null)
 const touchStartX = ref(0)
 const touchStartY = ref(0)
@@ -100,9 +104,11 @@ const isSwipe = ref(false)
 const touchDeltaX = ref(0)
 const isHorizontalGesture = ref(false)
 const pendingDirection = ref(null)
+const isPressed = ref(false)
+const cardWidth = ref(0)
 
 const SWIPE_THRESHOLD = 40
-const FILL_FULL_DISTANCE = 60
+const HORIZONTAL_TOLERANCE = 8
 
 const localOverrideCompleted = ref(null)
 
@@ -125,31 +131,41 @@ const swipeDirection = computed(() => {
 })
 
 const isActionable = computed(() => {
+    if (pendingDirection.value) return true
+    if (!isOnline.value) return false
     const dir = swipeDirection.value
     if (dir === 'right') return !effectiveCompleted.value
     if (dir === 'left') return effectiveCompleted.value
     return false
 })
 
-const swipeFillPercent = computed(() => {
-    if (pendingDirection.value) return 100
+const swipeFillWidth = computed(() => {
+    if (pendingDirection.value) return cardWidth.value
     if (!isHorizontalGesture.value) return 0
-    const distance = Math.abs(touchDeltaX.value)
-    return Math.min((distance / FILL_FULL_DISTANCE) * 100, 100)
+    return Math.min(Math.abs(touchDeltaX.value), cardWidth.value)
+})
+
+const swipePastThreshold = computed(() => {
+    if (pendingDirection.value) return true
+    return Math.abs(touchDeltaX.value) >= SWIPE_THRESHOLD
 })
 
 const showSwipeFill = computed(() => {
-    return isActionable.value && swipeFillPercent.value > 0
+    return isActionable.value && swipeFillWidth.value > 0
 })
 
 const handleTouchMove = (e) => {
     const dx = e.touches[0].clientX - touchStartX.value
     const dy = e.touches[0].clientY - touchStartY.value
 
-    if (!isHorizontalGesture.value && Math.abs(dy) > Math.abs(dx) + 5) return
+    if (!isHorizontalGesture.value && Math.abs(dy) > Math.abs(dx) + 5) {
+        isPressed.value = false
+        return
+    }
 
-    if (Math.abs(dx) > 8) {
+    if (Math.abs(dx) > HORIZONTAL_TOLERANCE) {
         isHorizontalGesture.value = true
+        isPressed.value = false
         e.preventDefault()
         touchDeltaX.value = dx
     }
@@ -172,6 +188,15 @@ const handleTouchStart = (e) => {
     isSwipe.value = false
     touchDeltaX.value = 0
     isHorizontalGesture.value = false
+    isPressed.value = true
+    cardWidth.value = cardRef.value?.offsetWidth || 0
+}
+
+const handleTouchCancel = () => {
+    isPressed.value = false
+    isSwipe.value = isHorizontalGesture.value
+    touchDeltaX.value = 0
+    isHorizontalGesture.value = false
 }
 
 const handleTouchEnd = async (e) => {
@@ -181,14 +206,18 @@ const handleTouchEnd = async (e) => {
     const swipeTime = touchEndTime - touchStartTime.value
     const direction = touchEndX > touchStartX.value ? 'right' : 'left'
 
-    const isValidSwipe = swipeDistance > SWIPE_THRESHOLD && swipeTime < 800
-    const willAct = isValidSwipe && (
+    const wasHorizontal = isHorizontalGesture.value
+
+    isPressed.value = false
+    isSwipe.value = wasHorizontal
+
+    const isValidSwipe = wasHorizontal && swipeDistance > SWIPE_THRESHOLD && swipeTime < 800
+    const willAct = isValidSwipe && isOnline.value && (
         (direction === 'right' && !effectiveCompleted.value) ||
         (direction === 'left' && effectiveCompleted.value)
     )
 
     if (willAct) {
-        isSwipe.value = true
         pendingDirection.value = direction
     }
 

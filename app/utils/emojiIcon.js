@@ -23,8 +23,8 @@ export function graphemeLength(value) {
     return splitGraphemes(value).length
 }
 
-export function keepEmojiGraphemes(value) {
-    return splitGraphemes(value)
+export function keepLastEmojiGrapheme(value) {
+    const emojis = splitGraphemes(value)
         .filter(cluster => /\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(cluster))
-        .join('')
+    return emojis.length ? emojis[emojis.length - 1] : ''
 }

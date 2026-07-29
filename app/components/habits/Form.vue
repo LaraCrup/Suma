@@ -18,7 +18,7 @@
                 <div class="flex items-center gap-2">
                     <input id="habit-icon" v-model="formData.habitIcon" type="text"
                         class="w-12 h-12 text-xl text-center bg-transparent outline-none border border-gray rounded-full p-2"
-                        placeholder="" maxlength="10" required aria-required="true"
+                        placeholder="" maxlength="20" required aria-required="true"
                         aria-invalid="errors.habitIcon ? 'true' : 'false'"
                         :aria-describedby="errors.habitIcon ? 'habit-icon-error' : null"
                         @input="validateEmojiInput"
@@ -163,7 +163,7 @@ const openFrequencyModal = () => {
 }
 
 const validateEmojiInput = () => {
-    formData.habitIcon = keepEmojiGraphemes(formData.habitIcon)
+    formData.habitIcon = keepLastEmojiGrapheme(formData.habitIcon)
 }
 
 const getPreviousFrequencySelection = () => {
@@ -294,9 +294,8 @@ const validateForm = () => {
         return false
     }
 
-    const iconLength = graphemeLength(formData.habitIcon.trim())
-    if (iconLength > 3) {
-        errors.value.habitIcon = 'El icono debe ser un emoji o carácter simple'
+    if (graphemeLength(formData.habitIcon.trim()) !== 1) {
+        errors.value.habitIcon = 'El icono debe ser un solo emoji'
         return false
     }
 
@@ -430,7 +429,7 @@ const handleSubmit = async () => {
 
         const habitData = {
             name: formData.habitName.trim(),
-            icon: formData.habitIcon || '📝',
+            icon: formData.habitIcon.trim(),
             unit: formData.habitUnit || 'veces',
             when_where: formData.habitWhenWhere || null,
             identity: formData.habitIdentity || null,
@@ -519,7 +518,7 @@ const loadFormData = (data) => {
         frequencyVariant = corrected.variant
 
         formData.habitName = data.name || ''
-        formData.habitIcon = data.icon || '📝'
+        formData.habitIcon = data.icon || ''
         formData.habitUnit = data.unit || 'veces'
         formData.habitWhenWhere = data.when_where || ''
         formData.habitIdentity = data.identity || ''

@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection class="gap-6">
+    <DefaultSection class="gap-6 lg:h-[80dvh]">
         <div class="w-full flex flex-col items-center gap-2">
             <HeadingH1>¡Qué bueno verte!</HeadingH1>
             <p class="text-xs">Tu progreso te espera.</p>

@@ -2,7 +2,7 @@
     <DefaultSection>
         <div class="relative w-full flex items-center">
             <NavigationBackArrow :url="ROUTE_NAMES.HABITS_CREATE" class="absolute text-gray" @click="goBack" />
-            <HeadingH2 class="text-center">{{ currentIcon }} {{ currentName || 'Nuevo hábito' }}</HeadingH2>
+            <HeadingH2 class="text-center"><span v-if="currentIcon">{{ currentIcon }} </span>{{ currentName || 'Nuevo hábito' }}</HeadingH2>
         </div>
 
         <HabitsForm
@@ -26,7 +26,7 @@ const initialData = ref(null)
 const isEditing = ref(false)
 
 const currentName = ref('')
-const currentIcon = ref('📝')
+const currentIcon = ref('')
 
 const goBack = () => {
     habitStore.clearSelection()
@@ -44,7 +44,7 @@ const handleFormError = (err) => {
 
 const handleFormUpdate = (data) => {
     currentName.value = data.name
-    currentIcon.value = data.icon || '📝'
+    currentIcon.value = data.icon || ''
 }
 
 onMounted(() => {

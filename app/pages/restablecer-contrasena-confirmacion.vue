@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection class="gap-6">
+    <DefaultSection class="gap-6 lg:h-[80dvh]">
         <NavigationBackArrow color="text-green-light" />
         <div class="flex flex-col items-center gap-2">
             <HeadingH1 class="text-center">¡Verificá tu correo para continuar!</HeadingH1>

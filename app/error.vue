@@ -23,7 +23,7 @@ const statusCode = computed(() => props.error?.statusCode || 500)
 
 const message = computed(() =>
     statusCode.value === 404
-        ? 'La página que buscás no existe o fue movida.'
+        ? 'La página que buscás no existe.'
         : 'Algo salió mal. Probá de nuevo en unos minutos.'
 )
 

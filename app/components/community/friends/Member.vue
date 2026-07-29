@@ -3,7 +3,7 @@
         <div class="relative">
             <div class="w-10 h-10 flex items-center justify-center rounded-full bg-green-light overflow-hidden">
                 <img v-if="member?.avatar_url" :src="member.avatar_url" :alt="`Foto de perfil de ${member.display_name || member.name || 'un miembro'}`" class="w-full h-full object-cover" />
-                <span v-else class="text-xs text-light font-bold">{{ member?.display_name?.charAt(0).toUpperCase()
+                <span v-else class="bg-green-light text-xs text-light font-bold">{{ member?.display_name?.charAt(0).toUpperCase()
                     }}</span>
             </div>
             <button type="button" @click="emit('remove', member?.id)"

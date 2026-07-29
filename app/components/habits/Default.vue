@@ -43,7 +43,7 @@ const defaultHabits = [
               icon: '💧',
             },
             { name: 'Meditar',
-              icon: '🧘🏻‍♀',
+              icon: '🧘‍♀️',
             },
             { name: 'Ejercicio',
               icon: '💪',
@@ -129,7 +129,7 @@ const defaultHabits = [
         icon: 'wellness',
         habits: [
             { name: 'Meditación',
-              icon: '🧘🏻‍♀',
+              icon: '🧘‍♀️',
             },
             { name: 'Respiración profunda',
               icon: '🌬️',

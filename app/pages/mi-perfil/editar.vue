@@ -57,8 +57,11 @@
       />
 
 
-      <ButtonPrimary type="submit" :disabled="authStore.loading" class="self-center">
-        {{ authStore.loading ? 'Guardando...' : 'Guardar cambios' }}
+      <ButtonPrimary type="submit" :disabled="isSaving" class="self-center">
+        <span class="flex items-center gap-2">
+          <Loader v-if="isSaving" color="light" />
+          {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+        </span>
       </ButtonPrimary>
     </form>
 
@@ -117,6 +120,7 @@ const handlePushToggle = async (value) => {
 const fileInput = ref(null)
 const previewImage = ref(null)
 const selectedFile = ref(null)
+const isSaving = ref(false)
 const formData = ref({
   name: '',
   display_name: ''
@@ -214,6 +218,8 @@ const handleSave = async () => {
     return
   }
 
+  isSaving.value = true
+
   try {
     const router = useRouter()
     const supabase = useSupabaseClient()
@@ -282,6 +288,8 @@ const handleSave = async () => {
     await router.push(ROUTE_NAMES.PROFILE)
   } catch (error) {
     authStore.error = `Error al guardar: ${error.message}`
+  } finally {
+    isSaving.value = false
   }
 }
 </script>

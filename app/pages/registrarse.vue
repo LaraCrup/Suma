@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection>
+    <DefaultSection class="lg:h-[80dvh]">
         <HeadingH1>Registrarse</HeadingH1>
 
         <FormLayout @submit.prevent="signUp">

@@ -30,7 +30,7 @@
                     type="text"
                     class="w-12 h-12 text-xl text-center bg-transparent outline-none border border-gray rounded-full p-2"
                     placeholder=""
-                    maxlength="10"
+                    maxlength="20"
                     inputmode="text"
                     @input="validateEmojiInput"
                 />
@@ -155,7 +155,7 @@ const submitLabel = computed(() => {
 })
 
 const validateEmojiInput = () => {
-    formData.habitIcon = keepEmojiGraphemes(formData.habitIcon)
+    formData.habitIcon = keepLastEmojiGrapheme(formData.habitIcon)
 }
 
 const getPreviousFrequencySelection = () => {
@@ -203,6 +203,10 @@ const validateForm = () => {
     }
     if (!formData.habitIcon?.trim()) {
         errors.value.habitIcon = 'El icono es obligatorio'
+        return false
+    }
+    if (graphemeLength(formData.habitIcon.trim()) !== 1) {
+        errors.value.habitIcon = 'El icono debe ser un solo emoji'
         return false
     }
     if (!formData.habitIdentity?.trim() || formData.habitIdentity.trim().length < 5) {

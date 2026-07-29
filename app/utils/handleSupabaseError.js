@@ -1,5 +1,5 @@
 const errorMessages = {
-    'Invalid login credentials': 'El usuario o la contraseña no coinciden. Revisá tus datos e intentá de nuevo.',
+    'Invalid login credentials': 'La contraseña es incorrecta. Intentá de nuevo o recuperá tu contraseña.',
     'Email not confirmed': 'Tu correo electrónico todavía no fue verificado. Revisá tu bandeja de entrada y tocá el enlace de confirmación.',
     'User not found': 'No encontramos una cuenta con esos datos.',
     'Password recovery token is invalid or has expired': 'El enlace de recuperación expiró. Pedí uno nuevo.',

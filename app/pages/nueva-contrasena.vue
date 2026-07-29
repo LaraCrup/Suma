@@ -1,5 +1,5 @@
 <template>
-    <DefaultSection v-if="!linkValidating">
+    <DefaultSection v-if="!linkValidating" class="lg:h-[80dvh]">
         <div v-if="linkValid" class="flex flex-col items-center gap-2">
             <HeadingH1>Creá tu nueva contraseña</HeadingH1>
             <p class="text-xs text-center">Elegí una nueva contraseña segura y volvé a tu progreso.</p>

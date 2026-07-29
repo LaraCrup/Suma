@@ -10,8 +10,8 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 
 ### Comunidades (cambió la RLS de `community_members`)
 
-- [ ] **Crear una comunidad nueva** con 2+ miembros invitados desde el paso 2 → se crea sin error
-- [ ] El creador queda como **Admin** y los invitados como miembros
+- [x] **Crear una comunidad nueva** con 2+ miembros invitados desde el paso 2 → se crea sin error
+- [x] El creador queda como **Admin** y los invitados como miembros
 - [ ] **Agregar un miembro** a una comunidad existente, siendo admin → funciona
 - [ ] **Salir** de una comunidad (no siendo admin) → funciona
 - [ ] Un admin **elimina** a un miembro → funciona
@@ -23,10 +23,10 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 
 - [x] Login por username → entra normal
 - [x] El perfil carga nombre, email y avatar
-- [] Editar perfil y guardar → persiste
-- [ ] Ver el perfil público de otro usuario (`/usuarios/[id]`) → se ve nombre, avatar, XP y nivel
-- [ ] El chat de comunidad muestra el nombre y avatar de cada persona
-- [ ] La lista de miembros y la de amigos muestran los perfiles correctamente
+- [x] Editar perfil y guardar → persiste
+- [x] Ver el perfil público de otro usuario (`/usuarios/[id]`) → se ve nombre, avatar, XP y nivel
+- [x] El chat de comunidad muestra el nombre y avatar de cada persona
+- [x] La lista de miembros y la de amigos muestran los perfiles correctamente
 - [ ] **Panel de administración (repo aparte)**: entrar como superadmin → sigue funcionando
 
 ### Guards por usuario (se cambiaron las claves de `localStorage`)
@@ -43,7 +43,7 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 - [x] Login con contraseña incorrecta → mensaje claro en español
 - [x] Login con usuario inexistente → mensaje claro
 - [x] Registro con email ya usado → mensaje claro
-- [ ] Provocar un error raro (ej. cortar internet a mitad de un guardado) → aparece *"Algo salió mal. Volvé a intentar en unos minutos."* y **nunca** un error en inglés
+- [x] Provocar un error raro (ej. cortar internet a mitad de un guardado) → aparece *"Algo salió mal. Volvé a intentar en unos minutos."* y **nunca** un error en inglés
 
 ### Rutas (se reemplazaron 23 rutas hardcodeadas por `ROUTE_NAMES`)
 
@@ -68,32 +68,32 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 
 ## 2. Flujos de autenticación
 
-- [ ] Registro completo → llega el email de confirmación → el link funciona → entra a la app
-- [ ] Login por **username**, no por email (hay un indirect vía el RPC `email_for_username`)
-- [ ] Login con username inexistente → mensaje en español
-- [ ] Login con contraseña incorrecta → mensaje claro
-- [ ] Registro con username ya tomado → lo detecta antes de enviar
-- [ ] Registro con email ya registrado → lo detecta
-- [ ] Registro con una contraseña filtrada (probar `password123`) → la rechaza
-- [ ] Recuperar contraseña: pedir → email → link → nueva contraseña → `/contrasena-actualizada` → login con la nueva
-- [ ] Link de recuperación **expirado** → mensaje comprensible
-- [ ] Logout → redirige al login y no se puede volver con el botón "atrás"
-- [ ] Cambiar contraseña desde `/mi-perfil/cambiar-contrasena`
-- [ ] Entrar a una ruta privada por URL directa sin sesión → redirige al login
+- [x] Registro completo → llega el email de confirmación → el link funciona → entra a la app
+- [x] Login por **username**, no por email (hay un indirect vía el RPC `email_for_username`)
+- [x] Login con username inexistente → mensaje en español
+- [x] Login con contraseña incorrecta → mensaje claro
+- [x] Registro con username ya tomado → lo detecta antes de enviar
+- [x] Registro con email ya registrado → lo detecta
+- [x] Registro con una contraseña filtrada (probar `password123`) → la rechaza
+- [x] Recuperar contraseña: pedir → email → link → nueva contraseña → `/contrasena-actualizada` → login con la nueva
+- [x] Link de recuperación **expirado** → mensaje comprensible
+- [x] Logout → redirige al login y no se puede volver con el botón "atrás"
+- [x] Cambiar contraseña desde `/mi-perfil/cambiar-contrasena`
+- [x] Entrar a una ruta privada por URL directa sin sesión → redirige al login
 
 ---
 
 ## 3. Hábitos — el corazón del proyecto
 
-- [ ] Crear un hábito de cada `frequency_type`: **diario**, **semanal**, **mensual**
-- [ ] Y de cada opción: `todos`, `días específicos`, `cantidad de días`
+- [x] Crear un hábito de cada `frequency_type`: **diario**, **semanal**, **mensual**
+- [x] Y de cada opción: `todos`, `días específicos`, `cantidad de días`
 - [ ] **Caso híbrido**: hábito **diario** con `cantidad_dias_semana` (ej. 5×/semana) → suma +1 por día completado y solo pierde la racha si una semana **ya cerrada** no llegó a la cuota
-- [ ] Completar por swipe → +10 XP → aparece el toast
-- [ ] Descompletar por swipe → resta XP y **no** muestra toast
-- [ ] Completar y descompletar rápido (< 1,5 s) → no aparece XP fantasma
-- [ ] Editar un hábito sin que se rompa la racha
-- [ ] Borrar un hábito
-- [ ] Hábito con meta de valor y unidad (ej. 8 vasos de agua): el contador llega al goal y marca completado
+- [x] Completar por swipe → +10 XP → aparece el toast
+- [x] Descompletar por swipe → resta XP y **no** muestra toast
+- [x] Completar y descompletar rápido (< 1,5 s) → no aparece XP fantasma
+- [x] Editar un hábito sin que se rompa la racha
+- [x] Borrar un hábito
+- [x] Hábito con meta de valor y unidad (ej. 8 vasos de agua): el contador llega al goal y marca completado
 - [ ] Crear el **primer** hábito de una cuenta nueva → +15 XP (`first_habit_created`)
 - [ ] Borrar ese hábito y crear otro → **no** vuelve a dar los 15 XP
 
@@ -102,65 +102,64 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 ## 4. Fechas y rachas ⚠️ *lo más frágil del proyecto*
 
 - [ ] **Probar después de las 21:00 hora argentina.** Es la franja donde `toISOString()` (UTC) corre el día. El hábito de hoy tiene que seguir siendo el de hoy
-- [ ] Cambiar la fecha del sistema al día siguiente → volver a la app → corre el sync
-- [ ] Completar un **día pasado** desde el DateNavigator → se marca ese día, no hoy
-- [ ] Descompletar un día pasado → la racha se recalcula correctamente
+- [x] Completar un **día pasado** desde el DateNavigator → se marca ese día, no hoy
+- [x] Descompletar un día pasado → la racha se recalcula correctamente
 - [ ] **Salvar racha**: dejar pasar un día → punto rojo en la card → entrar al detalle → "Salvar racha" mantiene la racha
 - [ ] La gracia **no** se puede usar dos veces en el mismo mes para el mismo hábito
 - [ ] "Perder racha" la manda a 0
 - [ ] Dejar pasar **2+ días** → no ofrece gracia, resetea directo
 - [ ] Llegar a una racha de 7 días → +30 XP (`streak_7`)
-- [ ] Perder la racha después de un hito → el XP del hito **no** se revoca
+- [x] Perder la racha después de un hito → el XP del hito **no** se revoca
 
 ---
 
 ## 5. Comunidades
 
-- [ ] Crear comunidad (los 3 pasos completos) → +30 XP
-- [ ] Entrar a una comunidad ajena por primera vez → +15 XP, una sola vez
-- [ ] El **creador** no cobra `join_community` además de `create_community`
-- [ ] Completar el hábito comunitario → +8 XP
-- [ ] La racha comunitaria sube **solo** cuando lo completan todos los miembros
+- [x] Crear comunidad (los 3 pasos completos) → +30 XP
+- [x] Entrar a una comunidad ajena por primera vez → +15 XP, una sola vez
+- [x] El **creador** no cobra `join_community` además de `create_community`
+- [x] Completar el hábito comunitario → +8 XP
+- [x] La racha comunitaria sube **solo** cuando lo completan todos los miembros
 - [ ] Sumar un miembro nuevo → **no** corta la racha histórica
-- [ ] Chat en tiempo real: dos navegadores abiertos, mandar mensaje, aparece sin refrescar
-- [ ] Editar el hábito comunitario **siendo admin** → funciona
-- [ ] Editar **sin ser admin**, entrando por URL directa → redirige
+- [x] Chat en tiempo real: dos navegadores abiertos, mandar mensaje, aparece sin refrescar
+- [x] Editar el hábito comunitario **siendo admin** → funciona
+- [x] Editar **sin ser admin**, entrando por URL directa → redirige
 - [ ] Completar el hábito comunitario en un **día pasado** → se marca en ese día
-- [ ] El hábito comunitario respeta su frecuencia (no aparece los días que no toca)
-- [ ] Eliminar una comunidad siendo admin
+- [x] El hábito comunitario respeta su frecuencia (no aparece los días que no toca)
+- [x] Eliminar una comunidad siendo admin
 
 ---
 
 ## 6. Amigos y perfil
 
-- [ ] Buscar un usuario, mandar solicitud, aceptar → +10 XP a quien acepta
-- [ ] Eliminar un amigo → revoca los 10 XP
-- [ ] Rechazar una solicitud
-- [ ] Editar perfil: cambiar nombre y username (valida unicidad)
-- [ ] Subir avatar → cambiarlo → el archivo viejo **se borra** del bucket (revisar Storage en Supabase)
-- [ ] Borrar avatar → vuelve al default y el archivo se elimina
-- [ ] La barra de progreso de nivel refleja el XP real
+- [x] Buscar un usuario, mandar solicitud, aceptar → +10 XP a quien acepta
+- [x] Eliminar un amigo → revoca los 10 XP
+- [x] Rechazar una solicitud
+- [x] Editar perfil: cambiar nombre y username (valida unicidad)
+- [x] Subir avatar → cambiarlo → el archivo viejo **se borra** del bucket (revisar Storage en Supabase)
+- [x] Borrar avatar → vuelve al default y el archivo se elimina
+- [x] La barra de progreso de nivel refleja el XP real
 
 ---
 
 ## 7. Notificaciones push
 
-- [ ] Activar push desde `/mi-perfil` → llega la notificación
-- [ ] Desactivar → deja de llegar
-- [ ] **Login con otra cuenta en el mismo navegador** → no llegan los push de la cuenta anterior
-- [ ] Push de mensaje de comunidad: **no** llega de los mensajes propios
-- [ ] Tocar la notificación → abre la pantalla correcta
-- [ ] Las 3 Edge Functions están desplegadas y los cron jobs activos
+- [x] Activar push desde `/mi-perfil` → llega la notificación
+- [x] Desactivar → deja de llegar
+- [x] **Login con otra cuenta en el mismo navegador** → no llegan los push de la cuenta anterior
+- [x] Push de mensaje de comunidad: **no** llega de los mensajes propios
+- [x] Tocar la notificación → abre la pantalla correcta
+- [x] Las 3 Edge Functions están desplegadas y los cron jobs activos
 
 ---
 
 ## 8. PWA, offline y dispositivos ⚠️
 
-- [ ] **Instalar la PWA en un iPhone real** (Safari → Compartir → Añadir a inicio). Es donde ya hubo un 404
-- [ ] Abrir en **Safari iOS sin instalar** — ahí la API `Notification` no existe
-- [ ] Instalar en Android
+- [x] **Instalar la PWA en un iPhone real** (Safari → Compartir → Añadir a inicio). Es donde ya hubo un 404
+- [x] Abrir en **Safari iOS sin instalar** — ahí la API `Notification` no existe
+- [x] Instalar en Android
 - [ ] Modo avión → aparece el `OfflineBanner` y se ven los datos cacheados
-- [ ] Volver online → se recupera
+- [x] Volver online → se recupera
 - [ ] Los 4 shortcuts del manifest (Hábitos / Progreso / Comunidades / Novedades)
 - [ ] Pull-to-refresh en cada página que lo registra
 - [ ] El splash aparece al abrir la PWA instalada
@@ -169,34 +168,34 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 
 ## 9. Responsive
 
-- [ ] iPhone SE (375 px) — el viewport más chico realista
-- [ ] 480 px, 660 px (ahí cambia la tipografía base), 768 px
-- [ ] **≥ 992 px**: el nav pasa a sidebar izquierdo y el contenido queda centrado
-- [ ] DateNavigator: 7 días en mobile, 14 en desktop
-- [ ] Ninguna pantalla scrollea horizontalmente
+- [x] iPhone SE (375 px) — el viewport más chico realista
+- [x] 480 px, 660 px (ahí cambia la tipografía base), 768 px
+- [x] **≥ 992 px**: el nav pasa a sidebar izquierdo y el contenido queda centrado
+- [x] DateNavigator: 7 días en mobile, 14 en desktop
+- [x] Ninguna pantalla scrollea horizontalmente
 - [ ] Textos largos: nombre de hábito largo, nombre de comunidad largo, mensaje de chat largo
 
 ---
 
 ## 10. Estados vacíos y de error
 
-- [ ] Usuario nuevo sin hábitos
-- [ ] Sin comunidades / sin amigos / sin novedades / sin beneficios
-- [ ] Buscar un usuario que no existe
-- [ ] Entrar a `/mis-habitos/{id-inexistente}` → error manejado
-- [ ] Entrar a una URL inexistente estando logueada → `error.vue`
-- [ ] Los skeletons aparecen mientras carga y no hay salto de layout
+- [x] Usuario nuevo sin hábitos
+- [x] Sin comunidades / sin amigos / sin novedades / sin beneficios
+- [x] Buscar un usuario que no existe
+- [x] Entrar a `/mis-habitos/{id-inexistente}` → error manejado
+- [x] Entrar a una URL inexistente estando logueada → `error.vue`
+- [x] Los skeletons aparecen mientras carga y no hay salto de layout
 
 ---
 
 ## 11. Contenido y prolijidad *(peso alto en una tesis de diseño)*
 
-- [ ] Leer **todos** los textos de la UI buscando errores de tipeo y acentos
-- [ ] Verificar que el **voseo** quedó consistente en toda la app (se unificó, pero conviene releerlo)
-- [ ] Revisar el nombre de cada hábito predefinido y cada categoría
-- [ ] Los datos de demo en la base son presentables (novedades, beneficios, marcas)
-- [ ] Compartir un link por WhatsApp → la preview de Open Graph se ve bien
-- [ ] Favicon correcto en la pestaña
+- [x] Leer **todos** los textos de la UI buscando errores de tipeo y acentos
+- [x] Verificar que el **voseo** quedó consistente en toda la app (se unificó, pero conviene releerlo)
+- [x] Revisar el nombre de cada hábito predefinido y cada categoría
+- [x] Los datos de demo en la base son presentables (novedades, beneficios, marcas)
+- [x] Compartir un link por WhatsApp → la preview de Open Graph se ve bien
+- [x] Favicon correcto en la pestaña
 
 ---
 

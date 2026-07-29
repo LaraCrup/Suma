@@ -32,7 +32,7 @@
                 <div class="flex items-center gap-2">
                     <input id="community-icon" v-model="icon" type="text"
                         class="w-12 h-12 text-xl text-center bg-transparent outline-none border border-gray rounded-full p-2"
-                        placeholder="" maxlength="10" inputmode="text"
+                        placeholder="" maxlength="20" inputmode="text"
                         @input="filterEmojiIcon" />
                 </div>
             </div>
@@ -92,7 +92,7 @@ const currentProfile = computed(() => authStore.profile)
 const errors = ref({ name: null, icon: null, members: null })
 
 const filterEmojiIcon = () => {
-    icon.value = keepEmojiGraphemes(icon.value)
+    icon.value = keepLastEmojiGrapheme(icon.value)
 }
 
 const removeMember = (id) => {
