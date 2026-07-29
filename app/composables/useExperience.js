@@ -7,10 +7,19 @@ export const useExperience = () => {
         const { data: { session }, error } = await client.auth.getSession()
 
         if (error || !session?.user?.id) {
-            throw new Error('Usuario no autenticado. Por favor inicia sesión.')
+            throw new Error('Usuario no autenticado. Iniciá sesión.')
         }
 
         return session.user.id
+    }
+
+    const scopedKey = async (base) => {
+        if (typeof window === 'undefined') return null
+        try {
+            return `${base}_${await getUserId()}`
+        } catch {
+            return null
+        }
     }
 
     const getWeekKey = () => {
@@ -154,8 +163,6 @@ export const useExperience = () => {
 
             const leveledUp = newLevel > currentLevel
 
-            console.log(`[XP] +${xpToGrant} XP por "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
-
             xpNotificationStore.enqueue(xpToGrant, actionKey)
             if (leveledUp) xpNotificationStore.enqueueLevelUp(newLevel)
 
@@ -195,10 +202,10 @@ export const useExperience = () => {
 
             if (typeof window !== 'undefined') {
                 const todayStr = getArgentineDate()
+                const key = `lastComebackCheck_${userId}`
 
-                const lastComebackCheck = localStorage.getItem('lastComebackCheck')
-                if (lastComebackCheck === todayStr) return null
-                localStorage.setItem('lastComebackCheck', todayStr)
+                if (localStorage.getItem(key) === todayStr) return null
+                localStorage.setItem(key, todayStr)
             }
 
             const { data: habits } = await client
@@ -225,7 +232,6 @@ export const useExperience = () => {
             const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24))
 
             if (diffDays >= 3) {
-                console.log(`[XP] Comeback detectado: ${diffDays} días de inactividad`)
                 return await grantXP('comeback')
             }
 
@@ -252,15 +258,14 @@ export const useExperience = () => {
             const allCompleted = todayHabits.every(h => h.progress_count >= (h.goal_value || 1))
 
             if (allCompleted) {
-                if (typeof window !== 'undefined') {
+                const key = await scopedKey('lastAllHabitsDailyXP')
+                if (key) {
                     const todayStr = getArgentineDate()
 
-                    const lastAllDaily = localStorage.getItem('lastAllHabitsDailyXP')
-                    if (lastAllDaily === todayStr) return null
-                    localStorage.setItem('lastAllHabitsDailyXP', todayStr)
+                    if (localStorage.getItem(key) === todayStr) return null
+                    localStorage.setItem(key, todayStr)
                 }
 
-                console.log('[XP] Todos los hábitos del día completados!')
                 return await grantXP('all_habits_daily')
             }
 
@@ -291,7 +296,6 @@ export const useExperience = () => {
                     if (localStorage.getItem(guardKey)) return null
                     localStorage.setItem(guardKey, '1')
                 }
-                console.log('[XP] Primer hábito creado!')
                 return await grantXP('first_habit_created')
             }
 
@@ -320,14 +324,13 @@ export const useExperience = () => {
             })
 
             if (allWeeklyMet) {
-                if (typeof window !== 'undefined') {
+                const key = await scopedKey('lastWeeklyGoalXP')
+                if (key) {
                     const weekKey = getWeekKey()
-                    const lastWeeklyGoal = localStorage.getItem('lastWeeklyGoalXP')
-                    if (lastWeeklyGoal === weekKey) return null
-                    localStorage.setItem('lastWeeklyGoalXP', weekKey)
+                    if (localStorage.getItem(key) === weekKey) return null
+                    localStorage.setItem(key, weekKey)
                 }
 
-                console.log('[XP] Meta semanal cumplida!')
                 return await grantXP('weekly_goal_met')
             }
 
@@ -365,8 +368,6 @@ export const useExperience = () => {
                 authStore.profile.current_level = newLevel
             }
 
-            console.log(`[XP] -${xpToRevoke} XP por revertir "${actionKey}" | Total: ${newXP} XP | Nivel: ${newLevel}`)
-
             return { xpRevoked: xpToRevoke, totalXP: newXP, currentLevel: newLevel }
         } catch (error) {
             console.error('Error en revokeXP:', error)
@@ -375,17 +376,18 @@ export const useExperience = () => {
     }
 
     const revokeAllHabitsDaily = async () => {
-        if (typeof window === 'undefined') return null
-        const todayStr = getArgentineDate()
-        if (localStorage.getItem('lastAllHabitsDailyXP') !== todayStr) return null
-        localStorage.removeItem('lastAllHabitsDailyXP')
+        const key = await scopedKey('lastAllHabitsDailyXP')
+        if (!key) return null
+        if (localStorage.getItem(key) !== getArgentineDate()) return null
+        localStorage.removeItem(key)
         return await revokeXP('all_habits_daily')
     }
 
     const revokeWeeklyGoalXP = async () => {
-        if (typeof window === 'undefined') return null
-        if (localStorage.getItem('lastWeeklyGoalXP') !== getWeekKey()) return null
-        localStorage.removeItem('lastWeeklyGoalXP')
+        const key = await scopedKey('lastWeeklyGoalXP')
+        if (!key) return null
+        if (localStorage.getItem(key) !== getWeekKey()) return null
+        localStorage.removeItem(key)
         return await revokeXP('weekly_goal_met')
     }
 

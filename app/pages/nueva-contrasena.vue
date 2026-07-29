@@ -102,7 +102,7 @@ onMounted(async () => {
     } catch (error) {
         console.error('Error al verificar sesión:', error)
         linkValid.value = false
-        linkErrorMsg.value = 'Error al verificar el enlace de recuperación. Por favor intenta nuevamente.'
+        linkErrorMsg.value = 'No pudimos verificar el enlace de recuperación. Intentá de nuevo.'
         linkValidating.value = false
     }
 })
@@ -184,7 +184,7 @@ const checkPasswordCompromise = async () => {
         isPasswordCompromised.value = passwordCheckCache.get(form.password)
 
         if (isPasswordCompromised.value) {
-            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+            errors.password = 'Esta contraseña apareció en filtraciones de datos. Usá una contraseña única.'
         }
 
         return
@@ -196,7 +196,7 @@ const checkPasswordCompromise = async () => {
         passwordCheckCache.set(form.password, isPasswordCompromised.value)
 
         if (isPasswordCompromised.value) {
-            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+            errors.password = 'Esta contraseña apareció en filtraciones de datos. Usá una contraseña única.'
         }
     } catch (error) {
         console.error('Error al verificar contraseña:', error)

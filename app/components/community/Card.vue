@@ -1,6 +1,6 @@
 <template>
     <NuxtLink
-        :to="`/comunidades/${community.id}`"
+        :to="`${ROUTE_NAMES.COMMUNITY}/${community.id}`"
         class="w-full flex justify-between gap-2 rounded-lg p-3 bg-midlight">
         <div class="flex gap-3 items-center min-w-0 flex-1">
             <div class="w-8 h-8 flex flex-shrink-0 items-center justify-center rounded-full bg-gradient-secondary">
@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 defineProps({
     community: {
         type: Object,

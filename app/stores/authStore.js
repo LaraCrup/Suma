@@ -89,6 +89,13 @@ export const useAuthStore = defineStore('auth', () => {
       const { removeSubscriptionForCurrentUser } = usePushNotifications()
       await removeSubscriptionForCurrentUser()
       await supabase.auth.signOut()
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('sessionPhrase')
+        sessionStorage.removeItem('sessionTip')
+        sessionStorage.removeItem('novedades_last_fetch')
+      }
+
       user.value = null
       profile.value = null
       error.value = null

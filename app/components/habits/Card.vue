@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useHabits } from '~/composables/useHabits'
 
@@ -263,7 +264,7 @@ const handleClick = () => {
 
 const goToHabit = () => {
     const dateParam = props.selectedDate ? `?date=${props.selectedDate}` : ''
-    router.push(`/mis-habitos/${props.habit.id}${dateParam}`)
+    router.push(`${ROUTE_NAMES.HABITS_DETAIL}/${props.habit.id}${dateParam}`)
 }
 
 const completeHabit = async () => {

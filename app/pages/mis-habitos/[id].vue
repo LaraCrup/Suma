@@ -228,7 +228,7 @@ onMounted(async () => {
         await checkStreakSavePending()
     } catch (error) {
         console.error('Error cargando hábito:', error)
-        navigateTo('/')
+        navigateTo(ROUTE_NAMES.HOME)
     } finally {
         isLoading.value = false
     }
@@ -280,7 +280,7 @@ const completeHabit = async () => {
 
 const editHabit = () => {
     showMenu.value = false
-    navigateTo(`/mis-habitos/editar/${habit.value.id}`)
+    navigateTo(`${ROUTE_NAMES.HABITS_EDIT.replace(':habitId', habit.value.id)}`)
 }
 
 const openDeleteModal = () => {
@@ -296,7 +296,7 @@ const confirmDelete = async () => {
     try {
         await deleteHabitAPI(route.params.id)
         showDeleteModal.value = false
-        navigateTo('/')
+        navigateTo(ROUTE_NAMES.HOME)
     } catch (error) {
         console.error('Error eliminando hábito:', error)
         closeDeleteModal()

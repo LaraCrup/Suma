@@ -35,7 +35,7 @@ const goBack = () => {
 
 const handleFormSuccess = () => {
     habitStore.clearSelection()
-    navigateTo('/')
+    navigateTo(ROUTE_NAMES.HOME)
 }
 
 const handleFormError = (err) => {

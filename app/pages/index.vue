@@ -217,12 +217,9 @@ const loadHabitsData = async () => {
     isLoading.value = true
     isCommunityLoading.value = true
     try {
-        console.log('[PAGE INDEX] Iniciando sincronización de hábitos...')
         await syncHabitsWithNewDay()
-        console.log('[PAGE INDEX] Sincronización completada')
 
         habits.value = await getHabitsForDate(selectedDate.value)
-        console.log('[PAGE INDEX] Hábitos cargados:', habits.value.map(h => ({ name: h.name, progress: h.progress_count, goal: h.goal_value })))
 
         await filterHabitsByVisibility()
         isLoading.value = false
@@ -253,7 +250,6 @@ let visibilityChangeHandler = null
 onMounted(async () => {
     try {
         await authStore.fetchUser()
-        console.log('[PAGE INDEX] Usuario autenticado:', authStore.isLoggedIn)
         await loadHabitsData()
         registerRefresh(loadHabitsData)
     } catch (error) {
@@ -265,15 +261,16 @@ onMounted(async () => {
     if (typeof window !== 'undefined') {
         dateCheckInterval = setInterval(async () => {
             try {
+                const userId = authStore.user?.id
+                if (!userId) return
+
                 const today = getArgentineDate()
-                const lastCheck = localStorage.getItem('lastHabitResetDate')
+                const lastCheck = localStorage.getItem(`lastHabitResetDate_${userId}`)
 
                 if (lastCheck && lastCheck !== today) {
-                    console.log('[PAGE INDEX] Detectado cambio de fecha! Reseteando hábitos...')
                     selectedDate.value = today
                     await syncHabitsWithNewDay()
                     habits.value = await getHabitsForDate(selectedDate.value)
-                    console.log('[PAGE INDEX] Hábitos reseteados por cambio de fecha')
 
                     await filterHabitsByVisibility()
                 }

@@ -2,7 +2,7 @@
     <DefaultSection class="gap-6">
         <div class="flex flex-col items-center gap-6">
             <HeadingH1 class="text-center">¡Contraseña actualizada!</HeadingH1>
-            <p class="text-xs text-center">Tu contraseña ha sido cambiada exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.</p>
+            <p class="text-xs text-center">Tu contraseña se cambió correctamente. Ya podés iniciar sesión con la nueva.</p>
         </div>
 
         <div class="w-full flex flex-col items-center">

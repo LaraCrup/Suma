@@ -26,7 +26,7 @@ const authStore = useAuthStore()
 
 const phrases = [
     'Hoy es un buen día para sumar',
-    'Cada hábito te acerca más a quien quieres ser',
+    'Cada hábito te acerca más a quien querés ser',
     'Pequeños pasos, grandes cambios'
 ]
 

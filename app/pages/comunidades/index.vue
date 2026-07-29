@@ -22,7 +22,7 @@
         <div class="w-full flex justify-between items-center">
             <HeadingH1>Mis Comunidades</HeadingH1>
             <button
-                @click="navigateTo('/comunidades/crear')"
+                @click="navigateTo(ROUTE_NAMES.COMMUNITY_CREATE)"
                 class="w-6 h-6 flex items-center justify-center bg-accent text-green-dark font-bold rounded-full"
             >+</button>
         </div>
@@ -41,7 +41,7 @@
         <div class="w-full flex justify-between items-center">
             <HeadingH1>Mis amigos</HeadingH1>
             <button
-                @click="navigateTo('/amigos')"
+                @click="navigateTo(ROUTE_NAMES.FRIENDS)"
                 class="w-6 h-6 flex items-center justify-center bg-accent text-green-dark font-bold rounded-full"
             >+</button>
         </div>
@@ -70,6 +70,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Comunidades',

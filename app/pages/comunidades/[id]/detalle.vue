@@ -247,6 +247,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Detalle de la comunidad',
@@ -409,7 +410,7 @@ const confirmLeaveCommunity = async () => {
     try {
         await removeMemberFromCommunity(route.params.id, currentUserId.value)
         showLeaveCommunity.value = false
-        await navigateTo('/comunidades')
+        await navigateTo(ROUTE_NAMES.COMMUNITY)
     } catch (e) {
         leaveCommunityError.value = e.message || 'Error al salir de la comunidad.'
     } finally {
@@ -423,7 +424,7 @@ const confirmDeleteCommunity = async () => {
     try {
         await deleteCommunity(route.params.id)
         showDeleteCommunity.value = false
-        await navigateTo('/comunidades')
+        await navigateTo(ROUTE_NAMES.COMMUNITY)
     } catch (e) {
         deleteCommunityError.value = e.message || 'Error al eliminar la comunidad.'
     } finally {

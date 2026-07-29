@@ -1,36 +1,41 @@
 const errorMessages = {
-    'Invalid login credentials': 'El correo o contraseña no coinciden. Por favor verifica tus datos e intenta nuevamente.',
-    'Email not confirmed': 'Tu correo electrónico aún no ha sido verificado. Por favor revisá tu bandeja de entrada y hacé clic en el enlace de confirmación.',
+    'Invalid login credentials': 'El usuario o la contraseña no coinciden. Revisá tus datos e intentá de nuevo.',
+    'Email not confirmed': 'Tu correo electrónico todavía no fue verificado. Revisá tu bandeja de entrada y tocá el enlace de confirmación.',
     'User not found': 'No encontramos una cuenta con esos datos.',
-    'Password recovery token is invalid or has expired': 'El enlace de recuperación ha expirado. Por favor solicita uno nuevo.',
-    'Rate limit exceeded': 'Has realizado demasiados intentos. Por favor espera unos minutos antes de intentar nuevamente.',
+    'Password recovery token is invalid or has expired': 'El enlace de recuperación expiró. Pedí uno nuevo.',
+    'Rate limit exceeded': 'Hiciste demasiados intentos. Esperá unos minutos antes de volver a probar.',
     'Email already taken': 'Este correo ya está registrado.',
     'User already registered': 'Este correo ya está registrado.',
-    'Username taken': 'Este nombre de usuario ya está en uso. Por favor elige otro.',
-    'Weak password': 'Tu contraseña debe ser más segura. Incluye al menos 8 caracteres, números y símbolos.',
-    'Password should contain at least one uppercase letter, one lowercase letter, one digit, and one special character': 'Tu contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial.',
-    'Insufficient permissions': 'No tienes permisos para realizar esta acción. Contacta al administrador si crees que es un error.',
-    'Invalid API key': 'Error de configuración del sistema. Por favor contacta al equipo de soporte.',
-    'JWT expired': 'Tu sesión ha expirado por inactividad. Por favor inicia sesión nuevamente.',
-    'JWT invalid': 'Ha ocurrido un problema con tu sesión. Por favor inicia sesión nuevamente.',
-    'Row not found': 'No pudimos encontrar la información solicitada. Puede haber sido modificada o eliminada.',
-    'Foreign key violation': 'No se puede realizar esta acción porque hay información relacionada. Intenta primero con otros elementos.',
-    'Unique constraint violation': 'Ya existe información con estos datos. Por favor utiliza valores únicos.',
-    'Value too long for type': 'Uno de los campos contiene demasiados caracteres. Por favor acorta tu texto.',
-    'New password should be different from the old password.': 'La nueva contraseña debe ser diferente a la anterior.',
+    'Username taken': 'Este nombre de usuario ya está en uso. Elegí otro.',
+    'Weak password': 'Tu contraseña tiene que ser más segura. Usá al menos 8 caracteres, números y símbolos.',
+    'Password should contain at least one uppercase letter, one lowercase letter, one digit, and one special character': 'Tu contraseña tiene que tener al menos una mayúscula, una minúscula, un número y un carácter especial.',
+    'Insufficient permissions': 'No tenés permisos para hacer esta acción.',
+    'Invalid API key': 'Hubo un problema de configuración. Volvé a intentar en unos minutos.',
+    'JWT expired': 'Tu sesión expiró por inactividad. Iniciá sesión de nuevo.',
+    'JWT invalid': 'Hubo un problema con tu sesión. Iniciá sesión de nuevo.',
+    'Row not found': 'No pudimos encontrar esa información. Puede haber sido modificada o eliminada.',
+    'Foreign key violation': 'No se puede hacer esta acción porque hay información relacionada.',
+    'Unique constraint violation': 'Ya existe información con estos datos. Probá con otros valores.',
+    'Value too long for type': 'Uno de los campos tiene demasiados caracteres. Acortá el texto.',
+    'New password should be different from the old password.': 'La nueva contraseña tiene que ser distinta a la anterior.',
     'Invalid email': 'El formato del correo electrónico no es válido.',
     'Unable to validate email address: invalid format': 'El formato del correo electrónico no es válido.',
-    'Database error saving new user': 'Este correo electrónico ya está registrado. Por favor inicia sesión o usa otro correo.',
+    'Database error saving new user': 'Este correo electrónico ya está registrado. Iniciá sesión o usá otro correo.',
 }
 
-export function handleSupabaseError(error) {
-    const errorMessage = error?.message || error?.error_description || 'Error desconocido';
+const GENERIC_ERROR = 'Algo salió mal. Volvé a intentar en unos minutos.'
 
-    const rateLimitMatch = errorMessage.match(/For security purposes, you can only request this after (\d+) seconds?/);
+export function handleSupabaseError(error) {
+    const errorMessage = error?.message || error?.error_description || ''
+
+    const rateLimitMatch = errorMessage.match(/For security purposes, you can only request this after (\d+) seconds?/)
     if (rateLimitMatch) {
-        const seconds = rateLimitMatch[1];
-        return `Por seguridad, debes esperar ${seconds} segundos antes de intentar nuevamente.`;
+        return `Por seguridad, esperá ${rateLimitMatch[1]} segundos antes de volver a intentar.`
     }
 
-    return errorMessages[errorMessage] || `Error: ${errorMessage}`;
+    if (errorMessages[errorMessage]) return errorMessages[errorMessage]
+
+    if (errorMessage) console.error('[SUPABASE]', errorMessage)
+
+    return GENERIC_ERROR
 }

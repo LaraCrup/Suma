@@ -318,7 +318,7 @@ const validateForm = () => {
     }
 
     if (formData.habitWhenWhere.trim().length < 5) {
-        errors.value.habitWhenWhere = 'Por favor describe cuándo y dónde de forma más detallada'
+        errors.value.habitWhenWhere = 'Describí cuándo y dónde de forma más detallada'
         return false
     }
 
@@ -333,7 +333,7 @@ const validateForm = () => {
     }
 
     if (formData.habitIdentity.trim().length < 5) {
-        errors.value.habitIdentity = 'Por favor describe la identidad de forma más detallada'
+        errors.value.habitIdentity = 'Describí la identidad de forma más detallada'
         return false
     }
 

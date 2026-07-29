@@ -195,7 +195,7 @@ const checkPasswordCompromise = async () => {
         isPasswordCompromised.value = passwordCheckCache.get(form.password)
 
         if (isPasswordCompromised.value) {
-            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+            errors.password = 'Esta contraseña apareció en filtraciones de datos. Usá una contraseña única.'
         }
 
         return
@@ -207,7 +207,7 @@ const checkPasswordCompromise = async () => {
         passwordCheckCache.set(form.password, isPasswordCompromised.value)
 
         if (isPasswordCompromised.value) {
-            errors.password = 'Esta contraseña ha aparecido en filtraciones de datos. Por favor, utiliza una contraseña única.'
+            errors.password = 'Esta contraseña apareció en filtraciones de datos. Usá una contraseña única.'
         }
     } catch (error) {
         console.error('Error al verificar contraseña:', error)

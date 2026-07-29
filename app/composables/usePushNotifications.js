@@ -56,7 +56,6 @@ export const usePushNotifications = () => {
           console.error('[PUSH] Error re-sincronizando suscripción:', error)
           isSubscribed.value = false
         } else {
-          console.log('[PUSH] Suscripción re-sincronizada con la DB')
           isSubscribed.value = true
         }
       }
@@ -99,8 +98,6 @@ export const usePushNotifications = () => {
         isSubscribed.value = false
         return
       }
-
-      console.log('[PUSH] Suscripción guardada correctamente')
     } catch (e) {
       console.error('[PUSH] Error al suscribir:', e)
       isSubscribed.value = false

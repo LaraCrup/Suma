@@ -21,6 +21,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Editar hábito',
@@ -49,14 +50,14 @@ onMounted(async () => {
         }
     } catch (error) {
         console.error('Error cargando hábito:', error)
-        navigateTo('/')
+        navigateTo(ROUTE_NAMES.HOME)
     } finally {
         isLoading.value = false
     }
 })
 
 const handleFormSuccess = (updatedHabit) => {
-    navigateTo(`/mis-habitos/${updatedHabit.id}`)
+    navigateTo(`${ROUTE_NAMES.HABITS_DETAIL}/${updatedHabit.id}`)
 }
 
 const handleFormError = (error) => {

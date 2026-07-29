@@ -83,6 +83,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Editar perfil',
@@ -277,7 +278,7 @@ const handleSave = async () => {
 
     await authStore.fetchUser()
 
-    await router.push('/mi-perfil')
+    await router.push(ROUTE_NAMES.PROFILE)
   } catch (error) {
     authStore.error = `Error al guardar: ${error.message}`
   }

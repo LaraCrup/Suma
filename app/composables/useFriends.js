@@ -5,7 +5,7 @@ export const useFriends = () => {
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
         if (error || !session?.user?.id) {
-            throw new Error('Usuario no autenticado. Por favor inicia sesión.')
+            throw new Error('Usuario no autenticado. Iniciá sesión.')
         }
         return session.user.id
     }

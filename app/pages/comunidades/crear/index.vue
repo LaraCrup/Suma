@@ -53,6 +53,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Nueva comunidad · Amigos',
@@ -87,7 +88,7 @@ const siguiente = () => {
         return
     }
     showError.value = false
-    navigateTo({ path: '/comunidades/crear/paso2', query: { members: selectedIds.value.join(',') } })
+    navigateTo({ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_2, query: { members: selectedIds.value.join(',') } })
 }
 
 onMounted(async () => {

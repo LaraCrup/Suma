@@ -201,14 +201,9 @@ const handleLogout = async () => {
     try {
         await authStore.logout()
 
-        if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('sessionPhrase')
-            sessionStorage.removeItem('sessionTip')
-        }
-
         window.location.href = ROUTE_NAMES.LOGIN
     } catch (error) {
-        errorMsg.value = 'Ocurrió un error inesperado. Por favor, intenta de nuevo.'
+        errorMsg.value = 'Ocurrió un error inesperado. Por favor, intentá de nuevo.'
         console.error('Error logging out:', error)
     }
 }

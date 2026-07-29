@@ -80,6 +80,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/authStore'
@@ -110,7 +111,7 @@ onMounted(async () => {
 
     await authStore.fetchUser()
     if (authStore.user?.id === targetId) {
-        return navigateTo('/mi-perfil')
+        return navigateTo(ROUTE_NAMES.PROFILE)
     }
 
     try {

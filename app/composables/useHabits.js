@@ -7,7 +7,7 @@ export const useHabits = () => {
         const { data: { session }, error } = await client.auth.getSession()
 
         if (error || !session?.user?.id) {
-            throw new Error('Usuario no autenticado. Por favor inicia sesión.')
+            throw new Error('Usuario no autenticado. Iniciá sesión.')
         }
 
         return session.user.id
@@ -689,43 +689,39 @@ export const useHabits = () => {
 
     const resetHabitsForNewDay = async () => {
         try {
-            console.log('[RESET DIARIO] Iniciando reset de hábitos...')
-
             const habits = await getHabits()
-            console.log('[RESET DIARIO] Hábitos obtenidos:', habits.length)
 
             for (const habit of habits) {
-                console.log(`[RESET DIARIO] Reseteando "${habit.name}": ${habit.progress_count} → 0`)
-
                 await updateHabit(habit.id, {
                     progress_count: 0,
                     updated_at: new Date().toISOString()
                 })
 
                 await updateStreakForNewDay(habit)
-                console.log(`[RESET DIARIO] "${habit.name}" resetado correctamente`)
             }
-
-            console.log('[RESET DIARIO] Reset completado exitosamente')
-
         } catch (error) {
             console.error('[RESET DIARIO] Error durante reset:', error)
-            console.error('[RESET DIARIO] Stack:', error.stack)
         }
     }
 
     const shouldResetToday = async () => {
         if (typeof window === 'undefined') return false
 
+        let userId
+        try {
+            userId = await getUserId()
+        } catch {
+            return false
+        }
+
         const today = getArgentineDate()
-        const lastResetDate = localStorage.getItem('lastHabitResetDate')
+        const resetKey = `lastHabitResetDate_${userId}`
 
-        if (lastResetDate === today) return false
+        if (localStorage.getItem(resetKey) === today) return false
 
-        localStorage.setItem('lastHabitResetDate', today)
+        localStorage.setItem(resetKey, today)
 
         try {
-            const userId = await getUserId()
             const { data: userHabits } = await client
                 .from('habits')
                 .select('id')
@@ -741,16 +737,12 @@ export const useHabits = () => {
                     .eq('date', today)
                     .limit(1)
 
-                if (todayLogs && todayLogs.length > 0) {
-                    console.log('[RESET DIARIO] Ya existen logs para hoy, omitiendo reset')
-                    return false
-                }
+                if (todayLogs && todayLogs.length > 0) return false
             }
         } catch (e) {
             console.error('[RESET DIARIO] Error verificando logs de hoy:', e)
         }
 
-        console.log('[RESET DIARIO] Realizando reset del día')
         return true
     }
 

@@ -1,7 +1,7 @@
 <template>
     <component
         :is="selectable ? 'button' : NuxtLink"
-        v-bind="selectable ? { type: 'button' } : { to: `/usuarios/${friend?.id}` }"
+        v-bind="selectable ? { type: 'button' } : { to: `${ROUTE_NAMES.USERS}/${friend?.id}` }"
         @click="handleRowClick"
         class="w-full flex items-center justify-between text-left bg-midlight rounded-lg p-3"
     >
@@ -26,6 +26,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { NuxtLink } from '#components'
 
 const props = defineProps({

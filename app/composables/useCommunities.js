@@ -5,7 +5,7 @@ export const useCommunities = () => {
     const getUserId = async () => {
         const { data: { session }, error } = await client.auth.getSession()
         if (error || !session?.user?.id) {
-            throw new Error('Usuario no autenticado. Por favor inicia sesión.')
+            throw new Error('Usuario no autenticado. Iniciá sesión.')
         }
         return session.user.id
     }
@@ -507,13 +507,19 @@ export const useCommunities = () => {
     const syncCommunityStreaks = async () => {
         if (typeof window === 'undefined') return
 
+        let userId
+        try {
+            userId = await getUserId()
+        } catch {
+            return
+        }
+
         const today = getArgentineDate()
-        if (localStorage.getItem('lastCommunityStreakSync') === today) return
-        localStorage.setItem('lastCommunityStreakSync', today)
+        const syncKey = `lastCommunityStreakSync_${userId}`
+        if (localStorage.getItem(syncKey) === today) return
+        localStorage.setItem(syncKey, today)
 
         try {
-            const userId = await getUserId()
-
             const { data: memberships } = await client
                 .from('community_members')
                 .select('community_id')

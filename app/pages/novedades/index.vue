@@ -28,7 +28,7 @@
             <NuxtLink
                 v-for="item in news"
                 :key="item.id"
-                :to="`/novedades/${item.id}`"
+                :to="`${ROUTE_NAMES.NEWS}/${item.id}`"
                 class="block w-full rounded-lg overflow-hidden"
             >
                 <div class="relative h-32 2xl:h-44 bg-midlight flex items-end p-3">
@@ -76,6 +76,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Novedades',

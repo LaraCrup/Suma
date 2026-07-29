@@ -1,5 +1,5 @@
 <template>
-    <NuxtLink :to="`/progreso/beneficios/${benefit.id}`" class="block">
+    <NuxtLink :to="`${ROUTE_NAMES.BENEFITS_DETAIL}/${benefit.id}`" class="block">
         <div>
             <NuxtImg
                 class="w-full h-32 rounded-t-lg object-cover"
@@ -24,6 +24,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 defineProps({
     benefit: {
         type: Object,

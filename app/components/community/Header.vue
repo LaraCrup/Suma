@@ -1,7 +1,7 @@
 <template>
     <div class="w-full flex items-center gap-3">
         <NavigationBackArrow class="!w-fit" color="text-gray" />
-        <NuxtLink :to="`/comunidades/${community?.id}/detalle`" class="w-full flex items-center gap-3">
+        <NuxtLink :to="`${ROUTE_NAMES.COMMUNITY}/${community?.id}/detalle`" class="w-full flex items-center gap-3">
             <div class="w-8 2xl:w-10 h-8 2xl:h-10 flex flex-shrink-0 items-center justify-center bg-green-dark rounded-full overflow-hidden">
                 <p class="text-lg 2xl:text-xl">{{ community?.icon }}</p>
             </div>
@@ -16,6 +16,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 defineProps({
     community: {
         type: Object,

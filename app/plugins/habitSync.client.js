@@ -1,6 +1,4 @@
 export default defineNuxtPlugin(async (nuxtApp) => {
-    console.log('[HABIT SYNC] Plugin initializing...')
-
     if (typeof window !== 'undefined') {
         const handleVisibilityChange = async () => {
             if (document.visibilityState !== 'visible') return
@@ -18,8 +16,6 @@ export default defineNuxtPlugin(async (nuxtApp) => {
                 await syncHabitsWithNewDay()
                 await syncCommunityStreaks()
                 await checkComeback()
-
-                console.log('[HABIT SYNC] Background sync completed')
             } catch (error) {
                 console.error('[HABIT SYNC] Error during background sync:', error)
             }

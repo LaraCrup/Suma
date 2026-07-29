@@ -42,7 +42,7 @@
         <div class="w-full flex flex-col gap-3">
             <p class="text-xs font-medium text-dark">Miembros: {{ members.length + 1 }}</p>
             <div class="flex flex-wrap gap-5">
-                <NuxtLink :to="{ path: '/comunidades/crear', query: { members: members.map(m => m.id).join(',') } }" class="flex flex-col items-center gap-1">
+                <NuxtLink :to="{ path: ROUTE_NAMES.COMMUNITY_CREATE, query: { members: members.map(m => m.id).join(',') } }" class="flex flex-col items-center gap-1">
                     <div class="w-10 h-10 rounded-full bg-green-dark flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                             viewBox="0 0 24 24">
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Nueva comunidad · Nombre',
@@ -119,7 +120,7 @@ const siguiente = () => {
 
     const currentMembers = members.value.map(m => m.id).join(',')
     router.replace({ query: { members: currentMembers } })
-    navigateTo({ path: '/comunidades/crear/paso3', query: { members: currentMembers, name: name.value, icon: icon.value } })
+    navigateTo({ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_3, query: { members: currentMembers, name: name.value, icon: icon.value } })
 }
 
 onMounted(async () => {

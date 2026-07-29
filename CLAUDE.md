@@ -237,7 +237,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 
 ## 13. Convenciones del proyecto
 
-- **Idioma**: rutas, variables de UI y mensajes al usuario en español. Identificadores de código en inglés.
+- **Idioma**: rutas, variables de UI y mensajes al usuario en **español rioplatense (voseo)**: "iniciá", "revisá", "elegí", "podés" — nunca tuteo peninsular ("inicia", "revisa", "elige", "puedes"). Identificadores de código en inglés.
 - **Sin comentarios en el código**: decisión del proyecto (jul-2026). No agregar comentarios nuevos; el conocimiento no obvio va en este archivo.
 - **Vue**: solo Composition API con `<script setup>`. La única excepción actual es [button/Primary.vue](app/components/button/Primary.vue), que aún usa `export default { props }`.
 - **Rutas**: importar `ROUTE_NAMES` desde [app/constants/ROUTE_NAMES.js](app/constants/ROUTE_NAMES.js). No hardcodear strings de rutas.
@@ -268,7 +268,7 @@ Configuración en [tailwind.config.js](tailwind.config.js).
   - **Cadencia**: aplica la misma regla de oro que los personales (la decide `frequency_type`, nunca la opción). `calculateCommunityStreakUpTo` espeja a `calculateStreakUpTo` pero el predicado "día completado" es `isCommunityDayComplete` (todos los miembros requeridos con `completed = true`).
   - **Miembros requeridos por día**: se calculan con `community_members.joined_at` (`requiredMembersOn`), así sumar un miembro nuevo no corta la racha histórica.
   - **Ancla de la racha**: `resolveCommunityStreakAnchor` elige hoy si la unidad actual ya está completa, o la unidad anterior si sigue en curso — por eso la racha se ve durante el día. Si la última unidad **cerrada** quedó sin cumplir, la racha va a 0 sin ofrecer gracia.
-  - **Decaimiento**: `syncCommunityStreaks()` (guard en localStorage `lastCommunityStreakSync`) recalcula las rachas una vez por día argentino; se llama desde el `onMounted` de la home y desde [plugins/habitSync.client.js](app/plugins/habitSync.client.js).
+  - **Decaimiento**: `syncCommunityStreaks()` (guard en localStorage `lastCommunityStreakSync_{userId}`) recalcula las rachas una vez por día argentino; se llama desde el `onMounted` de la home y desde [plugins/habitSync.client.js](app/plugins/habitSync.client.js).
 - **Suscripciones push por usuario, no por device**: `push_subscriptions` tiene PK `(user_id, endpoint)`, así que **un mismo endpoint puede quedar registrado para varias cuentas** si se hace login con otra cuenta en el mismo browser. Eso hacía que te llegara push de tus propios mensajes de comunidad. `checkSubscription` matchea por `(endpoint, user_id)` y `authStore.logout()` llama `removeSubscriptionForCurrentUser()` **antes** de `signOut` (la RLS necesita sesión). Las Edge Functions además deduplican por endpoint, excluyen los del emisor y purgan los endpoints que responden 404/410.
 - **Realtime en comunidades**: la página [`/comunidades/[id]/`](app/pages/comunidades/[id]/index.vue) usa Supabase Realtime (`client.channel()`) para escuchar cambios en `community_messages` y `community_habit_logs` en tiempo real. El canal se limpia en `onUnmounted`.
 - **Cadencia de la racha por `frequency_type` (regla de oro)**: hay 3 frecuencias (`diario`/`semanal`/`mensual`) y sus opciones (`todos`, `dias_especificos_semana/mes`, `cantidad_dias_semana/mes`) **se repiten entre frecuencias**, así que la cadencia del +1 se decide SOLO por el `type`, **nunca** por la opción (helpers `getStreakCadence`/`getGraceBreakMode`/`getPeriodBounds`/`getPeriodQuota`). `diario` ⇒ +1 por cada día completado; `semanal`/`mensual` ⇒ +1 al cumplir la meta del período. La opción define el calendario/meta (qué días aplica y cuántos), no la cadencia. **Caso híbrido**: un hábito **diario** con `cantidad_dias_semana` (ej. 5×/semana) suma +1 por completado y **solo pierde la racha si una semana ya cerrada no llegó a la cuota** (la semana en curso siempre aporta; `calculateStreakUpTo` implementa el conteo). `shouldShowHabitForDate` también respeta la opción en diario (`días específicos` aparece solo esos días; `cantidad` hasta cumplir la meta). **No existe el valor `flexible`.**
@@ -276,9 +276,12 @@ Configuración en [tailwind.config.js](tailwind.config.js).
 - **Push Notifications (Web Push)**: el plugin `pushNotifications.client.js` auto-suscribe al push al autenticarse. El composable `usePushNotifications` persiste las suscripciones en `push_subscriptions`. El service worker `app/sw.js` maneja `push` y `notificationclick`; está importado como `/sw-push.js` vía `workbox.importScripts` en [nuxt.config.ts](nuxt.config.ts). Requiere las tres vars VAPID en el `.env`. El usuario puede activar/desactivar las notificaciones desde [mi-perfil](app/pages/mi-perfil/index.vue) con el `FormSwitch` de push.
 - **Chat de comunidades**: `CommunityChatInputMessage` muestra mensajes recibidos de otros miembros; `CommunityChatOutputMessage` muestra los propios. Ambos viven en `components/community/chat/`.
 - **Edición del hábito comunitario (solo admin)**: el form vive en `CommunityHabitForm` ([components/community/HabitForm.vue](app/components/community/HabitForm.vue)) y lo comparten el paso 3 de creación y [comunidades/[id]/editar-habito.vue](app/pages/comunidades/[id]/editar-habito.vue). El botón de editar aparece en `/comunidades/[id]/habito` y en `/comunidades/[id]/detalle` solo si `role === 'admin'`; la página además re-chequea con `isCommunityAdmin` y redirige si no lo sos. **La RLS de `community_habits` deja actualizar la fila a cualquier miembro** (la policy `members can update habit streak` existe para que `updateCommunityStreak` funcione), así que la restricción a admin se refuerza con el trigger de [supabase/migrations/20260724_community_habit_admin_edit.sql](supabase/migrations/20260724_community_habit_admin_edit.sql): rechaza cambios en las columnas de contenido si `auth.uid()` no es admin de esa comunidad, y deja pasar los updates de `streak`/`longest_streak`.
+- **RLS de `community_members` (INSERT)**: hasta jul-2026 la policy era `WITH CHECK (auth.role() = 'authenticated')`, o sea que cualquier usuario logueado podía insertar cualquier fila `(community_id, user_id, role)` — incluido **autoproclamarse `admin` de una comunidad ajena** y, con eso, saltear el control de "solo admin edita el hábito". La reemplaza `community_members_insert` ([20260729_community_members_insert_rls.sql](supabase/migrations/20260729_community_members_insert_rls.sql)): solo el **creador** de la comunidad puede insertarse a sí mismo como `admin`, y las filas `member` las puede insertar el creador o un admin (`is_community_admin`). **La rama del creador es imprescindible**: `createCommunity` inserta la fila admin y las de miembros en un **único** statement, y dentro de ese statement `is_community_admin` todavía no ve la fila admin recién creada; por eso el chequeo se ancla en `communities.created_by`, que ya está commiteado.
 - **Des/completar días pasados y la racha**: el DateNavigator permite tocar días anteriores de la semana. En `logHabitProgress`, tanto completar como descompletar un día pasado recalculan la racha con `calculateStreakUpTo` anclada en el **último día realmente completado** (cadencia diaria) o en el período actual/anterior según si cumplió su cuota (semanal/mensual). No volver al ancla "día anterior al tocado": ignora completados posteriores al hueco.
 - **Avatares en Storage**: `profiles.avatar_url` es una **signed URL** con `?token=...`. Para derivar el path del bucket (`avatar/{userId}/{fileName}`) hay que sacar el query string y `decodeURIComponent` (ver `deleteAvatar`/`handleSave` en [mi-perfil/editar.vue](app/pages/mi-perfil/editar.vue)). Al borrar o reemplazar la foto se elimina el archivo del bucket para no dejar huérfanos.
 - **Caché de Novedades**: [novedades/index.vue](app/pages/novedades/index.vue) cachea categorías + noticias en `sessionStorage` (`novedades_last_fetch`, TTL 5 min) **incluyendo los datos**, no solo el timestamp — si se guarda solo el timestamp, al remontar la página los refs quedan vacíos y se ven skeletons infinitos. El pull-to-refresh fuerza recarga.
+- **La limpieza de `sessionStorage` vive en `authStore.logout()`**, no en la página de perfil: borra `sessionPhrase`, `sessionTip` y `novedades_last_fetch` justo después del `signOut`. Si se agrega otra clave de `sessionStorage` con datos de la sesión, sumarla ahí — así cualquier punto de salida futuro la limpia sin duplicar lógica.
+- **`handleSupabaseError` nunca devuelve el error crudo**: si el mensaje no está en el diccionario, loguea `[SUPABASE]` en consola y devuelve el texto genérico `GENERIC_ERROR`. No volver al fallback `` `Error: ${errorMessage}` ``: filtraba mensajes de Postgres en inglés a la UI.
 
 ## 15. Cómo verificar cambios
 
@@ -301,10 +304,10 @@ No hay test suite. Para validar:
 | `streak_30` | 100 | Racha llega a 30 días | — |
 | `streak_60` | 200 | Racha llega a 60 días | — |
 | `streak_100` | 400 | Racha llega a 100 días | — |
-| `all_habits_daily` | 20 | Se completan TODOS los hábitos del día (una vez/día, guard en localStorage `lastAllHabitsDailyXP`) | Cualquier hábito se descompletea ese día |
-| `weekly_goal_met` | 25 | Todos los hábitos semanales cumplen su meta (una vez/semana; guard en localStorage `lastWeeklyGoalXP` = fecha del **lunes** de la semana actual en fecha argentina) | Cualquier hábito semanal se descompletea bajo la meta |
+| `all_habits_daily` | 20 | Se completan TODOS los hábitos del día (una vez/día, guard en localStorage `lastAllHabitsDailyXP_{userId}`) | Cualquier hábito se descompletea ese día |
+| `weekly_goal_met` | 25 | Todos los hábitos semanales cumplen su meta (una vez/semana; guard en localStorage `lastWeeklyGoalXP_{userId}` = fecha del **lunes** de la semana actual en fecha argentina) | Cualquier hábito semanal se descompletea bajo la meta |
 | `first_habit_created` | 15 | El usuario crea su primer hábito (guard en localStorage `firstHabitXP_{userId}` para que no se re-gane borrando y recreando hábitos) | — |
-| `comeback` | 5 | El usuario vuelve tras 3+ días de inactividad (una vez/sesión, guard en localStorage `lastComebackCheck`) | — |
+| `comeback` | 5 | El usuario vuelve tras 3+ días de inactividad (una vez/sesión, guard en localStorage `lastComebackCheck_{userId}`) | — |
 | `community_habit_completed` | 8 | Usuario completa el hábito de una comunidad | Usuario descompletea el hábito comunitario |
 | `create_community` | 30 | Usuario crea una comunidad | — |
 | `join_community` | 15 | Usuario visita una comunidad por primera vez (guard en localStorage `joined_community_{id}`) | — |
@@ -315,7 +318,7 @@ No hay test suite. Para validar:
 - `grantXP(actionKey)` y `revokeXP(actionKey)` en [useExperience.js](app/composables/useExperience.js) son el punto de entrada único. Ambos actualizan `profiles.experience_points` y `profiles.current_level` y sincronizan el `authStore`; solo `grantXP` encola una notificación en `xpNotificationStore`.
 - Las notificaciones se muestran en [XpNotification.vue](app/components/XpNotification.vue): `+ N XP` para ganancias y aviso de level-up. Se descartan automáticamente a los 5 segundos.
 - Los milestones de racha (`streak_7` … `streak_100`) se verifican con `checkStreakMilestone(streak)` — nunca se revocan aunque se pierda la racha.
-- Los guards de "una vez por día/semana" usan `localStorage`; si se revoca el bono, se limpia el guard para que pueda re-ganarse. Limitación conocida: al ser por dispositivo, no protegen entre dispositivos distintos.
+- Los guards de "una vez por día/semana" usan `localStorage` y **todos van sufijados con el `userId`** (`lastAllHabitsDailyXP_{userId}`, `lastWeeklyGoalXP_{userId}`, `lastComebackCheck_{userId}`, `lastHabitResetDate_{userId}`, `lastCommunityStreakSync_{userId}`). Sin ese sufijo, loguearse con una segunda cuenta en el mismo navegador heredaba los guards de la primera: la segunda cuenta no cobraba el bonus diario y no le corría el reset de hábitos. En `useExperience` el helper `scopedKey(base)` arma la clave y devuelve `null` si no hay sesión. Si se revoca el bono, se limpia el guard para que pueda re-ganarse. Limitación conocida: al ser por dispositivo, no protegen entre dispositivos distintos.
 
 ## 17. Supabase server-side (Edge Functions y migrations)
 
@@ -369,7 +372,7 @@ Son **rutas Nitro** ([server/routes/](server/routes/)), no archivos en `public/`
 
 Hasta jul-2026 `profiles` tenía una policy de SELECT `Enable read access for all users` (`TO public USING (true)`) que dejaba a **cualquiera con la anon key**, sin sesión, hacer `select id, email, name from profiles` y llevarse la tabla entera. Las migraciones `20260729_profiles_public_rpcs.sql` y `20260729_profiles_column_privileges.sql` la reemplazan.
 
-**Modelo resultante**: la RLS deja leer cualquier fila (`profiles_select_public`, `TO authenticated USING (true)`), y lo que acota el daño son los **GRANTs a nivel columna**, que son la única protección por columna real de Postgres:
+**Modelo resultante**: `profiles` tiene una **sola** policy de SELECT — `profiles_select_public` (`TO authenticated USING (true)`); la duplicada `profiles_select` se eliminó en `20260729_profiles_drop_duplicate_select.sql`. La RLS deja leer cualquier fila, y lo que acota el daño son los **GRANTs a nivel columna**, que son la única protección por columna real de Postgres:
 
 - `authenticated` tiene `SELECT` sólo sobre `id`, `display_name`, `avatar_url`, `experience_points`, `current_level`.
 - `anon` no tiene `SELECT` sobre `profiles`.
@@ -387,6 +390,8 @@ Hasta jul-2026 `profiles` tenía una policy de SELECT `Enable read access for al
 | `email_taken(p_email)` | `anon`, `authenticated` | Unicidad de email en registro. |
 
 Siguen permitiendo enumerar de a un valor por vez, pero no el dump masivo que habilitaba la policy vieja.
+
+`handle_new_user()` **no** es un RPC: es la función del trigger `on_auth_user_created` sobre `auth.users`. Los default privileges de Supabase la exponían igual en `/rest/v1/rpc/handle_new_user`; `20260729_profiles_drop_duplicate_select.sql` le revoca el `EXECUTE` a `public`, `anon` y `authenticated`. El trigger sigue funcionando: el permiso de ejecución de una función de trigger se chequea al crear el trigger, no al dispararlo.
 
 ### Al tocar este código
 

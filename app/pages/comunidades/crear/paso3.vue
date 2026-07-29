@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="w-full flex items-center gap-3">
-            <NavigationBackArrow class="!w-fit" color="text-gray" :url="{ path: '/comunidades/crear/paso2', query: { members: route.query.members, name: route.query.name, icon: route.query.icon } }" />
+            <NavigationBackArrow class="!w-fit" color="text-gray" :url="{ path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_2, query: { members: route.query.members, name: route.query.name, icon: route.query.icon } }" />
             <HeadingH1>Nueva comunidad</HeadingH1>
         </div>
 
@@ -28,6 +28,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Nueva comunidad · Hábito',
@@ -50,7 +51,7 @@ const handleSubmit = async (habitPayload) => {
             habitPayload
         )
 
-        navigateTo('/comunidades')
+        navigateTo(ROUTE_NAMES.COMMUNITY)
     } catch (e) {
         console.error('Error creando comunidad:', e)
     } finally {
