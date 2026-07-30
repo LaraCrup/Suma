@@ -5,6 +5,7 @@
         style="overscroll-behavior-y: none"
         @touchstart.passive="onTouchStart"
         @touchend.passive="onTouchEnd"
+        @touchcancel.passive="onTouchEnd"
     >
         <div
             v-if="pullToRefresh && showIndicator"
@@ -22,7 +23,7 @@
                 class="text-primary"
                 :style="{
                     transform: `rotate(${arrowRotation}deg)`,
-                    transition: 'transform 0.1s',
+                    transition: isTransitioning ? 'transform 0.2s ease-out' : 'none',
                     opacity: pullProgress
                 }"
             >
@@ -42,13 +43,21 @@ const props = defineProps({
 const mainRef = ref(null)
 const { isRefreshing, triggerRefresh } = usePullToRefresh()
 
-const THRESHOLD = 80
+const THRESHOLD = 70
+const MAX_PULL = 120
+const RESISTANCE = 0.35
+const DIRECTION_DEADZONE = 8
 
 const displayHeight = ref(0)
 const isTransitioning = ref(false)
 
+let startX = 0
 let startY = 0
 let isPulling = false
+let isLocked = false
+let directionDecided = false
+let rafId = null
+let pendingHeight = 0
 
 const pullProgress = computed(() => Math.min(displayHeight.value / THRESHOLD, 1))
 const arrowRotation = computed(() => pullProgress.value * 180)
@@ -56,43 +65,90 @@ const showIndicator = computed(() =>
     displayHeight.value > 0 || isRefreshing.value || isTransitioning.value
 )
 
+const cancelPendingFrame = () => {
+    if (rafId === null) return
+    cancelAnimationFrame(rafId)
+    rafId = null
+}
+
+const setHeight = (value) => {
+    pendingHeight = value
+    if (rafId !== null) return
+    rafId = requestAnimationFrame(() => {
+        rafId = null
+        displayHeight.value = pendingHeight
+    })
+}
+
+const resetGesture = () => {
+    startX = 0
+    startY = 0
+    isPulling = false
+    isLocked = false
+    directionDecided = false
+}
+
 const onTouchStart = (e) => {
+    resetGesture()
     if (!props.pullToRefresh || isRefreshing.value) return
+    if (e.touches.length !== 1) return
     const el = mainRef.value
     if (!el || el.scrollTop > 0) return
+    startX = e.touches[0].clientX
     startY = e.touches[0].clientY
-    isPulling = false
     isTransitioning.value = false
 }
 
 const onTouchMove = (e) => {
-    if (!props.pullToRefresh || !startY) return
-    const delta = e.touches[0].clientY - startY
-    if (delta <= 0) {
-        startY = 0
+    if (!props.pullToRefresh || isLocked || !startY) return
+
+    const el = mainRef.value
+    if (!el || el.scrollTop > 0) {
+        isLocked = true
         return
     }
+
+    const dx = e.touches[0].clientX - startX
+    const dy = e.touches[0].clientY - startY
+
+    if (!directionDecided) {
+        if (Math.abs(dx) < DIRECTION_DEADZONE && Math.abs(dy) < DIRECTION_DEADZONE) return
+        if (dy <= 0 || Math.abs(dx) >= Math.abs(dy)) {
+            isLocked = true
+            return
+        }
+        directionDecided = true
+    }
+
+    if (dy <= 0) {
+        isLocked = true
+        setHeight(0)
+        return
+    }
+
     isPulling = true
-    displayHeight.value = Math.min(delta, THRESHOLD)
+    const resisted = dy <= THRESHOLD ? dy : THRESHOLD + (dy - THRESHOLD) * RESISTANCE
+    setHeight(Math.min(resisted, MAX_PULL))
     e.preventDefault()
 }
 
 const onTouchEnd = async () => {
-    if (!isPulling || !startY) {
-        startY = 0
-        return
-    }
+    const wasPulling = isPulling
+    const height = pendingHeight
+    resetGesture()
+    cancelPendingFrame()
 
-    const shouldRefresh = displayHeight.value >= THRESHOLD
-    startY = 0
-    isPulling = false
+    if (!wasPulling && height === 0 && displayHeight.value === 0) return
+
     isTransitioning.value = true
 
-    if (shouldRefresh) {
+    if (wasPulling && height >= THRESHOLD) {
+        pendingHeight = 48
         displayHeight.value = 48
         await triggerRefresh()
     }
 
+    pendingHeight = 0
     displayHeight.value = 0
     setTimeout(() => { isTransitioning.value = false }, 220)
 }
@@ -104,6 +160,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    cancelPendingFrame()
     const el = mainRef.value
     if (el) el.removeEventListener('touchmove', onTouchMove)
 })

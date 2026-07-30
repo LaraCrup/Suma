@@ -132,34 +132,22 @@ const hiddenHabits = ref([])
 const visibleCommunityHabits = ref([])
 
 const filterCommunityHabitsByVisibility = async () => {
-    const visible = []
+    const items = communityHabits.value
+    const results = await Promise.all(
+        items.map(item => shouldShowCommunityHabitForDate(item.habit, selectedDate.value))
+    )
 
-    for (const item of communityHabits.value) {
-        if (await shouldShowCommunityHabitForDate(item.habit, selectedDate.value)) {
-            visible.push(item)
-        }
-    }
-
-    visibleCommunityHabits.value = visible
+    visibleCommunityHabits.value = items.filter((_, index) => results[index])
 }
 
 const filterHabitsByVisibility = async () => {
-    const visible = []
-    const hidden = []
+    const existing = habits.value.filter(habit => habitExistsOn(habit, selectedDate.value))
+    const results = await Promise.all(
+        existing.map(habit => shouldShowHabitForDate(habit, selectedDate.value))
+    )
 
-    for (const habit of habits.value) {
-        if (!habitExistsOn(habit, selectedDate.value)) continue
-
-        const shouldShow = await shouldShowHabitForDate(habit, selectedDate.value)
-        if (shouldShow) {
-            visible.push(habit)
-        } else {
-            hidden.push(habit)
-        }
-    }
-
-    visibleHabits.value = visible
-    hiddenHabits.value = hidden
+    visibleHabits.value = existing.filter((_, index) => results[index])
+    hiddenHabits.value = existing.filter((_, index) => !results[index])
 }
 
 const handleHabitUpdated = async (updatedHabit) => {
@@ -229,14 +217,13 @@ const loadHabitsData = async () => {
         await syncCommunityStreaks()
 
         const communities = await getCommunities()
-        const items = []
-        for (const community of communities) {
-            if (!community.habit) continue
-            const habit = { ...community.habit, community_id: community.id }
-            const members = await getCommunityHabitCompletions(community.habit.id, selectedDate.value)
-            items.push({ habit, members })
-        }
-        communityHabits.value = items
+        const withHabit = communities.filter(community => community.habit)
+        communityHabits.value = await Promise.all(
+            withHabit.map(async (community) => ({
+                habit: { ...community.habit, community_id: community.id },
+                members: await getCommunityHabitCompletions(community.habit.id, selectedDate.value)
+            }))
+        )
         await filterCommunityHabitsByVisibility()
         isCommunityLoading.value = false
     } catch (error) {

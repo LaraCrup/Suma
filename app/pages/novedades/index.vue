@@ -120,8 +120,12 @@ const loadData = async (force = false) => {
         } catch (e) {}
     }
     loading.value = true
-    categories.value = await getCategories()
-    news.value = await getNews(activeCategory.value)
+    const [fetchedCategories, fetchedNews] = await Promise.all([
+        getCategories(),
+        getNews(activeCategory.value)
+    ])
+    categories.value = fetchedCategories
+    news.value = fetchedNews
     if (typeof window !== 'undefined' && !activeCategory.value) {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
             ts: Date.now(),

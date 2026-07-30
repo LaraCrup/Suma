@@ -68,12 +68,12 @@ Todos estos hábitos ya están cargados en `larabtv` con su historial, **fechado
 | **TEST 2 dias sin completar** 📉 | racha 4, completado del 23 al 26: sin hacer 27, 28 y 29 | hueco de 2+ días → **no** ofrece gracia, resetea directo a 0 (y si después lo completás, arranca en **1**) |
 | **TEST racha 7** 🔥 | racha 6, completado del 24 al 29 | completar el **30** → racha 7 → toast **+30 XP** (`streak_7`) |
 
-- [ ] Salvar racha mantiene la racha (🛟)
-- [ ] La gracia no se puede usar dos veces en el mismo mes (🚫)
-- [ ] "Perder racha" la manda a 0 (💔)
-- [ ] 2+ días sin completar → no ofrece gracia, resetea directo (📉)
+- [x] Salvar racha mantiene la racha (🛟)
+- [x] La gracia no se puede usar dos veces en el mismo mes (🚫)
+- [x] "Perder racha" la manda a 0 (💔)
+- [x] 2+ días sin completar → no ofrece gracia, resetea directo (📉)
 - [x] Racha de 7 días → +30 XP (🔥)
-- [ ] Después de salvar la racha en 🛟, mirar en Supabase que `habits.streak_grace_used_month` quedó en `2026-07`
+- [x] Después de salvar la racha en 🛟, mirar en Supabase que `habits.streak_grace_used_month` quedó en `2026-07`
 
 ### Caso híbrido: diario + cantidad de días por semana
 
@@ -101,25 +101,57 @@ Los dos ítems ya los validaste el 29. Estado en el que quedó la comunidad **TE
 
 ## 4. Guards por usuario (`localStorage` con sufijo de userId)
 
-- [ ] Con la cuenta B (`larabtv`), verificar que el reset diario de hábitos corre normal
-- [ ] Volver a la cuenta A (`laracrupnicoff`) → su racha y su progreso siguen intactos
+- [x] Con la cuenta B (`larabtv`), verificar que el reset diario de hábitos corre normal
+- [x] Volver a la cuenta A (`laracrupnicoff`) → su racha y su progreso siguen intactos
 
 ---
 
 ## 5. PWA y navegación
 
-- [ ] Los 4 shortcuts del manifest (Hábitos / Progreso / Comunidades / Novedades)
-- [ ] Pull-to-refresh en cada página que lo registra
-- [ ] El splash aparece al abrir la PWA instalada
+### Los 4 shortcuts del manifest — *fuera de alcance, no se testean*
+
+Los shortcuts solo los levantan Android y Chrome de escritorio: **iOS los ignora**, así que no hay dispositivo a mano donde probarlos. Queda como no verificado a propósito, no como pendiente.
+
+Lo que sí está chequeado es que el manifest los declara bien: en el build de producción (`.output/public/manifest.webmanifest`) salen los 4 con su `name`, `short_name`, `url` e ícono de 192×192 — Hábitos → `/`, Progreso → `/progreso`, Comunidades → `/comunidades`, Novedades → `/novedades`. Si en la defensa te preguntan, se ve en DevTools → Application → Manifest → Shortcuts.
+
+### Pull-to-refresh
+
+Es un gesto **táctil** (`touchstart`/`touchmove`/`touchend` en `DefaultMain`): con el mouse no pasa nada. Probalo en el celular, o en DevTools con el device toolbar (⌘⇧M), que emula touch.
+
+Dos condiciones para que dispare: el `<main>` tiene que estar **scrolleado arriba de todo** y hay que arrastrar hacia abajo **80 px** (`THRESHOLD`). Mientras tirás aparece una flecha que rota; al soltar, el Loader.
+
+Registran su recarga 6 páginas — probar una por una:
+
+- [ ] `/` (Mis hábitos)
+- [x] `/progreso`
+- [x] `/comunidades`
+- [x] `/amigos`
+- [ ] `/novedades` (además tiene que saltear el caché de `sessionStorage`, TTL 5 min)
+- [x] `/mi-perfil`
+- [x] Negativo: en `/iniciar-sesion` y `/registrarse` **no** aparece la flecha (el layout `auth` pasa `pullToRefresh: false`)
+
+Para confirmar que recargó de verdad y no solo animó: Network → tienen que salir requests nuevas a `supabase.co`. Si una página no refresca, lo más probable es que le falte el `registerRefresh(fn)` en su `onMounted` — es un singleton de módulo, la última página montada pisa el callback anterior.
+
+### El splash
+
+Arranca visible y se oculta a los **2,5 s** o en el primer cambio de ruta, lo que pase primero ([splash.client.js](app/plugins/splash.client.js)).
+
+> ⚠️ **Estaba roto: el splash no salía nunca.** Nuxt hace `router.replace(rutaInicial, { force: true })` en el hook `app:created`, o sea **después** de correr los plugins y **antes** de montar la app. Esa navegación disparaba el `router.beforeEach` del plugin, así que `hideSplash()` corría antes del primer render y el splash nunca llegaba a pintarse. Arreglado ignorando la navegación inicial (`from === START_LOCATION`). Volver a testear.
+
+- [ ] **Cold start** en la PWA instalada: cerrarla del multitarea (no solo minimizar) y abrirla desde el ícono → logo blanco + *"Pequeños pasos, grandes cambios."* por ~2,5 s
+- [ ] En el navegador: recargar `/` → el splash aparece y se va solo a los 2,5 s
+- [ ] Navegar a otra sección apenas abre → el splash se corta antes de los 2,5 s
+
+> Volver a la app desde el multitarea (warm start) **no** muestra el splash: no hay remount, es correcto. En iOS, antes del splash de la app aparece el splash nativo del manifest: son dos pantallas distintas. Y si navegás apenas abre, se corta antes de los 2,5 s (lo apaga el `router.beforeEach`).
 
 ---
 
 ## 6. Pendiente que no depende del código
 
-- [ ] **Activar Leaked Password Protection** en Supabase
-  Dashboard → Authentication → Sign In / Providers → *Leaked password protection*. Es el único punto que queda en el linter de seguridad; el front ya chequea contra HaveIBeenPwned
-- [ ] **Panel de administración (repo aparte)**: entrar como superadmin → sigue funcionando
-- [ ] **Decidir qué hacer con `useNotification`**: se usa en 6 lugares (creación de hábito, registro, los 3 flujos de contraseña) pero **solo escribe en consola**. Opciones: conectarlo a los toasts que ya existen (`XpNotification`) o sacar las llamadas
+- [x] **Panel de administración (repo aparte)**: entrar como superadmin → sigue funcionando
+- [x] **`useNotification` queda como está** (decidido el 30-07): se usa en 6 lugares (creación de hábito, registro, los 3 flujos de contraseña) y solo escribe en consola, pero esas 6 pantallas ya muestran su propio feedback al usuario, así que no hay nada roto de cara al usuario. No se conecta a los toasts ni se sacan las llamadas
+
+> **Leaked Password Protection**: sacado de la lista. Es feature de **plan Pro** y la organización está en **free**, así que el toggle ni siquiera aparece en el dashboard. El warning `auth_leaked_password_protection` del linter de seguridad de Supabase va a seguir apareciendo y es esperable. Si en la defensa preguntan: el front ya chequea las contraseñas contra HaveIBeenPwned por su cuenta, así que la protección existe igual, del lado del cliente.
 
 ---
 

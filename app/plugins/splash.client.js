@@ -1,5 +1,5 @@
 import { defineNuxtPlugin } from '#app'
-import { useRouter } from 'vue-router'
+import { useRouter, START_LOCATION } from 'vue-router'
 import { useSplashStore } from '~/stores/splashStore'
 
 export default defineNuxtPlugin((nuxtApp) => {
@@ -12,7 +12,8 @@ export default defineNuxtPlugin((nuxtApp) => {
         }, 2500)
     })
 
-    router.beforeEach(() => {
+    router.beforeEach((to, from) => {
+        if (from === START_LOCATION) return true
         splashStore.hideSplash()
         return true
     })

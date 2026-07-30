@@ -133,7 +133,13 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 - [useFriends.js](app/composables/useFriends.js) — búsqueda de usuarios, solicitudes y lista de amigos. `acceptFriendRequest` otorga XP; `removeFriend` lo revoca.
 - [useNovedades.js](app/composables/useNovedades.js) — feed de novedades (`status = 'approved'`) y categorías.
 - [useNotification.js](app/composables/useNotification.js) — wrapper sobre `console.*`. Stub para una capa futura de notificaciones in-app.
-- [usePullToRefresh.js](app/composables/usePullToRefresh.js) — singleton a nivel de módulo para el pull-to-refresh. Cada página registra su recarga con `registerRefresh(fn)` en `onMounted`; `DefaultMain` maneja el gesto táctil y llama `triggerRefresh()`. Al navegar, la página nueva pisa el callback anterior.
+- [usePullToRefresh.js](app/composables/usePullToRefresh.js) — singleton a nivel de módulo para el pull-to-refresh. Cada página registra su recarga con `registerRefresh(fn)` en `onMounted`; `DefaultMain` maneja el gesto táctil y llama `triggerRefresh()`. Al navegar, la página nueva pisa el callback anterior. Detalles del gesto en `DefaultMain` que conviene no revertir (jul-2026):
+  - **Un update de `displayHeight` por frame**: `setHeight()` batchea en `requestAnimationFrame`. `touchmove` dispara a 120 Hz en iOS y cada cambio de altura relayoutea todo el contenido de `<main>`; sin el rAF el pull se sentía trabado en las páginas con muchas cards (`/`, `/novedades`).
+  - **La flecha no lleva `transition` mientras se arrastra**: tenía `transform 0.1s` fijo, así que rotaba siempre 100 ms atrás del dedo. Ahora la transición solo se aplica cuando `isTransitioning` (el snap-back).
+  - **Resistencia después del umbral**: `THRESHOLD` es 70 px y a partir de ahí el arrastre sigue moviéndose al 35 % hasta `MAX_PULL` (120). Antes clampeaba en seco a 80 px y el indicador se congelaba con el dedo todavía moviéndose.
+  - **El gesto tiene que declararse vertical**: pasado un deadzone de 8 px, si `|dx| >= |dy|` (o `dy <= 0`) el gesto queda `isLocked` para el resto del touch. Sin eso, un swipe horizontal sobre `HabitsCard` con componente vertical abría el indicador y hacía `preventDefault()`.
+  - **`scrollTop` se re-chequea en cada move**, no solo en `touchstart`.
+  - **Hay `@touchcancel`**: un gesto interrumpido por el sistema no dispara `touchend` y dejaba `startY`/`isPulling` sucios y el indicador abierto.
 - [useOnlineStatus.js](app/composables/useOnlineStatus.js) — expone `isOnline` (ref reactivo) usando `navigator.onLine` y los eventos `online`/`offline` de `window`. Usado por `OfflineBanner`.
 - [useSeo.js](app/composables/useSeo.js) — `useSeoTags({ title, description, image, imageAlt, type, indexable })` centraliza title/description/canonical/Open Graph/Twitter de cada página. Exporta además las constantes `SITE_NAME`, `SITE_TAGLINE`, `SITE_DESCRIPTION`, `SITE_IMAGE`. Ver §18.
 - [usePushNotifications.js](app/composables/usePushNotifications.js) — gestiona suscripciones Web Push. Expone `isSupported`, `permission`, `isSubscribed`, `isLoading`, `subscribe()`, `unsubscribe()`, `checkSubscription()`, `removeSubscriptionForCurrentUser()`. Persiste las suscripciones en la tabla `push_subscriptions` de Supabase. Usa `config.public.vapidPublicKey` para la clave del applicationServerKey.
@@ -151,7 +157,7 @@ Toda la lógica de datos vive en **composables** ([app/composables/](app/composa
 
 ## 10. Plugins (client-only)
 
-- [plugins/splash.client.js](app/plugins/splash.client.js) — oculta el splash a los 2.5 s o al primer cambio de ruta.
+- [plugins/splash.client.js](app/plugins/splash.client.js) — oculta el splash a los 2.5 s o al primer cambio de ruta. **El `router.beforeEach` tiene que saltear `from === START_LOCATION`**: Nuxt hace `router.replace(rutaInicial, { force: true })` en el hook `app:created` (ver `node_modules/nuxt/dist/pages/runtime/plugins/router.js`), que corre **después** de los plugins y **antes** de `vueApp.mount()`. Sin ese guard, esa navegación interna cuenta como "primer cambio de ruta", `hideSplash()` corre antes del primer render y **el splash no se ve nunca**.
 - [plugins/habitSync.client.js](app/plugins/habitSync.client.js) — en `visibilitychange` (vuelta del background) llama a `syncHabitsWithNewDay()` y `checkComeback()`.
 - [plugins/pushNotifications.client.js](app/plugins/pushNotifications.client.js) — observa `useSupabaseUser()` y, cuando el usuario se autentica, llama a `checkSubscription()` y auto-suscribe al push si tiene permiso y no estaba suscripto.
 
