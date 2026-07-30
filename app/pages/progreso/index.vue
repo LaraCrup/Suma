@@ -275,11 +275,13 @@ const loadUserXP = async () => {
 const loadBenefits = async () => {
     try {
         const currentLevel = levelInfo.value.currentLevel
+        const today = getArgentineDate()
         const { data, error } = await client
             .from('benefits')
             .select('id, title, image_url, brands ( name, image_url )')
             .eq('status', 'approved')
             .eq('level', currentLevel)
+            .or(`valid_until.is.null,valid_until.gte.${today}`)
             .order('created_at', { ascending: true })
 
         if (error) {

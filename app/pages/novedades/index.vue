@@ -43,7 +43,7 @@
                     </span>
                 </div>
 
-                <div class="bg-midlight p-3 flex flex-col gap-3">
+                <div class="lg:h-full bg-midlight p-3 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-2 2xl:gap-4">
                             <NuxtImg

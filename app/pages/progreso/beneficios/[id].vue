@@ -61,6 +61,17 @@
                 class="w-full max-w-[480px] flex justify-center text-center text-xs text-primary border border-primary rounded-full py-3 px-12 bg-light"
             >Visitar sitio</a>
         </template>
+
+        <template v-else>
+            <div class="w-full">
+                <NavigationBackArrow :url="ROUTE_NAMES.PROGRESS" />
+            </div>
+
+            <div class="flex-1 w-full flex flex-col justify-center items-center gap-2">
+                <p class="text-sm 2xl:text-base text-center text-dark">Este beneficio ya no está disponible.</p>
+                <p class="text-xs 2xl:text-sm text-center text-gray">Puede que haya vencido o que la marca lo haya dado de baja.</p>
+            </div>
+        </template>
     </DefaultSection>
 </template>
 
@@ -83,11 +94,13 @@ useSeoTags({
 
 const loadBenefit = async () => {
     try {
+        const today = getArgentineDate()
         const { data, error } = await client
             .from('benefits')
             .select('id, title, image_url, description, discount_code, terms_conditions, valid_until, brands ( name, image_url, website )')
             .eq('id', route.params.id)
             .eq('status', 'approved')
+            .or(`valid_until.is.null,valid_until.gte.${today}`)
             .single()
 
         if (error) {
