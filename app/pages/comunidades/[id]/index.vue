@@ -30,14 +30,15 @@
                     class="w-full h-11 2xl:h-fit bg-midlight text-sm 2xl:text-base text-dark focus:outline-none rounded-lg border-[1px] border-solid border-gray px-3 2xl:px-5 py-2 2xl:py-4 pr-12 disabled:opacity-50"
                 />
                 <button
+                    v-if="isOnline"
                     type="submit"
-                    :disabled="!isOnline || isSending || !newMessage.trim()"
+                    :disabled="isSending || !newMessage.trim()"
                     class="w-7 2xl:w-8 h-7 2xl:h-8 absolute right-3 2xl:right-5 top-1/2 -translate-y-1/2 flex items-center justify-center bg-primary rounded-full disabled:opacity-50"
                 >
                     <NuxtImg src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3" />
                 </button>
             </form>
-            <p v-if="!isOnline" class="text-xs text-gray">Sin conexión: no podés enviar mensajes.</p>
+            <p v-if="!isOnline" class="text-xs text-error">Sin conexión: no podés enviar mensajes.</p>
             <p v-else-if="sendError" class="text-xs text-error">{{ sendError }}</p>
         </div>
         </template>
