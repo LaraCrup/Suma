@@ -60,6 +60,19 @@ export const letterDaysToNumbers = (letterDays) => {
     return letterDays.map(letterDayToNumber).filter(day => day !== -1)
 }
 
+export const habitStartDate = (habit) => {
+    const starts = [habit?.created_at, habit?.member_since]
+        .filter(Boolean)
+        .map(timestampToArgentineDateStr)
+
+    return starts.length ? starts.reduce((a, b) => (a > b ? a : b)) : null
+}
+
+export const habitExistsOn = (habit, dateStr) => {
+    const start = habitStartDate(habit)
+    return !start || dateStr >= start
+}
+
 export const isHabitScheduledOn = (habit, dateStr) => {
     const [y, m, d] = dateStr.split('-').map(Number)
     const dow = new Date(y, m - 1, d).getDay()
@@ -152,6 +165,10 @@ export const findScheduledBefore = (habit, dateStr) => {
 }
 
 export const shouldShowHabitForDateWith = async (habit, dateStr, countCompletedInPeriod) => {
+    if (!habitExistsOn(habit, dateStr)) {
+        return false
+    }
+
     const [year, month, day] = dateStr.split('-').map(Number)
     const dateObj = new Date(year, month - 1, day)
     const dayOfWeek = dateObj.getDay()

@@ -2,37 +2,31 @@
 
 Solo lo que falta testear. Lo ya marcado como OK vive en [CHECKLIST.md](CHECKLIST.md) y no se toca.
 
-Fecha de armado: **29-07-2026** (los datos de prueba de `larabtv` están calculados para *hoy*: si testeás otro día, las rachas se corren y hay que rearmarlas).
+Armada el 29-07-2026. **Los datos de `larabtv` están fechados para testear el 30-07-2026** (ayer = 29-07). Si lo dejás para más adelante, avisame y los recorro de nuevo.
 
 ---
 
-## 0. Antes de empezar: preparar el navegador ⚠️ *leer esto o los tests de racha no funcionan*
+## 0. Antes de empezar ⚠️ *el 30-07, con el día nuevo*
 
-**El bloque de rachas (punto 2) va PRIMERO, antes de completar cualquier otra cosa.** No es un capricho: la gracia de rachas la detecta `syncHabitsWithNewDay`, y `shouldResetToday` decide si correr o no con dos guards:
+Todo el bloque de rachas depende de `syncHabitsWithNewDay`, y `shouldResetToday` lo corre **una sola vez por día** y solo si se cumplen dos condiciones:
 
 1. `lastHabitResetDate_{userId}` en localStorage ≠ hoy, **y**
-2. que **no exista ni un solo `habit_log` de hoy** para esa cuenta — ni siquiera uno con `value: 0` / `completed: false`, que es lo que deja atrás un hábito completado y descompletado.
+2. que **no exista ni un solo `habit_log` de hoy** para esa cuenta — ni siquiera uno con `value: 0` / `completed: false`, que es justo lo que queda cuando completás y descompletás un hábito.
 
-Si ya registraste algo hoy, el sync **no corre en todo el día** y por eso no aparece ni el punto rojo ni "Salvar racha", y los hábitos que tenían que caerse a 0 se quedan con la racha vieja (fue exactamente lo que pasó en la primera pasada). Es el comportamiento esperado del guard, no un bug: en uso real el primer render del día corre el sync antes de que el usuario pueda tocar nada.
+El 29 se rompió por (2): había cuatro logs del día (los tres completados de 🔥 🚴 🛼 más un `value: 0` de 📉), así que el sync se saltó todo el día y por eso no salió el punto rojo ni bajaron las rachas. El 30 arranca limpio, así que **no hay que borrar nada de localStorage**: solo respetar el orden.
 
-Con la cuenta `larabtv` logueada:
+Con `larabtv` logueada, el 30-07:
 
-1. DevTools → Application → Local Storage → borrar estas claves (si existen):
-   - `lastHabitResetDate_f9c70bfa-2954-452b-b5e1-627056006b41`
-   - `lastCommunityStreakSync_f9c70bfa-2954-452b-b5e1-627056006b41`
-   - `streakGracePending_…` y `streakGraceForgiven_…` (todas)
-2. **No completar ningún hábito todavía.**
-3. Recargar la home (`/`) y mirar la consola: tiene que aparecer `[HABIT SYNC]`.
-4. Recién ahí: el punto rojo tiene que estar en 🛟 y 💔, y 🚫 y 📉 tienen que haber caído a 0.
+1. **Primero abrir la home (`/`) sin completar nada.** En la consola tiene que aparecer `[HABIT SYNC]`.
+2. Mirar la home antes de tocar cualquier hábito y anotar lo que ves:
+   - 🛟 **TEST salvar racha** y 💔 **TEST perder racha** → **punto rojo** en la card (racha en riesgo)
+   - 🚫 **TEST gracia ya usada** y 📉 **TEST 2 dias sin completar** → racha en **0**, sin punto rojo
+3. Recién después, hacer los tests del punto 2.
 
-Si volvés a quedar trabada porque ya hay logs de hoy, hay dos salidas: pedirme que limpie el día de nuevo, o **simular la oferta a mano** desde la consola del navegador (sirve para probar la UI y el apply/decline, no la detección):
+> **Esto es lo que estamos verificando.** Si el 30 ves ese estado, quedó confirmado que lo del 29 era solo el guard del sync y no hay nada roto.
+> Si en cambio 📉 vuelve a aparecer con racha **4** y al completarlo salta a **5**, entonces sí hay un bug aparte: `logHabitProgress` hace `streak + 1` sobre el valor que hay en la base sin chequear que el día anterior esté cumplido, así que infla una racha ya cortada. Tengo el fix identificado (validar la continuidad de la unidad anterior antes de sumar) y lo aplico cuando me digas.
 
-```js
-localStorage.setItem('streakGracePending_d6601386-d5b2-4de6-826f-c6a12783fb57', '{"offeredForDate":"2026-07-28"}') // TEST salvar racha
-localStorage.setItem('streakGracePending_67c504e4-6de1-4ba1-a714-7d1b9a807389', '{"offeredForDate":"2026-07-28"}') // TEST perder racha
-```
-
-Ya dejé cargado en `larabtv` todo lo necesario (hábitos `TEST …` y 3 comunidades `TEST …`) y **re-armé los fixtures del punto 2** después de la primera pasada: se borraron los logs de hoy y las rachas volvieron a los valores de la tabla. Los ítems del punto 2 que ya validaste (🔥 y los dos híbridos) siguen valiendo; si querés repetirlos, los datos están otra vez en el estado inicial.
+**Hoy 29 no toques los hábitos `TEST …`**: si completás alguno, queda un log del 29 y mañana el 29 pasa a ser "el día de ayer, cumplido" → desaparece el hueco y ya no hay nada que salvar.
 
 ---
 
@@ -48,6 +42,8 @@ Ya dejé cargado en `larabtv` todo lo necesario (hábitos `TEST …` y 3 comunid
 - [x] **Salir siendo el único miembro** → creá una comunidad nueva vos sola y salí: la comunidad se elimina (no queda basura invisible)
 - [x] Regresión: un admin **elimina** a otro miembro → sigue funcionando igual que antes
 
+> Resultado en la base después de tu prueba, por si lo querés para la defensa: en **TEST salir siendo admin** el rol cayó en `lara.davinci`, que quedó como `admin` y además con el `created_by` transferido (o sea que puede eliminar la comunidad). **TEST salir siendo miembro** ya no existe: al quedarse con un solo miembro y salir, se eliminó sola.
+
 ### Offline: bloqueo de escrituras
 
 Modo avión o DevTools → Network → Offline.
@@ -62,15 +58,15 @@ Modo avión o DevTools → Network → Offline.
 
 ## 2. Fechas y rachas ⚠️ *lo más frágil*
 
-Todos estos hábitos ya están cargados en `larabtv` con su historial. Hacer el punto 0 antes.
+Todos estos hábitos ya están cargados en `larabtv` con su historial, **fechados para el 30-07**. Hacer el punto 0 antes.
 
-| Hábito | Estado que dejé | Qué tiene que pasar |
+| Hábito | Estado que dejé (para el 30-07) | Qué tiene que pasar |
 |---|---|---|
-| **TEST salvar racha** 🛟 | racha 4, completado hasta el 27-07, el 28 sin hacer | punto rojo en la card → detalle → **Salvar racha** mantiene la racha en 4 |
+| **TEST salvar racha** 🛟 | racha 4, completado del 25 al 28, **el 29 sin hacer** | punto rojo en la card → detalle → **Salvar racha** mantiene la racha en 4 |
 | **TEST perder racha** 💔 | igual que el anterior | detalle → **Perder racha** la manda a **0** |
 | **TEST gracia ya usada** 🚫 | mismo hueco, pero la gracia de julio ya está consumida | **no** ofrece gracia: la racha va directo a 0 |
-| **TEST 2 dias sin completar** 📉 | racha 4, sin completar 26, 27 y 28 | hueco de 2+ días → **no** ofrece gracia, resetea directo |
-| **TEST racha 7** 🔥 | racha 6, completado del 23 al 28 | completar **hoy** → racha 7 → toast **+30 XP** (`streak_7`) |
+| **TEST 2 dias sin completar** 📉 | racha 4, completado del 23 al 26: sin hacer 27, 28 y 29 | hueco de 2+ días → **no** ofrece gracia, resetea directo a 0 (y si después lo completás, arranca en **1**) |
+| **TEST racha 7** 🔥 | racha 6, completado del 24 al 29 | completar el **30** → racha 7 → toast **+30 XP** (`streak_7`) |
 
 - [ ] Salvar racha mantiene la racha (🛟)
 - [ ] La gracia no se puede usar dos veces en el mismo mes (🚫)
@@ -79,11 +75,9 @@ Todos estos hábitos ya están cargados en `larabtv` con su historial. Hacer el 
 - [x] Racha de 7 días → +30 XP (🔥)
 - [ ] Después de salvar la racha en 🛟, mirar en Supabase que `habits.streak_grace_used_month` quedó en `2026-07`
 
-> Si 📉 te aparece con racha 4 y al completarlo sube a 5, o si en 🛟/💔 no ves el punto rojo, es que el sync no corrió: volvé al punto 0. El decaimiento y la oferta de gracia **solo** pasan dentro de ese sync.
-
 ### Caso híbrido: diario + cantidad de días por semana
 
-Dos hábitos, los dos "4 días por semana", misma frecuencia, historial distinto:
+Ya los validaste el 29 y **quedaron en el mismo estado inicial**, así que se pueden repetir tal cual el 30 (la semana en curso sigue siendo la del 27-07 al 02-08, así que las cuentas no cambian). Los dos son "4 días por semana", con historial distinto:
 
 | Hábito | Semana cerrada (20 al 26-07) | Esta semana (27 y 28) | Racha esperada |
 |---|---|---|---|
@@ -98,7 +92,7 @@ Dos hábitos, los dos "4 días por semana", misma frecuencia, historial distinto
 
 ## 3. Comunidades
 
-Comunidad **TEST racha comunitaria** 🔥, hábito *Tomar 2 litros de agua* 💧: racha **3** (26, 27 y 28-07 completados por `larabtv`, único miembro). El 25-07 quedó libre a propósito.
+Los dos ítems ya los validaste el 29. Estado en el que quedó la comunidad **TEST racha comunitaria** 🔥, hábito *Tomar 2 litros de agua* 💧: racha **5**, con el 25, 26, 27, 28 y 29-07 completados por `larabtv`, que sigue siendo la **única** miembro. Como el 29 quedó completo, el 30 la racha sigue en 5 y se puede repetir el test de sumar miembro (agregar a `laracrupnicoff` o a `lara.davinci`) sin rearmar nada.
 
 - [x] **Sumar un miembro nuevo no corta la racha histórica**: agregá a `laracrupnicoff` desde el detalle → borrá `lastCommunityStreakSync_f9c70bfa-2954-452b-b5e1-627056006b41` → recargá la home → la racha **sigue en 3**
 - [x] **Completar el hábito comunitario en un día pasado**: desde el DateNavigator elegí el **25-07** y completá → el log queda en el 25, no en hoy (verificable en `community_habit_logs`), y la racha pasa a 4

@@ -59,7 +59,7 @@
                     :progress-count="habit?.progress_count"
                     :goal-value="habit?.goal_value"
                 />
-                <div v-if="isOnline" class="w-full flex justify-center items-center gap-3 mt-3">
+                <div v-if="canLog" class="w-full flex justify-center items-center gap-3 mt-3">
                     <button @click="decreaseProgress" class="h-6 w-6 flex justify-center items-center bg-accent rounded-full text-lg leading-none">-</button>
                     <div class="flex items-end gap-1">
                         <p class="text-xl">{{ habit?.progress_count || 0 }}</p>
@@ -72,7 +72,7 @@
                         <p class="text-xl">{{ habit?.progress_count || 0 }}</p>
                         <p class="text-xs/[2] text-gray">/<span>{{ habit?.goal_value || 1 }}</span></p>
                     </div>
-                    <p class="text-center text-xs text-gray">Sin conexión: no podés registrar progreso.</p>
+                    <p class="text-center text-xs text-gray">{{ blockedReason }}</p>
                 </div>
             </div>
         </div>
@@ -99,7 +99,7 @@
                 {{ streakSaveLoading ? 'Guardando...' : 'Perder racha' }}
             </ButtonTerciary>
         </div>
-        <div v-if="isOnline" class="w-full flex justify-between items-center">
+        <div v-if="canLog" class="w-full flex justify-between items-center">
             <button @click="resetProgress" class="h-9 w-9 flex justify-center items-center bg-green-light rounded-full">
                 <NuxtImg src="/images/icons/restart.svg" alt="Restablecer hábito" class="w-4" />
             </button>
@@ -141,6 +141,16 @@ const hasSpecificFrequency = computed(() => {
     ]
     return specificOptions.includes(habit.value?.frequency_option)
 })
+
+const canLog = computed(() =>
+    isOnline.value && (habit.value ? habitExistsOn(habit.value, selectedDate.value || getArgentineDate()) : true)
+)
+
+const blockedReason = computed(() =>
+    isOnline.value
+        ? 'Este hábito todavía no existía en esta fecha.'
+        : 'Sin conexión: no podés registrar progreso.'
+)
 
 const brilloCount = computed(() => {
     if (!habit.value?.frequency_option || !habit.value?.frequency_detail) {

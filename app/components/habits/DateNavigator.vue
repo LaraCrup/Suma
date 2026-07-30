@@ -100,18 +100,25 @@ const days = computed(() => {
 const fetchCommunityHabits = async (userId, dates) => {
     const { data: memberships } = await client
         .from('community_members')
-        .select('community_id')
+        .select('community_id, joined_at')
         .eq('user_id', userId)
 
     const communityIds = (memberships || []).map(m => m.community_id)
     if (communityIds.length === 0) return { habits: [], logs: [] }
 
-    const { data: habits } = await client
+    const joinedAtByCommunity = {}
+    for (const membership of memberships) {
+        joinedAtByCommunity[membership.community_id] = membership.joined_at
+    }
+
+    const { data: rawHabits } = await client
         .from('community_habits')
-        .select('id, frequency_type, frequency_option, frequency_detail')
+        .select('id, community_id, created_at, frequency_type, frequency_option, frequency_detail')
         .in('community_id', communityIds)
 
-    if (!habits || habits.length === 0) return { habits: [], logs: [] }
+    if (!rawHabits || rawHabits.length === 0) return { habits: [], logs: [] }
+
+    const habits = rawHabits.map(h => ({ ...h, member_since: joinedAtByCommunity[h.community_id] }))
 
     const { data: logs } = await client
         .from('community_habit_logs')
@@ -137,7 +144,7 @@ const fetchWeekCompletions = async () => {
 
     const { data: habits } = await client
         .from('habits')
-        .select('id, frequency_type, frequency_option, frequency_detail')
+        .select('id, created_at, frequency_type, frequency_option, frequency_detail')
         .eq('user_id', userId)
 
     const personalHabits = habits || []
@@ -164,7 +171,7 @@ const fetchWeekCompletions = async () => {
 
     const result = {}
     pastAndTodayDates.forEach(date => {
-        const total = allHabits.filter(h => isHabitScheduledOn(h, date)).length
+        const total = allHabits.filter(h => habitExistsOn(h, date) && isHabitScheduledOn(h, date)).length
         result[date] = { completed: countPerDay[date] || 0, total }
     })
     dayCompletions.value = result

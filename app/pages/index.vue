@@ -148,6 +148,8 @@ const filterHabitsByVisibility = async () => {
     const hidden = []
 
     for (const habit of habits.value) {
+        if (!habitExistsOn(habit, selectedDate.value)) continue
+
         const shouldShow = await shouldShowHabitForDate(habit, selectedDate.value)
         if (shouldShow) {
             visible.push(habit)

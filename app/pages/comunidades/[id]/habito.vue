@@ -117,10 +117,21 @@ const isScheduledDay = computed(() =>
     habit.value ? isHabitScheduledOn(habit.value, targetDate.value) : true
 )
 
-const canLog = computed(() => isOnline.value && isScheduledDay.value)
+const myMembership = computed(() =>
+    community.value?.members?.find(m => m.profile.id === currentUserId.value)
+)
+
+const existsOnDate = computed(() =>
+    habit.value
+        ? habitExistsOn({ ...habit.value, member_since: myMembership.value?.joined_at }, targetDate.value)
+        : true
+)
+
+const canLog = computed(() => isOnline.value && existsOnDate.value && isScheduledDay.value)
 
 const blockedReason = computed(() => {
     if (!isOnline.value) return 'Sin conexión: no podés registrar progreso.'
+    if (!existsOnDate.value) return 'Todavía no eras parte de esta comunidad en esta fecha.'
     return 'Este hábito no está programado para este día.'
 })
 

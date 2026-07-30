@@ -544,10 +544,14 @@ export const useCommunities = () => {
     const shouldShowCommunityHabitForDate = async (habit, dateStr) => {
         if (!habit?.community_id) return true
 
+        const userId = await getUserId()
         const members = await getCommunityMembersFor(habit.community_id)
         const completedDays = await buildCommunityCompletedDays(habit.id, members)
 
-        return await shouldShowHabitForDateWith(habit, dateStr, async (start, end) =>
+        const myMembership = members.find(m => m.user_id === userId)
+        const habitForMember = { ...habit, member_since: myMembership?.joined_at }
+
+        return await shouldShowHabitForDateWith(habitForMember, dateStr, async (start, end) =>
             countCompletedDaysInRange(completedDays, start, end))
     }
 
