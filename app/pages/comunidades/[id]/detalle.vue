@@ -203,6 +203,7 @@
                     </button>
                     <div class="w-full flex flex-col items-center gap-3">
                         <p class="text-center text-sm">¿Estás seguro de que querés salir de esta comunidad?</p>
+                        <p v-if="leaveWarning" class="text-center text-xs text-gray">{{ leaveWarning }}</p>
                     </div>
                     <p v-if="leaveCommunityError" class="text-xs text-red-500 text-center">{{ leaveCommunityError }}</p>
                     <div class="w-full flex flex-col items-center gap-2">
@@ -262,6 +263,7 @@ const {
     updateCommunityName,
     deleteCommunity,
     removeMemberFromCommunity,
+    leaveCommunity,
     addMembersToExistingCommunity,
 } = useCommunities()
 const { getFriends } = useFriends()
@@ -314,6 +316,13 @@ const isAdmin = computed(() =>
         m => m.profile.id === currentUserId.value && m.role === 'admin'
     )
 )
+
+const leaveWarning = computed(() => {
+    if (!isAdmin.value) return ''
+    const others = (community.value?.members || []).filter(m => m.profile.id !== currentUserId.value)
+    if (others.length === 0) return 'Sos el único miembro: al salir se elimina la comunidad.'
+    return 'Tenés el rol de admin: al salir pasa a otro miembro de la comunidad.'
+})
 
 const editableMembers = computed(() =>
     (community.value?.members || []).filter(m => m.profile.id !== currentUserId.value)
@@ -408,7 +417,7 @@ const confirmLeaveCommunity = async () => {
     isSaving.value = true
     leaveCommunityError.value = ''
     try {
-        await removeMemberFromCommunity(route.params.id, currentUserId.value)
+        await leaveCommunity(route.params.id)
         showLeaveCommunity.value = false
         await navigateTo(ROUTE_NAMES.COMMUNITY)
     } catch (e) {

@@ -15,7 +15,7 @@
                     <p class="text-xs">{{ authStore.user?.email }}</p>
                 </div>
             </div>
-            <NuxtLink :to="ROUTE_NAMES.PROFILE_EDIT" class="self-start">
+            <NuxtLink v-if="isOnline" :to="ROUTE_NAMES.PROFILE_EDIT" class="self-start">
                 <NuxtImg src="images/icons/edit.svg" alt="Editar perfil" class="h-5" />
             </NuxtLink>
         </div>
@@ -118,6 +118,7 @@ import { useFriends } from '~/composables/useFriends'
 import { useCommunities } from '~/composables/useCommunities'
 
 const authStore = useAuthStore()
+const { isOnline } = useOnlineStatus()
 
 const {
     isSupported: pushSupported,

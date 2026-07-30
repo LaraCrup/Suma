@@ -12,10 +12,10 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 
 - [x] **Crear una comunidad nueva** con 2+ miembros invitados desde el paso 2 → se crea sin error
 - [x] El creador queda como **Admin** y los invitados como miembros
-- [ ] **Agregar un miembro** a una comunidad existente, siendo admin → funciona
+- [x] **Agregar un miembro** a una comunidad existente, siendo admin → funciona
 - [ ] **Salir** de una comunidad (no siendo admin) → funciona
-- [ ] Un admin **elimina** a un miembro → funciona
-- [ ] Se otorgan los XP de `create_community` (+30) y `join_community` (+15)
+- [x] Un admin **elimina** a un miembro → funciona
+- [x] Se otorgan los XP de `create_community` (+30) y `join_community` (+15)
 
 > Si algo de esto falla con un error de permisos, el problema está en la policy `community_members_insert` de la migración `20260729_community_members_insert_rls.sql`.
 
@@ -94,14 +94,14 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 - [x] Editar un hábito sin que se rompa la racha
 - [x] Borrar un hábito
 - [x] Hábito con meta de valor y unidad (ej. 8 vasos de agua): el contador llega al goal y marca completado
-- [ ] Crear el **primer** hábito de una cuenta nueva → +15 XP (`first_habit_created`)
-- [ ] Borrar ese hábito y crear otro → **no** vuelve a dar los 15 XP
+- [x] Crear el **primer** hábito de una cuenta nueva → +15 XP (`first_habit_created`)
+- [x] Borrar ese hábito y crear otro → **no** vuelve a dar los 15 XP
 
 ---
 
 ## 4. Fechas y rachas ⚠️ *lo más frágil del proyecto*
 
-- [ ] **Probar después de las 21:00 hora argentina.** Es la franja donde `toISOString()` (UTC) corre el día. El hábito de hoy tiene que seguir siendo el de hoy
+- [x] **Probar después de las 21:00 hora argentina.** Es la franja donde `toISOString()` (UTC) corre el día. El hábito de hoy tiene que seguir siendo el de hoy
 - [x] Completar un **día pasado** desde el DateNavigator → se marca ese día, no hoy
 - [x] Descompletar un día pasado → la racha se recalcula correctamente
 - [ ] **Salvar racha**: dejar pasar un día → punto rojo en la card → entrar al detalle → "Salvar racha" mantiene la racha
@@ -158,7 +158,7 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 - [x] **Instalar la PWA en un iPhone real** (Safari → Compartir → Añadir a inicio). Es donde ya hubo un 404
 - [x] Abrir en **Safari iOS sin instalar** — ahí la API `Notification` no existe
 - [x] Instalar en Android
-- [ ] Modo avión → aparece el `OfflineBanner` y se ven los datos cacheados
+- [x] Modo avión → aparece el `OfflineBanner` y se ven los datos cacheados
 - [x] Volver online → se recupera
 - [ ] Los 4 shortcuts del manifest (Hábitos / Progreso / Comunidades / Novedades)
 - [ ] Pull-to-refresh en cada página que lo registra
@@ -173,7 +173,7 @@ Estos flujos se tocaron a nivel de base de datos y de código. **Probarlos prime
 - [x] **≥ 992 px**: el nav pasa a sidebar izquierdo y el contenido queda centrado
 - [x] DateNavigator: 7 días en mobile, 14 en desktop
 - [x] Ninguna pantalla scrollea horizontalmente
-- [ ] Textos largos: nombre de hábito largo, nombre de comunidad largo, mensaje de chat largo
+- [x] Textos largos: nombre de hábito largo, nombre de comunidad largo, mensaje de chat largo
 
 ---
 

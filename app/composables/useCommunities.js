@@ -617,6 +617,17 @@ export const useCommunities = () => {
         return true
     }
 
+    const leaveCommunity = async (communityId) => {
+        const { data, error } = await client.rpc('leave_community', { p_community_id: communityId })
+
+        if (error) {
+            console.error('Error saliendo de la comunidad:', error)
+            throw new Error(handleSupabaseError(error))
+        }
+
+        return data
+    }
+
     const addMembersToExistingCommunity = async (communityId, memberIds) => {
         const currentUserId = await getUserId()
         const records = memberIds
@@ -672,6 +683,7 @@ export const useCommunities = () => {
         updateCommunityName,
         deleteCommunity,
         removeMemberFromCommunity,
+        leaveCommunity,
         addMembersToExistingCommunity,
         recordCommunityJoin,
     }

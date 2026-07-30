@@ -16,7 +16,7 @@
           :image="authStore.profile?.avatar_url"
           :preview="previewImage"
         />
-        <div class="flex items-center gap-3">
+        <div v-if="isOnline" class="flex items-center gap-3">
           <button type="button" @click="triggerFileInput" class="cursor-pointer">
             <NuxtImg src="images/icons/edit.svg" alt="Cambiar foto de perfil" class="h-4 2xl:h-5 text-green-dark" />
           </button>
@@ -57,7 +57,10 @@
       />
 
 
-      <ButtonPrimary type="submit" :disabled="isSaving" class="self-center">
+      <p v-if="!isOnline" class="text-xs text-gray text-center">
+        Sin conexión: no podés editar tu perfil.
+      </p>
+      <ButtonPrimary v-else type="submit" :disabled="isSaving" class="self-center">
         <span class="flex items-center gap-2">
           <Loader v-if="isSaving" color="light" />
           {{ isSaving ? '' : 'Guardar cambios' }}
@@ -96,6 +99,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '~/stores/authStore'
 
 const authStore = useAuthStore()
+const { isOnline } = useOnlineStatus()
 
 const {
   isSupported: pushSupported,
@@ -202,6 +206,8 @@ const deleteAvatar = async () => {
 }
 
 const handleSave = async () => {
+  if (!isOnline.value) return
+
   errors.value = {
     name: '',
     display_name: ''

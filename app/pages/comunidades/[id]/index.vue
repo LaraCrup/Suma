@@ -10,7 +10,7 @@
                 <HabitsCommunityCard :habit="habit" :members="completions" />
             </div>
         </div>
-        <div ref="messagesContainer" class="relative w-full h-[50dvh] 2xl:h-[60dvh] flex flex-col justify-end gap-2 2xl:gap-3 overflow-y-auto">
+        <div ref="messagesContainer" class="relative w-full h-[50dvh] 2xl:h-[45dvh] flex flex-col justify-end gap-2 2xl:gap-3 overflow-y-auto">
             <template v-for="msg in messages" :key="msg.id">
                 <CommunityChatOutputMessage v-if="msg.user_id === currentUserId" :message="msg" />
                 <CommunityChatInputMessage v-else :message="msg" />
@@ -20,21 +20,26 @@
             </p>
             <div class="absolute top-0 left-0 h-[50dvh] 2xl:h-[60dvh] w-full bg-[linear-gradient(180deg,_rgba(243,252,247,1)_0%,rgba(243,252,247,0)_12%)] pointer-events-none"></div>
         </div>
-        <form @submit.prevent="handleSend" class="relative w-full">
-            <input
-                v-model="newMessage"
-                type="text"
-                placeholder="Escribí acá..."
-                class="w-full h-11 2xl:h-fit bg-midlight text-sm 2xl:text-base text-dark focus:outline-none rounded-lg border-[1px] border-solid border-gray px-3 2xl:px-5 py-2 2xl:py-4 pr-12"
-            />
-            <button
-                type="submit"
-                :disabled="isSending || !newMessage.trim()"
-                class="w-7 2xl:w-8 h-7 2xl:h-8 absolute right-3 2xl:right-5 top-1/2 -translate-y-1/2 flex items-center justify-center bg-primary rounded-full disabled:opacity-50"
-            >
-                <NuxtImg src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3" />
-            </button>
-        </form>
+        <div class="w-full flex flex-col gap-1">
+            <form @submit.prevent="handleSend" class="relative w-full">
+                <input
+                    v-model="newMessage"
+                    type="text"
+                    :placeholder="isOnline ? 'Escribí acá...' : 'Sin conexión'"
+                    :disabled="!isOnline"
+                    class="w-full h-11 2xl:h-fit bg-midlight text-sm 2xl:text-base text-dark focus:outline-none rounded-lg border-[1px] border-solid border-gray px-3 2xl:px-5 py-2 2xl:py-4 pr-12 disabled:opacity-50"
+                />
+                <button
+                    type="submit"
+                    :disabled="!isOnline || isSending || !newMessage.trim()"
+                    class="w-7 2xl:w-8 h-7 2xl:h-8 absolute right-3 2xl:right-5 top-1/2 -translate-y-1/2 flex items-center justify-center bg-primary rounded-full disabled:opacity-50"
+                >
+                    <NuxtImg src="/images/icons/send.svg" alt="Enviar" class="w-3 h-3" />
+                </button>
+            </form>
+            <p v-if="!isOnline" class="text-xs text-gray">Sin conexión: no podés enviar mensajes.</p>
+            <p v-else-if="sendError" class="text-xs text-error">{{ sendError }}</p>
+        </div>
         </template>
     </DefaultSection>
 </template>
@@ -55,6 +60,8 @@ useSeoTags({
 const messages = ref([])
 const newMessage = ref('')
 const isSending = ref(false)
+const sendError = ref('')
+const { isOnline } = useOnlineStatus()
 const messagesContainer = ref(null)
 const currentUserId = ref(null)
 const isLoading = ref(true)
@@ -141,7 +148,12 @@ const setupRealtime = (communityId, habitId) => {
 
 const handleSend = async () => {
     if (!newMessage.value.trim() || isSending.value) return
+    if (!isOnline.value) {
+        sendError.value = 'Sin conexión: no podés enviar mensajes.'
+        return
+    }
     isSending.value = true
+    sendError.value = ''
     try {
         const msg = await sendMessage(route.params.id, newMessage.value)
         if (!messages.value.some(m => m.id === msg.id)) {
@@ -151,6 +163,7 @@ const handleSend = async () => {
         scrollToBottom()
     } catch (e) {
         console.error('Error enviando mensaje:', e)
+        sendError.value = 'No pudimos enviar el mensaje. Volvé a intentar.'
     } finally {
         isSending.value = false
     }
