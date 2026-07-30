@@ -60,7 +60,7 @@
       <ButtonPrimary type="submit" :disabled="isSaving" class="self-center">
         <span class="flex items-center gap-2">
           <Loader v-if="isSaving" color="light" />
-          {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+          {{ isSaving ? '' : 'Guardar cambios' }}
         </span>
       </ButtonPrimary>
     </form>

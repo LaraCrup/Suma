@@ -26,13 +26,18 @@
                     <template v-for="member in completions" :key="member.id">
                         <div
                             class="w-4 2xl:w-5 h-4 2xl:h-5 rounded-full overflow-hidden flex items-center justify-center"
-                            :class="member.completed ? 'bg-green-dark' : 'bg-gray'">
+                            :class="member.completed ? 'bg-green-light' : 'bg-gray'">
                             <img
                                 v-if="member.completed && member.avatar_url"
                                 :src="member.avatar_url"
                                 :alt="member.display_name"
                                 class="w-full h-full object-cover"
                             />
+                            <span
+                                v-else-if="member.completed"
+                                class="text-[0.5rem] 2xl:text-xs text-light font-bold">
+                                {{ member.display_name?.[0]?.toUpperCase() }}
+                            </span>
                         </div>
                     </template>
                 </div>
