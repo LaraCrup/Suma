@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="w-full flex items-center gap-3">
-            <NavigationBackArrow class="!w-fit" color="text-gray" :url="backUrl" />
+            <NavigationBackArrow class="!w-fit" color="text-gray" :url="ROUTE_NAMES.COMMUNITY" />
             <HeadingH1>Armá tu comunidad</HeadingH1>
         </div>
 
@@ -66,18 +66,6 @@ const friends = ref([])
 const query = ref('')
 const selectedIds = ref([])
 const showError = ref(false)
-
-const backUrl = computed(() => {
-    if (!('name' in route.query) && !('icon' in route.query)) return ROUTE_NAMES.COMMUNITY
-    return {
-        path: ROUTE_NAMES.COMMUNITY_CREATE_STEP_2,
-        query: {
-            members: route.query.members ?? '',
-            name: route.query.name ?? '',
-            icon: route.query.icon ?? ''
-        }
-    }
-})
 
 const filteredFriends = computed(() => {
     if (!query.value.trim()) return friends.value

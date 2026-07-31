@@ -22,7 +22,7 @@
                     <p class="text-xs 2xl:text-sm">Tu hábito más constante</p>
                     <div class="h-16 2xl:h-20 w-full flex flex-col justify-center bg-midlight rounded-lg p-3">
                         <template v-if="mostConsistentHabit">
-                            <p class="text-xs 2xl:text-sm truncate">{{ mostConsistentHabit.name }}</p>
+                            <p class="h-fit text-xs 2xl:text-sm">{{ mostConsistentHabit.name }}</p>
                             <span class="text-xl 2xl:text-2xl font-bold text-primary">
                                 {{ mostConsistentHabit.longest_streak }} {{ mostConsistentHabit.longest_streak === 1 ? 'día' : 'días' }}
                             </span>

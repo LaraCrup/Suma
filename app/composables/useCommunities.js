@@ -653,18 +653,16 @@ export const useCommunities = () => {
     }
 
     const recordCommunityJoin = async (communityId) => {
-        const userId = await getUserId()
-        const key = `joined_community_${userId}_${communityId}`
-        if (localStorage.getItem(key)) return null
-        localStorage.setItem(key, '1')
+        const { data, error } = await client.rpc('claim_community_join_xp', {
+            p_community_id: communityId
+        })
 
-        const { data: community } = await client
-            .from('communities')
-            .select('created_by')
-            .eq('id', communityId)
-            .maybeSingle()
+        if (error) {
+            console.error('Error registrando el ingreso a la comunidad:', error)
+            return null
+        }
 
-        if (community?.created_by === userId) return null
+        if (!data) return null
 
         return await grantXP('join_community')
     }
