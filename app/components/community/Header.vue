@@ -1,6 +1,6 @@
 <template>
     <div class="w-full flex items-center gap-3">
-        <NavigationBackArrow class="!w-fit" color="text-gray" />
+        <NavigationBackArrow class="!w-fit" color="text-gray" :url="backUrl" />
         <NuxtLink :to="`${ROUTE_NAMES.COMMUNITY}/${community?.id}/detalle`" class="w-full flex items-center gap-3">
             <div class="w-8 2xl:w-10 h-8 2xl:h-10 flex flex-shrink-0 items-center justify-center bg-green-dark rounded-full overflow-hidden">
                 <p class="text-lg 2xl:text-xl">{{ community?.icon }}</p>
@@ -21,6 +21,10 @@ defineProps({
     community: {
         type: Object,
         default: null
+    },
+    backUrl: {
+        type: [String, Object],
+        required: true
     }
 })
 </script>

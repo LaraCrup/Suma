@@ -1,7 +1,7 @@
 <template>
     <component
         :is="selectable ? 'button' : NuxtLink"
-        v-bind="selectable ? { type: 'button' } : { to: `${ROUTE_NAMES.USERS}/${friend?.id}` }"
+        v-bind="selectable ? { type: 'button' } : { to: userLink }"
         @click="handleRowClick"
         class="w-full flex items-center justify-between text-left bg-midlight rounded-lg p-3"
     >
@@ -51,6 +51,13 @@ const props = defineProps({
         default: ''
     }
 })
+
+const route = useRoute()
+
+const userLink = computed(() => ({
+    path: `${ROUTE_NAMES.USERS}/${props.friend?.id}`,
+    query: { from: route.fullPath }
+}))
 
 const emit = defineEmits(['toggle'])
 

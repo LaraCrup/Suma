@@ -41,7 +41,13 @@ const props = defineProps({
 })
 
 const mainRef = ref(null)
+const route = useRoute()
 const { isRefreshing, triggerRefresh } = usePullToRefresh()
+
+watch(() => route.path, () => {
+    const el = mainRef.value
+    if (el) el.scrollTop = 0
+})
 
 const THRESHOLD = 70
 const MAX_PULL = 120

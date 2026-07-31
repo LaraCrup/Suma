@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="relative w-full flex items-center gap-3">
-            <NavigationBackArrow class="!w-fit" color="text-gray" />
+            <NavigationBackArrow class="!w-fit" color="text-gray" :url="backUrl" />
             <h1 class="absolute top-0 left-1/2 -translate-x-1/2 text-sm 2xl:text-base font-bold">{{ profile?.display_name ?? '...' }}</h1>
         </div>
 
@@ -101,6 +101,12 @@ const friendCount = ref(0)
 const communityCount = ref(0)
 const isFriend = ref(false)
 const isPending = ref(false)
+
+const backUrl = computed(() => {
+    const from = route.query.from
+    if (typeof from === 'string' && from.startsWith('/') && !from.startsWith('//')) return from
+    return ROUTE_NAMES.COMMUNITY
+})
 
 useSeoTags({
     title: () => profile.value?.display_name || profile.value?.name || 'Perfil de usuario',

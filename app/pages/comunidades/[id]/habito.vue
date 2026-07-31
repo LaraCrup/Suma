@@ -1,7 +1,7 @@
 <template>
     <DefaultSection class="h-full">
         <div class="w-full flex items-center gap-2">
-            <CommunityHeader :community="community" />
+            <CommunityHeader :community="community" :backUrl="`${ROUTE_NAMES.COMMUNITY}/${route.params.id}`" />
             <button
                 v-if="isAdmin && habit"
                 @click="navigateTo(`/comunidades/${route.params.id}/editar-habito`)"
@@ -87,6 +87,7 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 
 useSeoTags({
     title: 'Hábito comunitario',

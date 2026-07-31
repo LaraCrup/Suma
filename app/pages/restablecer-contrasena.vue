@@ -1,6 +1,6 @@
 <template>
     <DefaultSection class="gap-6 lg:h-[80dvh]">
-        <NavigationBackArrow color="text-green-light" />
+        <NavigationBackArrow color="text-green-light" :url="ROUTE_NAMES.LOGIN" />
         <div class="flex flex-col items-center gap-2">
             <HeadingH1 class="text-center">Te ayudamos a volver a Suma</HeadingH1>
             <p class="text-xs text-center">Te mandaremos un correo con un enlace para que puedas restablecer tu

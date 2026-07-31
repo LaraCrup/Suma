@@ -1,6 +1,6 @@
 <template>
     <DefaultSection class="gap-6 lg:h-[80dvh]">
-        <NavigationBackArrow color="text-green-light" />
+        <NavigationBackArrow color="text-green-light" :url="ROUTE_NAMES.RESET_PASSWORD" />
         <div class="flex flex-col items-center gap-2">
             <HeadingH1 class="text-center">¡Verificá tu correo para continuar!</HeadingH1>
             <p class="text-xs text-center">Mirá tu bandeja de entrada. Te mandamos un correo a <span class="font-bold">{{ userEmail }}</span> para restablecer tu contraseña.</p>

@@ -1,7 +1,7 @@
 <template>
     <DefaultSection>
         <div class="w-full flex items-center gap-3">
-            <NavigationBackArrow class="!w-fit" color="text-gray" />
+            <NavigationBackArrow class="!w-fit" color="text-gray" :url="backUrl" />
             <HeadingH1>Nueva comunidad</HeadingH1>
         </div>
 
@@ -90,6 +90,11 @@ const icon = ref('')
 const members = ref([])
 const currentProfile = computed(() => authStore.profile)
 const errors = ref({ name: null, icon: null, members: null })
+
+const backUrl = computed(() => ({
+    path: ROUTE_NAMES.COMMUNITY_CREATE,
+    query: { members: members.value.map(m => m.id).join(','), name: name.value, icon: icon.value }
+}))
 
 const filterEmojiIcon = () => {
     icon.value = keepLastEmojiGrapheme(icon.value)

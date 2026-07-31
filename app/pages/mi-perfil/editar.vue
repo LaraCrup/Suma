@@ -1,7 +1,7 @@
 <template>
   <DefaultSection>
     <div class="w-full flex items-center gap-3">
-      <NavigationBackArrow class="!w-fit text-gray" />
+      <NavigationBackArrow class="!w-fit text-gray" :url="ROUTE_NAMES.PROFILE" />
       <HeadingH1>Editar perfil</HeadingH1>
     </div>
 

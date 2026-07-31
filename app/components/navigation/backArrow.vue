@@ -16,7 +16,7 @@ const props = defineProps({
   },
   url: {
     type: [String, Object],
-    default: null
+    required: true
   }
 })
 

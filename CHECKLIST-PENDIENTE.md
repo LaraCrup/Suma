@@ -118,7 +118,9 @@ Lo que sí está chequeado es que el manifest los declara bien: en el build de p
 
 Es un gesto **táctil** (`touchstart`/`touchmove`/`touchend` en `DefaultMain`): con el mouse no pasa nada. Probalo en el celular, o en DevTools con el device toolbar (⌘⇧M), que emula touch.
 
-Dos condiciones para que dispare: el `<main>` tiene que estar **scrolleado arriba de todo** y hay que arrastrar hacia abajo **80 px** (`THRESHOLD`). Mientras tirás aparece una flecha que rota; al soltar, el Loader.
+Dos condiciones para que dispare: el `<main>` tiene que estar **scrolleado arriba de todo** y hay que arrastrar hacia abajo **70 px** (`THRESHOLD`). Mientras tirás aparece una flecha que rota; al soltar, el Loader.
+
+> ⚠️ **Retocado el 30-07 porque el gesto se sentía trabado** (`093d9fe`). Cuatro cambios que tenés que poder ver: (1) la flecha ahora sigue el dedo sin retraso — antes tenía un `transition` fijo de 100 ms y siempre iba atrasada; (2) pasando los 70 px el indicador sigue moviéndose con resistencia hasta 120 px en vez de congelarse; (3) un swipe **horizontal** sobre una card de hábito ya no abre el indicador; (4) el umbral bajó de 80 a 70 px. Además se paralelizaron las queries de `/` y `/novedades`, así que el Loader tiene que durar bastante menos que antes.
 
 Registran su recarga 6 páginas — probar una por una:
 
@@ -146,6 +148,23 @@ Arranca visible y se oculta a los **2,5 s** o en el primer cambio de ruta, lo qu
 
 ---
 
+## 5 bis. Beneficios vencidos *(cambio del 30-07, sin testear)*
+
+Las dos queries de `benefits` ahora filtran por `valid_until` (`null` = no vence). `null` no se usa hoy: los 49 beneficios tienen fecha.
+
+**Ojo: con los datos actuales no se nota nada.** Los 49 están `approved` y el `valid_until` más cercano es **2027-03-12**, así que hay que forzar uno a mano. Poné un beneficio **de tu nivel actual** (el listado filtra por `level`) con `valid_until` en una fecha pasada:
+
+```sql
+update benefits set valid_until = '2026-07-01' where id = '<id de un beneficio de tu nivel>';
+```
+
+- [ ] El beneficio vencido **desaparece** del listado de `/progreso`
+- [ ] Entrando por **URL directa** a `/progreso/beneficios/<id vencido>` sale *"Este beneficio ya no está disponible."* y no se ve el código de descuento
+- [ ] Un beneficio que vence **hoy** todavía se ve (el filtro es `gte`, no `gt`)
+- [ ] Devolver el `valid_until` original cuando termines
+
+---
+
 ## 6. Pendiente que no depende del código
 
 - [x] **Panel de administración (repo aparte)**: entrar como superadmin → sigue funcionando
@@ -160,7 +179,7 @@ Arranca visible y se oculta a los **2,5 s** o en el primer cambio de ruta, lo qu
 - [ ] Correr **Lighthouse** en mobile (Performance / Accessibility / Best Practices / SEO)
 - [ ] El deploy de producción tiene todas las variables de entorno cargadas
 - [ ] Probar la app **desde el celular de otra persona**, con datos móviles
-- [ ] Revisar que `.env` no esté en el **historial** de git (hoy no está trackeado, pero conviene mirar el historial)
+- [x] ~~Revisar que `.env` no esté en el **historial** de git~~ — **verificado el 30-07**: `git log --all -- .env .env.local .env.production` no devuelve nada, o sea que nunca se commiteó, en ninguna rama. El `.gitignore` además lo cubre con `.env` + `.env.*` y la excepción `!.env.example`
 - [ ] Tener un **usuario de demo** listo, con hábitos, racha y comunidad ya cargados
 - [ ] Tener una **segunda cuenta** lista para demostrar comunidades y amigos en vivo
 - [ ] Ensayar la demo completa una vez, de punta a punta

@@ -1,6 +1,6 @@
 <template>
     <DefaultSection>
-        <NavigationBackArrow class="text-gray" />
+        <NavigationBackArrow class="text-gray" :url="ROUTE_NAMES.NEWS" />
 
         <div v-if="loading" class="w-full flex justify-center py-8">
             <Loader />
@@ -44,6 +44,8 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
+
 const route = useRoute()
 const { getNews } = useNovedades()
 

@@ -5,7 +5,7 @@
         </div>
         <template v-else>
         <div class="w-full">
-            <NavigationBackArrow color="text-gray" />
+            <NavigationBackArrow color="text-gray" :url="`${ROUTE_NAMES.COMMUNITY}/${route.params.id}`" />
         </div>
 
         <div class="w-full flex gap-4">

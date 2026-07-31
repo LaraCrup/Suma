@@ -5,7 +5,7 @@
         </div>
         <template v-else>
         <div class="w-full flex flex-col gap-3">
-            <CommunityHeader :community="community" />
+            <CommunityHeader :community="community" :backUrl="ROUTE_NAMES.COMMUNITY" />
             <div v-if="habit" class="w-full">
                 <HabitsCommunityCard :habit="habit" :members="completions" />
             </div>
@@ -46,6 +46,8 @@
 </template>
 
 <script setup>
+import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
+
 const route = useRoute()
 const client = useSupabaseClient()
 const { getCommunityById, getCommunityHabit, getCommunityMessages, sendMessage, getCommunityHabitCompletions, recordCommunityJoin } = useCommunities()

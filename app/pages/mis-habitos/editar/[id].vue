@@ -1,7 +1,7 @@
 <template>
     <DefaultSection class="pb-12">
         <div class="w-full flex items-center">
-            <NavigationBackArrow class="absolute text-gray" />
+            <NavigationBackArrow class="absolute text-gray" :url="`${ROUTE_NAMES.HABITS_DETAIL}/${route.params.id}`" />
             <h1 class="w-full text-sm font-bold text-center">{{ habit?.icon }} {{ habit?.name }}</h1>
             <div class="w-6"></div>
         </div>

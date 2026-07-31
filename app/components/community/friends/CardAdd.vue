@@ -1,5 +1,5 @@
 <template>
-    <NuxtLink :to="`${ROUTE_NAMES.USERS}/${user?.id}`" class="w-full flex items-center justify-between bg-midlight rounded-lg p-3 2xl:p-4">
+    <NuxtLink :to="userLink" class="w-full flex items-center justify-between bg-midlight rounded-lg p-3 2xl:p-4">
         <div class="flex gap-3 items-center">
             <div class="w-6 2xl:w-7 h-6 2xl:h-7 rounded-full overflow-hidden flex items-center justify-center bg-green-light flex-shrink-0">
                 <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user.display_name" class="w-full h-full object-cover" />
@@ -45,6 +45,13 @@ const props = defineProps({
         default: false
     }
 })
+
+const route = useRoute()
+
+const userLink = computed(() => ({
+    path: `${ROUTE_NAMES.USERS}/${props.user?.id}`,
+    query: { from: route.fullPath }
+}))
 
 const emit = defineEmits(['request-sent', 'request-cancelled'])
 
