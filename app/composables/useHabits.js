@@ -138,28 +138,33 @@ export const useHabits = () => {
     }
 
     const logHabitProgress = async (habitId, amount = 1, date = null) => {
-        await getUserId()
-
-        const habit = await getHabitById(habitId)
-        if (!habit) {
-            throw new Error('Hábito no encontrado')
-        }
-
         const today = getArgentineDate()
         const targetDate = date || today
         const isPastDate = targetDate !== today
 
-        const { data: existingLog, error: searchError } = await client
-            .from('habit_logs')
-            .select('*')
-            .eq('habit_id', habitId)
-            .eq('date', targetDate)
-            .maybeSingle()
+        const [habitResult, logResult] = await Promise.all([
+            client.from('habits').select('*').eq('id', habitId).maybeSingle(),
+            client.from('habit_logs').select('*').eq('habit_id', habitId).eq('date', targetDate).maybeSingle()
+        ])
+
+        if (habitResult.error) {
+            throw habitResult.error
+        }
+
+        if (!habitResult.data) {
+            throw new Error('Hábito no encontrado')
+        }
+
+        const { data: existingLog, error: searchError } = logResult
 
         if (searchError) {
             console.error('Error buscando log existente:', searchError)
             throw searchError
         }
+
+        const habitRow = habitResult.data
+        habitRow.progress_count = existingLog?.value ?? 0
+        const habit = (await enrichHabitsWithCompletedDays([habitRow]))[0]
 
         const baseProgress = existingLog?.value || 0
         let newProgressCount = baseProgress + amount
@@ -325,8 +330,9 @@ export const useHabits = () => {
         }
 
         if (!isPastDate && isCompleted && !existingLog?.completed) {
-            await checkAllHabitsDaily(getHabits, shouldShowHabitToday)
-            await checkWeeklyGoalMet(getHabits)
+            const habitsForChecks = await getHabits()
+            await checkAllHabitsDaily(habitsForChecks, shouldShowHabitToday)
+            await checkWeeklyGoalMet(habitsForChecks)
         }
 
         if (!isPastDate && !isCompleted && existingLog?.completed) {
@@ -366,7 +372,7 @@ export const useHabits = () => {
 
         const { data: weekLogs } = await client
             .from('habit_logs')
-            .select('*')
+            .select('id')
             .eq('habit_id', habitId)
             .gte('date', weekStart)
             .lte('date', weekEnd)
@@ -384,7 +390,7 @@ export const useHabits = () => {
 
         const { data: monthLogs } = await client
             .from('habit_logs')
-            .select('*')
+            .select('id')
             .eq('habit_id', habitId)
             .gte('date', monthStart)
             .lte('date', monthEnd)
@@ -393,22 +399,57 @@ export const useHabits = () => {
         return monthLogs?.length || 0
     }
 
+    const WEEKLY_OPTIONS = ['cantidad_dias_semana', 'dias_especificos_semana']
+    const MONTHLY_OPTIONS = ['cantidad_dias_mes', 'dias_especificos_mes']
+
+    const countCompletedByHabit = async (habitIds, start, end) => {
+        if (habitIds.length === 0) return {}
+
+        const { data } = await client
+            .from('habit_logs')
+            .select('habit_id')
+            .in('habit_id', habitIds)
+            .gte('date', start)
+            .lte('date', end)
+            .eq('completed', true)
+
+        const counts = {}
+        for (const log of data || []) {
+            counts[log.habit_id] = (counts[log.habit_id] || 0) + 1
+        }
+        return counts
+    }
+
     const enrichHabitsWithCompletedDays = async (habits) => {
-        const enriched = await Promise.all(
-            habits.map(async (habit) => {
-                const enrichedHabit = { ...habit }
+        const weeklyIds = habits.filter(h => WEEKLY_OPTIONS.includes(h.frequency_option)).map(h => h.id)
+        const monthlyIds = habits.filter(h => MONTHLY_OPTIONS.includes(h.frequency_option)).map(h => h.id)
 
-                if (habit.frequency_option === 'cantidad_dias_semana' || habit.frequency_option === 'dias_especificos_semana') {
-                    enrichedHabit.weekCompletedDays = await getWeekCompletedDays(habit.id)
-                } else if (habit.frequency_option === 'cantidad_dias_mes' || habit.frequency_option === 'dias_especificos_mes') {
-                    enrichedHabit.monthCompletedDays = await getMonthCompletedDays(habit.id)
-                }
+        if (weeklyIds.length === 0 && monthlyIds.length === 0) {
+            return habits.map(habit => ({ ...habit }))
+        }
 
-                return enrichedHabit
-            })
-        )
+        const todayStr = getArgentineDate()
+        const [year, month, day] = todayStr.split('-').map(Number)
+        const today = new Date(year, month - 1, day)
+        const lastDayOfMonth = new Date(year, month, 0).getDate()
+        const monthPrefix = `${year}-${String(month).padStart(2, '0')}`
 
-        return enriched
+        const [weekCounts, monthCounts] = await Promise.all([
+            countCompletedByHabit(weeklyIds, getWeekStart(today), getWeekEnd(today)),
+            countCompletedByHabit(monthlyIds, `${monthPrefix}-01`, `${monthPrefix}-${String(lastDayOfMonth).padStart(2, '0')}`)
+        ])
+
+        return habits.map(habit => {
+            const enrichedHabit = { ...habit }
+
+            if (WEEKLY_OPTIONS.includes(habit.frequency_option)) {
+                enrichedHabit.weekCompletedDays = weekCounts[habit.id] || 0
+            } else if (MONTHLY_OPTIONS.includes(habit.frequency_option)) {
+                enrichedHabit.monthCompletedDays = monthCounts[habit.id] || 0
+            }
+
+            return enrichedHabit
+        })
     }
 
     const getYesterdayString = () => addDaysToDateStr(getArgentineDate(), -1)
@@ -416,7 +457,7 @@ export const useHabits = () => {
     const isPeriodComplete = async (habit, startDate, endDate) => {
         const { data: logs, error } = await client
             .from('habit_logs')
-            .select('*')
+            .select('date')
             .eq('habit_id', habit.id)
             .gte('date', startDate)
             .lte('date', endDate)
@@ -768,6 +809,46 @@ export const useHabits = () => {
 
     const shouldShowHabitToday = (habit) => shouldShowHabitForDate(habit, getArgentineDate())
 
+    const QUOTA_OPTIONS = ['cantidad_dias_semana', 'cantidad_dias_mes']
+
+    const resolveHabitsVisibility = async (habits, dateStr) => {
+        const quotaHabits = habits.filter(h => QUOTA_OPTIONS.includes(h.frequency_option))
+
+        if (quotaHabits.length === 0) {
+            return await Promise.all(habits.map(habit => shouldShowHabitForDate(habit, dateStr)))
+        }
+
+        const bounds = quotaHabits.map(habit => getPeriodBounds(habit, dateStr))
+        const rangeStart = bounds.reduce((min, b) => (b.start < min ? b.start : min), bounds[0].start)
+        const rangeEnd = bounds.reduce((max, b) => (b.end > max ? b.end : max), bounds[0].end)
+
+        const { data: logs } = await client
+            .from('habit_logs')
+            .select('habit_id, date')
+            .in('habit_id', quotaHabits.map(h => h.id))
+            .gte('date', rangeStart)
+            .lte('date', rangeEnd)
+            .eq('completed', true)
+
+        const logsByHabit = {}
+        for (const log of logs || []) {
+            (logsByHabit[log.habit_id] ||= []).push(log.date)
+        }
+
+        const countFromCache = (habitId) => async (start, end) =>
+            (logsByHabit[habitId] || []).filter(date => date >= start && date <= end).length
+
+        return await Promise.all(
+            habits.map(habit => shouldShowHabitForDateWith(
+                habit,
+                dateStr,
+                QUOTA_OPTIONS.includes(habit.frequency_option)
+                    ? countFromCache(habit.id)
+                    : countCompletedLogsInPeriod(habit.id)
+            ))
+        )
+    }
+
     return {
         createHabit,
         getHabits,
@@ -778,6 +859,7 @@ export const useHabits = () => {
         logHabitProgress,
         shouldShowHabitToday,
         shouldShowHabitForDate,
+        resolveHabitsVisibility,
         syncHabitsWithNewDay,
         getArgentineDate,
         applyStreakGrace,

@@ -107,6 +107,17 @@ export default defineNuxtConfig({
       runtimeCaching: [
         {
           urlPattern: ({ url }) =>
+            url.hostname.includes('supabase.co') && url.pathname.startsWith('/storage/'),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'supabase-storage',
+            matchOptions: { ignoreSearch: true },
+            expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 7 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+        {
+          urlPattern: ({ url }) =>
             url.hostname.includes('supabase.co') && !url.pathname.startsWith('/auth/'),
           handler: 'NetworkFirst',
           options: {

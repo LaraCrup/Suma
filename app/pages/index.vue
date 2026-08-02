@@ -94,7 +94,7 @@ import { ROUTE_NAMES } from '~/constants/ROUTE_NAMES'
 import { useHabits } from '~/composables/useHabits'
 import { useAuthStore } from '~/stores/authStore'
 
-const { getHabitsForDate, shouldShowHabitForDate, syncHabitsWithNewDay, getArgentineDate } = useHabits()
+const { getHabitsForDate, resolveHabitsVisibility, syncHabitsWithNewDay, getArgentineDate } = useHabits()
 const { getCommunities, getCommunityHabit, getCommunityHabitCompletions, shouldShowCommunityHabitForDate, syncCommunityStreaks } = useCommunities()
 const { registerRefresh } = usePullToRefresh()
 const authStore = useAuthStore()
@@ -142,9 +142,7 @@ const filterCommunityHabitsByVisibility = async () => {
 
 const filterHabitsByVisibility = async () => {
     const existing = habits.value.filter(habit => habitExistsOn(habit, selectedDate.value))
-    const results = await Promise.all(
-        existing.map(habit => shouldShowHabitForDate(habit, selectedDate.value))
-    )
+    const results = await resolveHabitsVisibility(existing, selectedDate.value)
 
     visibleHabits.value = existing.filter((_, index) => results[index])
     hiddenHabits.value = existing.filter((_, index) => !results[index])
@@ -152,19 +150,12 @@ const filterHabitsByVisibility = async () => {
 
 const handleHabitUpdated = async (updatedHabit) => {
     const habitIndex = habits.value.findIndex(h => h.id === updatedHabit.id)
-    if (habitIndex !== -1) {
-        habits.value[habitIndex] = updatedHabit
+    if (habitIndex === -1) return
 
-        try {
-            const refreshedHabits = await getHabitsForDate(selectedDate.value)
-            habits.value = refreshedHabits
-        } catch (error) {
-            console.error('Error refrescando hábitos:', error)
-        }
+    habits.value[habitIndex] = updatedHabit
 
-        await filterHabitsByVisibility()
-        await dateNavigatorRef.value?.refreshCompletions()
-    }
+    await filterHabitsByVisibility()
+    dateNavigatorRef.value?.refreshCompletions()
 }
 
 const handleCommunityHabitUpdated = async (habitId) => {
@@ -187,19 +178,30 @@ const handleCommunityHabitUpdated = async (habitId) => {
 }
 
 watch(selectedDate, async (newDate) => {
+    isLoading.value = true
+    isCommunityLoading.value = true
     try {
-        habits.value = await getHabitsForDate(newDate)
-        await filterHabitsByVisibility()
+        const [habitsForDate, communityMembers] = await Promise.all([
+            getHabitsForDate(newDate),
+            Promise.all(
+                communityHabits.value.map(item => getCommunityHabitCompletions(item.habit.id, newDate))
+            )
+        ])
 
-        const updatedItems = []
-        for (const item of communityHabits.value) {
-            const members = await getCommunityHabitCompletions(item.habit.id, newDate)
-            updatedItems.push({ ...item, members })
-        }
-        communityHabits.value = updatedItems
+        habits.value = habitsForDate
+        await filterHabitsByVisibility()
+        isLoading.value = false
+
+        communityHabits.value = communityHabits.value.map((item, index) => ({
+            ...item,
+            members: communityMembers[index]
+        }))
         await filterCommunityHabitsByVisibility()
+        isCommunityLoading.value = false
     } catch (error) {
         console.error('Error cargando hábitos para fecha:', error)
+        isLoading.value = false
+        isCommunityLoading.value = false
     }
 })
 
@@ -271,13 +273,15 @@ onMounted(async () => {
 
     if (typeof window !== 'undefined') {
         visibilityChangeHandler = async () => {
-            if (document.visibilityState === 'visible') {
-                try {
-                    habits.value = await getHabitsForDate(selectedDate.value)
-                    await filterHabitsByVisibility()
-                } catch (error) {
-                    console.error('[PAGE INDEX] Error refreshing habits on visibility:', error)
-                }
+            if (document.visibilityState !== 'visible') return
+
+            const today = getArgentineDate()
+            if (selectedDate.value === today) return
+
+            try {
+                selectedDate.value = today
+            } catch (error) {
+                console.error('[PAGE INDEX] Error refreshing habits on visibility:', error)
             }
         }
         document.addEventListener('visibilitychange', visibilityChangeHandler)

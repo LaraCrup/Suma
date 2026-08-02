@@ -35,9 +35,9 @@
             </div>
         </div>
         <div class="relative flex items-center gap-2 flex-shrink-0">
-            <div v-if="habit.streak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
+            <div v-if="effectiveStreak > 0" :class="['flex flex-shrink-0 items-center gap-1', isUpdating ? 'animate-pulse' : '']">
                 <NuxtImg src="/images/racha.svg" alt="Racha" class="w-2 2xl:w-3" />
-                <p class="text-xs 2xl:text-sm">{{ habit.streak }}</p>
+                <p class="text-xs 2xl:text-sm">{{ effectiveStreak }}</p>
                 <span v-if="hasPendingStreakSave" class="w-1.5 h-1.5 rounded-full bg-error shrink-0"></span>
             </div>
             <div :class="['w-6 h-6 flex justify-center items-center rounded-full', isCompleted ? 'bg-green-dark' : 'border-gray border-[1px]']">
@@ -86,14 +86,24 @@ const SWIPE_THRESHOLD = 40
 const HORIZONTAL_TOLERANCE = 8
 
 const localOverrideProgress = ref(null)
+const localOverrideStreak = ref(null)
 
 const effectiveProgress = computed(() => {
     if (localOverrideProgress.value !== null) return localOverrideProgress.value
     return props.habit.progress_count || 0
 })
 
+const effectiveStreak = computed(() => {
+    if (localOverrideStreak.value !== null) return localOverrideStreak.value
+    return props.habit.streak || 0
+})
+
 watch(() => props.habit.progress_count, () => {
     localOverrideProgress.value = null
+})
+
+watch(() => props.habit.streak, () => {
+    localOverrideStreak.value = null
 })
 
 const isCompleted = computed(() => {
@@ -296,6 +306,11 @@ const goToHabit = () => {
     router.push(`${ROUTE_NAMES.HABITS_DETAIL}/${props.habit.id}${dateParam}`)
 }
 
+const predictsStreakChange = computed(() =>
+    props.habit.frequency_type === 'diario' &&
+    (!props.selectedDate || props.selectedDate === getArgentineDate())
+)
+
 const completeHabit = async () => {
     const currentProgress = props.habit.progress_count || 0
     const goalValue = props.habit.goal_value || 1
@@ -304,13 +319,18 @@ const completeHabit = async () => {
     if (progressNeeded <= 0) return
 
     localOverrideProgress.value = goalValue
+    if (predictsStreakChange.value) {
+        localOverrideStreak.value = (props.habit.streak || 0) + 1
+    }
     try {
         const updated = await logHabitProgress(props.habit.id, progressNeeded, props.selectedDate)
         emit('habitUpdated', updated)
+        localOverrideStreak.value = null
         await checkPendingStreakSave(updated)
     } catch (error) {
         console.error('Error completando hábito:', error)
         localOverrideProgress.value = null
+        localOverrideStreak.value = null
     }
 }
 
@@ -320,13 +340,18 @@ const resetHabit = async () => {
     if (currentProgress <= 0) return
 
     localOverrideProgress.value = 0
+    if (predictsStreakChange.value) {
+        localOverrideStreak.value = Math.max(0, (props.habit.streak || 0) - 1)
+    }
     try {
         const updated = await logHabitProgress(props.habit.id, -currentProgress, props.selectedDate)
         emit('habitUpdated', updated)
+        localOverrideStreak.value = null
         await checkPendingStreakSave(updated)
     } catch (error) {
         console.error('Error reiniciando hábito:', error)
         localOverrideProgress.value = null
+        localOverrideStreak.value = null
     }
 }
 </script>

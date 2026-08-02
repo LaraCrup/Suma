@@ -109,29 +109,36 @@ export const useCommunities = () => {
             return []
         }
 
-        const enriched = await Promise.all(
-            (communities || []).map(async (community) => {
-                const { count } = await client
-                    .from('community_members')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('community_id', community.id)
+        const [membersResult, habitsResult] = await Promise.all([
+            client
+                .from('community_members')
+                .select('community_id')
+                .in('community_id', communityIds),
+            client
+                .from('community_habits')
+                .select('*')
+                .in('community_id', communityIds)
+        ])
 
-                const { data: habit } = await client
-                    .from('community_habits')
-                    .select('*')
-                    .eq('community_id', community.id)
-                    .maybeSingle()
+        const memberCountByCommunity = {}
+        for (const row of membersResult.data || []) {
+            memberCountByCommunity[row.community_id] = (memberCountByCommunity[row.community_id] || 0) + 1
+        }
 
-                return {
-                    ...community,
-                    member_count: count || 0,
-                    habit: habit || null,
-                    streak: habit?.streak || 0,
-                }
-            })
-        )
+        const habitByCommunity = {}
+        for (const habit of habitsResult.data || []) {
+            habitByCommunity[habit.community_id] = habit
+        }
 
-        return enriched
+        return (communities || []).map(community => {
+            const habit = habitByCommunity[community.id] || null
+            return {
+                ...community,
+                member_count: memberCountByCommunity[community.id] || 0,
+                habit,
+                streak: habit?.streak || 0,
+            }
+        })
     }
 
     const getCommunityById = async (communityId) => {

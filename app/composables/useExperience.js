@@ -1,3 +1,6 @@
+let levelsCache = null
+let xpActionsCache = null
+
 export const useExperience = () => {
     const client = useSupabaseClient()
     const authStore = useAuthStore()
@@ -52,6 +55,8 @@ export const useExperience = () => {
     }
 
     const getLevels = async () => {
+        if (levelsCache) return levelsCache
+
         const { data, error } = await client
             .from('levels')
             .select('*')
@@ -62,7 +67,8 @@ export const useExperience = () => {
             return []
         }
 
-        return data || []
+        levelsCache = data || []
+        return levelsCache
     }
 
     const calculateLevel = async (experiencePoints) => {
@@ -70,7 +76,7 @@ export const useExperience = () => {
 
         if (levels.length === 0) return 1
 
-        const currentLevel = levels
+        const currentLevel = [...levels]
             .reverse()
             .find(level => experiencePoints >= level.xp_required)
 
@@ -104,20 +110,26 @@ export const useExperience = () => {
         }
     }
 
-    const getXPForAction = async (actionKey) => {
+    const getXPActions = async () => {
+        if (xpActionsCache) return xpActionsCache
+
         const { data, error } = await client
             .from('xp_actions')
-            .select('xp_value')
-            .eq('action_key', actionKey)
+            .select('action_key, xp_value')
             .eq('active', true)
-            .single()
 
         if (error) {
-            console.error(`Error obteniendo XP para acción ${actionKey}:`, error)
-            return 0
+            console.error('Error obteniendo acciones de XP:', error)
+            return {}
         }
 
-        return data?.xp_value || 0
+        xpActionsCache = Object.fromEntries((data || []).map(a => [a.action_key, a.xp_value]))
+        return xpActionsCache
+    }
+
+    const getXPForAction = async (actionKey) => {
+        const actions = await getXPActions()
+        return actions[actionKey] || 0
     }
 
     const grantXP = async (actionKey, customAmount = null) => {
@@ -242,10 +254,10 @@ export const useExperience = () => {
         }
     }
 
-    const checkAllHabitsDaily = async (getHabits, shouldShowHabitToday) => {
+    const checkAllHabitsDaily = async (habitsSource, shouldShowHabitToday) => {
         try {
-            const habits = await getHabits()
-            if (habits.length === 0) return null
+            const habits = typeof habitsSource === 'function' ? await habitsSource() : habitsSource
+            if (!habits || habits.length === 0) return null
 
             const todayHabits = []
             for (const habit of habits) {
@@ -306,9 +318,11 @@ export const useExperience = () => {
         }
     }
 
-    const checkWeeklyGoalMet = async (getHabits) => {
+    const checkWeeklyGoalMet = async (habitsSource) => {
         try {
-            const habits = await getHabits()
+            const habits = typeof habitsSource === 'function' ? await habitsSource() : habitsSource
+            if (!habits) return null
+
             const weeklyHabits = habits.filter(h =>
                 h.frequency_option === 'cantidad_dias_semana' ||
                 h.frequency_option === 'dias_especificos_semana'
